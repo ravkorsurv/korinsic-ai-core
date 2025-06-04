@@ -1,0 +1,12 @@
+{
+  "model_id": "SpoofingModel",
+  "components": [
+    "Access_InfoModule",
+    "Intent_Module",
+    "Quote_BehaviorModule",
+    "MarketImpact_Module",
+    "Trade_ExecutionModule",
+    "Confounding_Explainer"
+  ],
+  "output_node": "Spoofing_Score"
+}

@@ -1,0 +1,15 @@
+{
+  "component_id": "Quote_BehaviorModule",
+  "description": "Identifies patterns in quoting activity indicative of spoofing",
+  "inputs": ["Quote_LargeLayered", "Quote_CancelRateHigh", "Quote_PriorToFill"],
+  "outputs": ["Quote_BehaviorScore"],
+  "cpt_definitions": {
+    "Quote_BehaviorScore": "noisy_or"
+  },
+  "node_types": {
+    "Quote_LargeLayered": "binary",
+    "Quote_CancelRateHigh": "binary",
+    "Quote_PriorToFill": "binary",
+    "Quote_BehaviorScore": "ranked"
+  }
+}
