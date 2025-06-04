@@ -1,0 +1,3 @@
+# Model Design Notes
+
+Detailed architecture and causal design for insider dealing and spoofing models...
