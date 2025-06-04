@@ -1,3 +1,1 @@
-# Regulator Justification
-
-This document outlines why Bayesian networks are preferable to rule-based systems...
+# Regulator Justification\n\nSpoofing logic uses market behavior and pattern analysis to infer manipulative intent.
