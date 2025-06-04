@@ -1,0 +1,3 @@
+# Regulator Justification
+
+This document outlines why Bayesian networks are preferable to rule-based systems...

@@ -1,0 +1,10 @@
+{
+  "News_Embargoed": true,
+  "Comms_Anomaly": true,
+  "Role_Sensitive": true,
+  "HR_Events": "PerformanceReview",
+  "Motive_PersonalGain": true,
+  "Trade_TimingScore": "High",
+  "Market_ReactionSharp": true,
+  "PolicyExplained": false
+}

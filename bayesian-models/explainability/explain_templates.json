@@ -1,0 +1,4 @@
+{
+  "Access_Score": "High likelihood of MNPI access due to {{inputs}}.",
+  "InsiderDeal_Score": "Alert triggered by strong combination of access, intent, and trade timing."
+}
