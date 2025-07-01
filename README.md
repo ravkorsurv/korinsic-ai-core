@@ -31,10 +31,3 @@ pip install -r requirements.txt
 python src/app.py
 
 ---
-
-Let me know if you'd like to:
-- Add badges (build status, coverage, etc.)
-- Link to the `kor-ai-alert-ui` repo
-- Add screenshots or diagrams
-
-Or I can generate a matching `README.md` for the UI repo next.
