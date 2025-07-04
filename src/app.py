@@ -14,7 +14,10 @@ from utils.logger import setup_logger
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=[
+    "http://localhost:3000",
+    "https://kor-ai-alert-ui.amplifyapp.com"
+], allow_headers=["Content-Type", "Authorization"])
 
 # Setup logging
 logger = setup_logger()
