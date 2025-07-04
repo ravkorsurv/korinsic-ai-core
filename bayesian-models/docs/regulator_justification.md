@@ -1,0 +1,1 @@
+# Regulator Justification\n\nSpoofing logic uses market behavior and pattern analysis to infer manipulative intent.

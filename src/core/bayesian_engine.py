@@ -63,93 +63,162 @@ class BayesianEngine:
                 self.insider_dealing_inference = VariableElimination(model)
                 logger.info("Loaded insider dealing model from config: %s", config_path)
                 return
+        
         # fallback to old method
-            # Define the network structure
-            # Nodes: MaterialInfo, TradingActivity, Timing, Price Impact, Risk
-            model = BayesianNetwork([
-                ('MaterialInfo', 'Risk'),
-                ('TradingActivity', 'Risk'),
-                ('Timing', 'Risk'),
-                ('PriceImpact', 'Risk'),
-                ('MaterialInfo', 'Timing'),
-                ('TradingActivity', 'PriceImpact')
-            ])
-            
-            # Define Conditional Probability Distributions
-            
-            # Material Information (0: No access, 1: Potential access, 2: Clear access)
-            cpd_material = TabularCPD(
-                variable='MaterialInfo',
-                variable_card=3,
-                values=[[0.7], [0.25], [0.05]]
-            )
-            
-            # Trading Activity (0: Normal, 1: Unusual, 2: Highly unusual)
-            cpd_trading = TabularCPD(
-                variable='TradingActivity',
-                variable_card=3,
-                values=[[0.8], [0.15], [0.05]]
-            )
-            
-            # Timing relative to material events (0: Normal, 1: Suspicious, 2: Highly suspicious)
-            cpd_timing = TabularCPD(
-                variable='Timing',
-                variable_card=3,
-                values=[
-                    [0.9, 0.7, 0.3],  # Normal timing
-                    [0.08, 0.2, 0.4], # Suspicious timing
-                    [0.02, 0.1, 0.3]  # Highly suspicious timing
-                ],
-                evidence=['MaterialInfo'],
-                evidence_card=[3]
-            )
-            
-            # Price Impact (0: Low, 1: Medium, 2: High)
-            cpd_price = TabularCPD(
-                variable='PriceImpact',
-                variable_card=3,
-                values=[
-                    [0.8, 0.5, 0.2],  # Low impact
-                    [0.15, 0.3, 0.3], # Medium impact
-                    [0.05, 0.2, 0.5]  # High impact
-                ],
-                evidence=['TradingActivity'],
-                evidence_card=[3]
-            )
-            
-            # Risk of Insider Dealing (0: Low, 1: Medium, 2: High)
-            # Temporary fix: repeat the last 27 values 3 times to get 81 columns
-            base_low = [0.95, 0.9, 0.8, 0.85, 0.7, 0.5, 0.7, 0.5, 0.2,
-                        0.8, 0.7, 0.5, 0.6, 0.4, 0.2, 0.4, 0.2, 0.1,
-                        0.5, 0.3, 0.1, 0.3, 0.1, 0.05, 0.2, 0.05, 0.01]
-            base_med = [0.04, 0.08, 0.15, 0.12, 0.25, 0.35, 0.25, 0.35, 0.3,
-                        0.15, 0.25, 0.35, 0.3, 0.45, 0.5, 0.45, 0.5, 0.4,
-                        0.35, 0.5, 0.4, 0.5, 0.4, 0.35, 0.5, 0.35, 0.24]
-            base_high = [0.01, 0.02, 0.05, 0.03, 0.05, 0.15, 0.05, 0.15, 0.5,
-                         0.05, 0.05, 0.15, 0.1, 0.15, 0.3, 0.15, 0.3, 0.5,
-                         0.15, 0.2, 0.5, 0.2, 0.5, 0.6, 0.3, 0.6, 0.75]
+        # Define the network structure
+        # Nodes: MaterialInfo, TradingActivity, Timing, Price Impact, Risk
+        model = BayesianNetwork([
+            ('MaterialInfo', 'Risk'),
+            ('TradingActivity', 'Risk'),
+            ('Timing', 'Risk'),
+            ('PriceImpact', 'Risk'),
+            ('MaterialInfo', 'Timing'),
+            ('TradingActivity', 'PriceImpact')
+        ])
+        
+        # Define Conditional Probability Distributions
+        
+        # Material Information (0: No access, 1: Potential access, 2: Clear access)
+        cpd_material = TabularCPD(
+            variable='MaterialInfo',
+            variable_card=3,
+            values=[[0.7], [0.25], [0.05]]
+        )
+        
+        # Trading Activity (0: Normal, 1: Unusual, 2: Highly unusual)
+        cpd_trading = TabularCPD(
+            variable='TradingActivity',
+            variable_card=3,
+            values=[[0.8], [0.15], [0.05]]
+        )
+        
+        # Timing relative to material events (0: Normal, 1: Suspicious, 2: Highly suspicious)
+        cpd_timing = TabularCPD(
+            variable='Timing',
+            variable_card=3,
+            values=[
+                [0.9, 0.7, 0.3],  # Normal timing
+                [0.08, 0.2, 0.4], # Suspicious timing
+                [0.02, 0.1, 0.3]  # Highly suspicious timing
+            ],
+            evidence=['MaterialInfo'],
+            evidence_card=[3]
+        )
+        
+        # Price Impact (0: Low, 1: Medium, 2: High)
+        cpd_price = TabularCPD(
+            variable='PriceImpact',
+            variable_card=3,
+            values=[
+                [0.8, 0.5, 0.2],  # Low impact
+                [0.15, 0.3, 0.3], # Medium impact
+                [0.05, 0.2, 0.5]  # High impact
+            ],
+            evidence=['TradingActivity'],
+            evidence_card=[3]
+        )
+        
+        # Risk of Insider Dealing (0: Low, 1: Medium, 2: High)
+        # Temporary fix: repeat the last 27 values 3 times to get 81 columns
+        base_low = [0.95, 0.9, 0.8, 0.85, 0.7, 0.5, 0.7, 0.5, 0.2,
+                    0.8, 0.7, 0.5, 0.6, 0.4, 0.2, 0.4, 0.2, 0.1,
+                    0.5, 0.3, 0.1, 0.3, 0.1, 0.05, 0.2, 0.05, 0.01]
+        base_med = [0.04, 0.08, 0.15, 0.12, 0.25, 0.35, 0.25, 0.35, 0.3,
+                    0.15, 0.25, 0.35, 0.3, 0.45, 0.5, 0.45, 0.5, 0.4,
+                    0.35, 0.5, 0.4, 0.5, 0.4, 0.35, 0.5, 0.35, 0.24]
+        base_high = [0.01, 0.02, 0.05, 0.03, 0.05, 0.15, 0.05, 0.15, 0.5,
+                     0.05, 0.05, 0.15, 0.1, 0.15, 0.3, 0.15, 0.3, 0.5,
+                     0.15, 0.2, 0.5, 0.2, 0.5, 0.6, 0.3, 0.6, 0.75]
 
-            cpd_risk = TabularCPD(
-                variable='Risk',
-                variable_card=3,
-                values=[
-                    base_low * 3,   # 27 * 3 = 81
-                    base_med * 3,
-                    base_high * 3
-                ],
-                evidence=['MaterialInfo', 'TradingActivity', 'Timing', 'PriceImpact'],
-                evidence_card=[3, 3, 3, 3]
-            )
-            
-            # Add CPDs to model
-            model.add_cpds(cpd_material, cpd_trading, cpd_timing, cpd_price, cpd_risk)
-            
-            # Validate model
-            assert model.check_model()
-            
-            self.insider_dealing_model = model
-            self.insider_dealing_inference = VariableElimination(model)
-            logger.info("Loaded insider dealing model from config: %s", config_path)
+        cpd_risk = TabularCPD(
+            variable='Risk',
+            variable_card=3,
+            values=[
+                base_low * 3,   # 27 * 3 = 81
+                base_med * 3,
+                base_high * 3
+            ],
+            evidence=['MaterialInfo', 'TradingActivity', 'Timing', 'PriceImpact'],
+            evidence_card=[3, 3, 3, 3]
+        )
+        
+        # Add CPDs to model
+        model.add_cpds(cpd_material, cpd_trading, cpd_timing, cpd_price, cpd_risk)
+        
+        # Validate model
+        assert model.check_model()
+        
+        self.insider_dealing_model = model
+        self.insider_dealing_inference = VariableElimination(model)
+        logger.info("Loaded insider dealing model from config: %s", config_path)
+            values=[
+                [0.8, 0.5, 0.2],  # Low impact
+                [0.15, 0.3, 0.3], # Medium impact
+                [0.05, 0.2, 0.5]  # High impact
+            ],
+            evidence=['TradingActivity'],
+            evidence_card=[3]
+        )
+        
+        # Risk of Insider Dealing (0: Low, 1: Medium, 2: High)
+        cpd_risk = TabularCPD(
+            variable='Risk',
+            variable_card=3,
+            values=[
+                # Low risk scenarios (81 combinations: MaterialInfo × TradingActivity × Timing × PriceImpact)
+                # MaterialInfo=0, TradingActivity=0
+                [0.95, 0.9, 0.8, 0.85, 0.7, 0.5, 0.7, 0.5, 0.2,  # Timing=0,1,2 × PriceImpact=0,1,2
+                 0.9, 0.85, 0.75, 0.8, 0.65, 0.45, 0.65, 0.45, 0.15,  # Timing=0,1,2 × PriceImpact=0,1,2
+                 0.85, 0.8, 0.7, 0.75, 0.6, 0.4, 0.6, 0.4, 0.1,  # Timing=0,1,2 × PriceImpact=0,1,2
+                 # MaterialInfo=0, TradingActivity=1
+                 0.8, 0.7, 0.5, 0.6, 0.4, 0.2, 0.4, 0.2, 0.1,
+                 0.75, 0.65, 0.45, 0.55, 0.35, 0.15, 0.35, 0.15, 0.05,
+                 0.7, 0.6, 0.4, 0.5, 0.3, 0.1, 0.3, 0.1, 0.02,
+                 # MaterialInfo=0, TradingActivity=2
+                 0.5, 0.3, 0.1, 0.3, 0.1, 0.05, 0.2, 0.05, 0.01,
+                 0.45, 0.25, 0.05, 0.25, 0.05, 0.02, 0.15, 0.02, 0.005,
+                 0.4, 0.2, 0.02, 0.2, 0.02, 0.01, 0.1, 0.01, 0.001],
+                
+                # Medium risk scenarios
+                # MaterialInfo=0, TradingActivity=0
+                [0.04, 0.08, 0.15, 0.12, 0.25, 0.35, 0.25, 0.35, 0.3,
+                 0.08, 0.12, 0.2, 0.15, 0.3, 0.4, 0.3, 0.4, 0.35,
+                 0.12, 0.15, 0.25, 0.2, 0.35, 0.45, 0.35, 0.45, 0.4,
+                 # MaterialInfo=0, TradingActivity=1
+                 0.15, 0.25, 0.35, 0.3, 0.45, 0.5, 0.45, 0.5, 0.4,
+                 0.2, 0.3, 0.4, 0.35, 0.5, 0.55, 0.5, 0.55, 0.45,
+                 0.25, 0.35, 0.45, 0.4, 0.55, 0.6, 0.55, 0.6, 0.5,
+                 # MaterialInfo=0, TradingActivity=2
+                 0.35, 0.5, 0.4, 0.5, 0.4, 0.35, 0.5, 0.35, 0.24,
+                 0.4, 0.55, 0.45, 0.55, 0.45, 0.4, 0.55, 0.4, 0.29,
+                 0.45, 0.6, 0.5, 0.6, 0.5, 0.45, 0.6, 0.45, 0.34],
+                
+                # High risk scenarios
+                # MaterialInfo=0, TradingActivity=0
+                [0.01, 0.02, 0.05, 0.03, 0.05, 0.15, 0.05, 0.15, 0.5,
+                 0.02, 0.03, 0.05, 0.05, 0.05, 0.15, 0.05, 0.15, 0.5,
+                 0.03, 0.05, 0.05, 0.05, 0.05, 0.15, 0.05, 0.15, 0.5,
+                 # MaterialInfo=0, TradingActivity=1
+                 0.05, 0.05, 0.15, 0.1, 0.15, 0.3, 0.15, 0.3, 0.5,
+                 0.05, 0.05, 0.15, 0.1, 0.15, 0.3, 0.15, 0.3, 0.5,
+                 0.05, 0.05, 0.15, 0.1, 0.15, 0.3, 0.15, 0.3, 0.48,
+                 # MaterialInfo=0, TradingActivity=2
+                 0.15, 0.2, 0.5, 0.2, 0.5, 0.6, 0.3, 0.6, 0.75,
+                 0.15, 0.2, 0.5, 0.2, 0.5, 0.58, 0.3, 0.58, 0.705,
+                 0.15, 0.2, 0.48, 0.2, 0.48, 0.54, 0.3, 0.54, 0.659]
+            ],
+            evidence=['MaterialInfo', 'TradingActivity', 'Timing', 'PriceImpact'],
+            evidence_card=[3, 3, 3, 3]
+        )
+        
+        # Add CPDs to model
+        model.add_cpds(cpd_material, cpd_trading, cpd_timing, cpd_price, cpd_risk)
+        
+        # Validate model
+        assert model.check_model()
+        
+        self.insider_dealing_model = model
+        self.insider_dealing_inference = VariableElimination(model)
     
     def _create_spoofing_model(self):
         """Create Bayesian network for spoofing detection from config if available"""
