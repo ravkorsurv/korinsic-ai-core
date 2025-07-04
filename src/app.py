@@ -5,7 +5,7 @@ import logging
 from datetime import datetime
 import traceback
 
-from core.bayesian_engine import BayesianEngine
+from core.bayesian_engine_simple import SimpleBayesianEngine as BayesianEngine
 from core.data_processor import DataProcessor
 from core.alert_generator import AlertGenerator
 from core.risk_calculator import RiskCalculator

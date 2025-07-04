@@ -1,0 +1,1 @@
+2025-07-04 00:15:27,857 - kor-ai-surveillance - ERROR - get_models_info:95 - Error getting models info: 'SimpleBayesianEngine' object has no attribute 'get_models_info'

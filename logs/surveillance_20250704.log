@@ -1,0 +1,17 @@
+2025-07-04 00:15:16,298 - kor-ai-surveillance - INFO - main:26 - ============================================================
+2025-07-04 00:15:16,298 - kor-ai-surveillance - INFO - main:27 - Starting Kor.ai Surveillance Platform
+2025-07-04 00:15:16,298 - kor-ai-surveillance - INFO - main:28 - ============================================================
+2025-07-04 00:15:16,298 - kor-ai-surveillance - INFO - main:29 - Environment: development
+2025-07-04 00:15:16,298 - kor-ai-surveillance - INFO - main:30 - Debug Mode: False
+2025-07-04 00:15:16,298 - kor-ai-surveillance - INFO - main:31 - Host: 0.0.0.0
+2025-07-04 00:15:16,298 - kor-ai-surveillance - INFO - main:32 - Port: 5000
+2025-07-04 00:15:27,857 - kor-ai-surveillance - ERROR - get_models_info:95 - Error getting models info: 'SimpleBayesianEngine' object has no attribute 'get_models_info'
+2025-07-04 00:15:27,860 - kor-ai-surveillance - INFO - analyze_trading_data:80 - Analysis completed for 2 trades
+2025-07-04 00:16:45,762 - kor-ai-surveillance - INFO - main:26 - ============================================================
+2025-07-04 00:16:45,762 - kor-ai-surveillance - INFO - main:27 - Starting Kor.ai Surveillance Platform
+2025-07-04 00:16:45,762 - kor-ai-surveillance - INFO - main:28 - ============================================================
+2025-07-04 00:16:45,762 - kor-ai-surveillance - INFO - main:29 - Environment: development
+2025-07-04 00:16:45,762 - kor-ai-surveillance - INFO - main:30 - Debug Mode: False
+2025-07-04 00:16:45,762 - kor-ai-surveillance - INFO - main:31 - Host: 0.0.0.0
+2025-07-04 00:16:45,762 - kor-ai-surveillance - INFO - main:32 - Port: 5000
+2025-07-04 00:17:49,795 - kor-ai-surveillance - INFO - analyze_trading_data:80 - Analysis completed for 2 trades
