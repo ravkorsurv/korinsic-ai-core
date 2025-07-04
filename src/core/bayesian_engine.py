@@ -7,6 +7,7 @@ from typing import Dict, List, Any
 import logging
 from .fallback_logic import apply_fallback_evidence
 from .risk_aggregator import ComplexRiskAggregator
+from .evidence_sufficiency_index import EvidenceSufficiencyIndex
 import os
 
 logger = logging.getLogger(__name__)
@@ -22,6 +23,7 @@ class BayesianEngine:
         self.spoofing_model = None
         self.models_loaded = False
         self.risk_aggregator = ComplexRiskAggregator()
+        self.esi_calculator = EvidenceSufficiencyIndex()
         self._load_models()
     
     def _load_models(self):
@@ -280,8 +282,18 @@ class BayesianEngine:
                 'Timing': timing,
                 'PriceImpact': price_impact
             }
+            # Apply fallback logic for missing evidence
             if node_defs:
-                evidence = apply_fallback_evidence(evidence, node_defs)
+                evidence, fallback_usage = apply_fallback_evidence(evidence, node_defs)
+            else:
+                fallback_usage = {}
+            
+            # Calculate ESI
+            esi_result = self.esi_calculator.calculate_esi(
+                evidence=processed_data,
+                node_states=evidence,
+                fallback_usage=fallback_usage
+            )
             
             # Perform inference
             result = self.insider_dealing_inference.query(['Risk'], evidence=evidence)
@@ -329,7 +341,8 @@ class BayesianEngine:
                 'mapped_evidence': mapped_evidence,
                 'explanation': complex_risk['explanation'],
                 'triggers': complex_risk['triggers'],
-                'node_scores': complex_risk['node_scores']
+                'node_scores': complex_risk['node_scores'],
+                'esi': esi_result
             }
             
         except Exception as e:
@@ -366,8 +379,18 @@ class BayesianEngine:
                 'PriceMovement': price_movement,
                 'VolumeRatio': volume_ratio
             }
+            # Apply fallback logic for missing evidence
             if node_defs:
-                evidence = apply_fallback_evidence(evidence, node_defs)
+                evidence, fallback_usage = apply_fallback_evidence(evidence, node_defs)
+            else:
+                fallback_usage = {}
+            
+            # Calculate ESI
+            esi_result = self.esi_calculator.calculate_esi(
+                evidence=processed_data,
+                node_states=evidence,
+                fallback_usage=fallback_usage
+            )
             
             # Perform inference
             result = self.spoofing_inference.query(['Risk'], evidence=evidence)
@@ -416,7 +439,8 @@ class BayesianEngine:
                 'explanation': complex_risk['explanation'],
                 'triggers': complex_risk['triggers'],
                 'node_scores': complex_risk['node_scores'],
-                'news_context': news_context
+                'news_context': news_context,
+                'esi': esi_result
             }
             
         except Exception as e:
