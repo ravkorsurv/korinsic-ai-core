@@ -31,56 +31,52 @@ class AlertGenerator:
     
     def generate_alerts(self, processed_data: Dict, insider_score: Dict, 
                        spoofing_score: Dict, overall_risk: float) -> List[Dict]:
-        """Generate alerts based on risk scores and thresholds"""
+        """Generate alerts based on risk scores and thresholds, with news context and dynamic fields"""
         alerts = []
-        
         try:
+            # News context suppression logic
+            news_context = insider_score.get('news_context', 2)
+            # 0 = explained, 1 = partial, 2 = unexplained
+            if news_context == 0:
+                logger.info("Suppressing alerts due to explained move (news context)")
+                return []
             # Check insider dealing alerts
             insider_alerts = self._check_insider_dealing_alerts(
                 processed_data, insider_score
             )
             alerts.extend(insider_alerts)
-            
             # Check spoofing alerts
             spoofing_alerts = self._check_spoofing_alerts(
                 processed_data, spoofing_score
             )
             alerts.extend(spoofing_alerts)
-            
             # Check overall risk alerts
             overall_alerts = self._check_overall_risk_alerts(
                 processed_data, overall_risk
             )
             alerts.extend(overall_alerts)
-            
             # Store alerts in history
             for alert in alerts:
                 self.alert_history.append(alert)
                 logger.warning(f"ALERT GENERATED: {alert['type']} - {alert['severity']}")
-            
             return alerts
-            
         except Exception as e:
             logger.error(f"Error generating alerts: {str(e)}")
             return []
     
     def _check_insider_dealing_alerts(self, data: Dict, scores: Dict) -> List[Dict]:
-        """Check for insider dealing alerts"""
+        """Check for insider dealing alerts, include dynamic fields"""
         alerts = []
-        
         if 'error' in scores:
             return alerts
-        
         overall_score = scores.get('overall_score', 0)
         thresholds = self.alert_thresholds['insider_dealing']
-        
         if overall_score >= thresholds['high_risk']:
             severity = 'HIGH'
         elif overall_score >= thresholds['medium_risk']:
             severity = 'MEDIUM'
         else:
             return alerts
-        
         alert = {
             'id': f"insider_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}",
             'type': 'INSIDER_DEALING',
@@ -92,29 +88,29 @@ class AlertGenerator:
             'evidence': self._compile_insider_evidence(data, scores),
             'recommended_actions': self._get_insider_actions(severity),
             'instruments': data.get('instruments', []),
-            'timeframe': data.get('timeframe')
+            'timeframe': data.get('timeframe'),
+            # New dynamic fields
+            'news_context': scores.get('news_context', None),
+            'high_nodes': scores.get('high_nodes', []),
+            'critical_nodes': scores.get('critical_nodes', []),
+            'explanation': scores.get('explanation', None)
         }
-        
         alerts.append(alert)
         return alerts
     
     def _check_spoofing_alerts(self, data: Dict, scores: Dict) -> List[Dict]:
-        """Check for spoofing alerts"""
+        """Check for spoofing alerts, include dynamic fields"""
         alerts = []
-        
         if 'error' in scores:
             return alerts
-        
         overall_score = scores.get('overall_score', 0)
         thresholds = self.alert_thresholds['spoofing']
-        
         if overall_score >= thresholds['high_risk']:
             severity = 'HIGH'
         elif overall_score >= thresholds['medium_risk']:
             severity = 'MEDIUM'
         else:
             return alerts
-        
         alert = {
             'id': f"spoofing_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}",
             'type': 'SPOOFING',
@@ -126,9 +122,13 @@ class AlertGenerator:
             'evidence': self._compile_spoofing_evidence(data, scores),
             'recommended_actions': self._get_spoofing_actions(severity),
             'instruments': data.get('instruments', []),
-            'timeframe': data.get('timeframe')
+            'timeframe': data.get('timeframe'),
+            # New dynamic fields
+            'news_context': scores.get('news_context', None),
+            'high_nodes': scores.get('high_nodes', []),
+            'critical_nodes': scores.get('critical_nodes', []),
+            'explanation': scores.get('explanation', None)
         }
-        
         alerts.append(alert)
         return alerts
     
@@ -169,44 +169,60 @@ class AlertGenerator:
         return alerts
     
     def _generate_insider_description(self, data: Dict, scores: Dict) -> str:
-        """Generate description for insider dealing alert"""
+        """Generate description for insider dealing alert, include news context and nodes"""
         evidence_factors = scores.get('evidence_factors', {})
         trader_role = data.get('trader_info', {}).get('role', 'unknown')
         trades_count = len(data.get('trades', []))
-        
+        news_context = scores.get('news_context', None)
+        high_nodes = scores.get('high_nodes', [])
+        critical_nodes = scores.get('critical_nodes', [])
         description = f"Potential insider dealing detected for {trader_role} with {trades_count} trades. "
-        
+        if news_context == 0:
+            description += "(Move explained by public news/event.) "
+        elif news_context == 1:
+            description += "(Partially explained by news/event.) "
+        elif news_context == 2:
+            description += "(Unexplained move.) "
+        if high_nodes:
+            description += f"High-risk nodes: {', '.join(high_nodes)}. "
+        if critical_nodes:
+            description += f"Critical nodes: {', '.join(critical_nodes)}. "
         if evidence_factors.get('MaterialInfo', 0) >= 1:
             description += "Trader has potential access to material information. "
-        
         if evidence_factors.get('Timing', 0) >= 1:
             description += "Suspicious timing relative to material events. "
-        
         if evidence_factors.get('TradingActivity', 0) >= 1:
             description += "Unusual trading activity detected. "
-        
         return description
     
     def _generate_spoofing_description(self, data: Dict, scores: Dict) -> str:
-        """Generate description for spoofing alert"""
+        """Generate description for spoofing alert, include news context and nodes"""
         evidence_factors = scores.get('evidence_factors', {})
         orders_count = len(data.get('orders', []))
-        
+        news_context = scores.get('news_context', None)
+        high_nodes = scores.get('high_nodes', [])
+        critical_nodes = scores.get('critical_nodes', [])
         description = f"Potential spoofing activity detected with {orders_count} orders. "
-        
+        if news_context == 0:
+            description += "(Move explained by public news/event.) "
+        elif news_context == 1:
+            description += "(Partially explained by news/event.) "
+        elif news_context == 2:
+            description += "(Unexplained move.) "
+        if high_nodes:
+            description += f"High-risk nodes: {', '.join(high_nodes)}. "
+        if critical_nodes:
+            description += f"Critical nodes: {', '.join(critical_nodes)}. "
         if evidence_factors.get('OrderPattern', 0) >= 1:
             description += "Layered ordering patterns identified. "
-        
         if evidence_factors.get('CancellationRate', 0) >= 1:
             description += "High order cancellation rate observed. "
-        
         if evidence_factors.get('VolumeRatio', 0) >= 1:
             description += "Volume imbalance detected. "
-        
         return description
     
     def _compile_insider_evidence(self, data: Dict, scores: Dict) -> Dict:
-        """Compile evidence for insider dealing alert"""
+        """Compile evidence for insider dealing alert, include dynamic fields"""
         return {
             'risk_scores': scores,
             'trader_info': data.get('trader_info', {}),
@@ -214,18 +230,26 @@ class AlertGenerator:
             'material_events_count': len(data.get('material_events', [])),
             'pre_event_trading': data.get('metrics', {}).get('pre_event_trading', 0),
             'unusual_volume': data.get('metrics', {}).get('avg_volume', 0),
-            'price_impact': data.get('metrics', {}).get('price_impact', 0)
+            'price_impact': data.get('metrics', {}).get('price_impact', 0),
+            'news_context': scores.get('news_context', None),
+            'high_nodes': scores.get('high_nodes', []),
+            'critical_nodes': scores.get('critical_nodes', []),
+            'explanation': scores.get('explanation', None)
         }
     
     def _compile_spoofing_evidence(self, data: Dict, scores: Dict) -> Dict:
-        """Compile evidence for spoofing alert"""
+        """Compile evidence for spoofing alert, include dynamic fields"""
         return {
             'risk_scores': scores,
             'cancellation_ratio': data.get('metrics', {}).get('cancellation_ratio', 0),
             'order_frequency': data.get('metrics', {}).get('order_frequency', 0),
             'volume_imbalance': data.get('metrics', {}).get('volume_imbalance', 0),
             'large_orders_count': len([o for o in data.get('orders', []) if o.get('size', 0) > 10000]),
-            'cancelled_orders_count': len([o for o in data.get('orders', []) if o.get('status') == 'cancelled'])
+            'cancelled_orders_count': len([o for o in data.get('orders', []) if o.get('status') == 'cancelled']),
+            'news_context': scores.get('news_context', None),
+            'high_nodes': scores.get('high_nodes', []),
+            'critical_nodes': scores.get('critical_nodes', []),
+            'explanation': scores.get('explanation', None)
         }
     
     def _get_insider_actions(self, severity: str) -> List[str]:
