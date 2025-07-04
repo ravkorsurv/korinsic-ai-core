@@ -93,7 +93,8 @@ class AlertGenerator:
             'news_context': scores.get('news_context', None),
             'high_nodes': scores.get('high_nodes', []),
             'critical_nodes': scores.get('critical_nodes', []),
-            'explanation': scores.get('explanation', None)
+            'explanation': scores.get('explanation', None),
+            'esi': scores.get('esi', {})
         }
         alerts.append(alert)
         return alerts
@@ -127,7 +128,8 @@ class AlertGenerator:
             'news_context': scores.get('news_context', None),
             'high_nodes': scores.get('high_nodes', []),
             'critical_nodes': scores.get('critical_nodes', []),
-            'explanation': scores.get('explanation', None)
+            'explanation': scores.get('explanation', None),
+            'esi': scores.get('esi', {})
         }
         alerts.append(alert)
         return alerts
