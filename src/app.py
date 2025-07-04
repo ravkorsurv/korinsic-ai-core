@@ -47,8 +47,14 @@ def analyze_trading_data():
         # Process incoming trading data
         processed_data = data_processor.process(data)
         
+        # Check for latent intent flag
+        use_latent_intent = data.get('use_latent_intent', False)
+        
         # Calculate risk scores using Bayesian models
-        insider_dealing_score = bayesian_engine.calculate_insider_dealing_risk(processed_data)
+        if use_latent_intent:
+            insider_dealing_score = bayesian_engine.calculate_insider_dealing_risk_with_latent_intent(processed_data)
+        else:
+            insider_dealing_score = bayesian_engine.calculate_insider_dealing_risk(processed_data)
         spoofing_score = bayesian_engine.calculate_spoofing_risk(processed_data)
         
         # Generate overall risk assessment

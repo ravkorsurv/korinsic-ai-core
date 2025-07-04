@@ -328,3 +328,60 @@ For support and questions:
 - [ ] Integration with major trading platforms
 - [ ] Regulatory reporting automation
 - [ ] Multi-language support
+
+## Hidden Causality & Latent Intent (Kor.ai Approach)
+
+### Overview
+
+Traditional risk models can only use observable evidence. The Kor.ai approach introduces **latent intent nodes** to model unobservable abusive intent, inferred from converging evidence paths (e.g., profit, access, order behavior, comms metadata).
+
+- **LatentIntentNode**: Represents unobservable intent to manipulate/abuse.
+- **Converging Evidence Nodes**: ProfitMotivationNode, AccessPatternNode, OrderBehaviorNode, CommsMetadataNode.
+- **Hidden Causality**: The model infers intent from indirect evidence, improving detection of sophisticated abuse.
+
+### API Usage
+
+To use the latent intent model in risk analysis, add the `use_latent_intent` flag to your request:
+
+```json
+POST /api/v1/analyze
+{
+  "trades": [...],
+  "orders": [...],
+  ...,
+  "use_latent_intent": true
+}
+```
+
+- If `use_latent_intent` is `true`, the system uses the advanced model with hidden causality and latent intent.
+- The response will include latent intent probabilities and enhanced risk assessment.
+
+### Example Response
+
+```json
+{
+  "risk_scores": {
+    "insider_dealing": {
+      "insider_dealing_probability": 0.03,
+      "latent_intent_no": 0.95,
+      "latent_intent_potential": 0.04,
+      "latent_intent_clear": 0.01,
+      "overall_score": 0.03,
+      "evidence_factors": { ... },
+      "model_type": "latent_intent"
+    },
+    ...
+  },
+  ...
+}
+```
+
+### Model Structure
+
+- Evidence nodes (profit, access, order behavior, comms) → **latent_intent** (hidden node) → risk_factor → outcome
+- The model can be extended for other abuse types (e.g., spoofing) in the future.
+
+### Benefits
+- Detects sophisticated abuse where intent is not directly observable
+- Models indirect, converging evidence
+- More robust to adversarial evasion
