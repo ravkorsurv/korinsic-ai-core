@@ -8,6 +8,7 @@ import logging
 from .fallback_logic import apply_fallback_evidence
 from .risk_aggregator import ComplexRiskAggregator
 from .evidence_sufficiency_index import EvidenceSufficiencyIndex
+from .regulatory_explainability import RegulatoryExplainability
 import os
 
 logger = logging.getLogger(__name__)

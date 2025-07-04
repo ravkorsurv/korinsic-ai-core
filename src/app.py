@@ -47,8 +47,17 @@ def analyze_trading_data():
         # Process incoming trading data
         processed_data = data_processor.process(data)
         
+        # Check for latent intent flag
+        use_latent_intent = data.get('use_latent_intent', False)
+        
+        # Check for regulatory explainability flag
+        include_regulatory_rationale = data.get('include_regulatory_rationale', False)
+        
         # Calculate risk scores using Bayesian models
-        insider_dealing_score = bayesian_engine.calculate_insider_dealing_risk(processed_data)
+        if use_latent_intent:
+            insider_dealing_score = bayesian_engine.calculate_insider_dealing_risk_with_latent_intent(processed_data)
+        else:
+            insider_dealing_score = bayesian_engine.calculate_insider_dealing_risk(processed_data)
         spoofing_score = bayesian_engine.calculate_spoofing_risk(processed_data)
         
         # Generate overall risk assessment
@@ -61,6 +70,45 @@ def analyze_trading_data():
             processed_data, insider_dealing_score, spoofing_score, overall_risk
         )
         
+        # Generate regulatory rationale if requested
+        regulatory_rationales = []
+        if include_regulatory_rationale and alerts:
+            for alert in alerts:
+                try:
+                    # Determine which risk scores to use based on alert type
+                    if alert['type'] == 'INSIDER_DEALING':
+                        risk_scores = insider_dealing_score
+                    elif alert['type'] == 'SPOOFING':
+                        risk_scores = spoofing_score
+                    else:
+                        risk_scores = {'overall_score': overall_risk}
+                    
+                    rationale = alert_generator.generate_regulatory_rationale(
+                        alert, risk_scores, processed_data
+                    )
+                    regulatory_rationales.append({
+                        'alert_id': alert['id'],
+                        'deterministic_narrative': rationale.deterministic_narrative,
+                        'inference_paths': [
+                            {
+                                'node_name': path.node_name,
+                                'evidence_value': path.evidence_value,
+                                'probability': path.probability,
+                                'contribution': path.contribution,
+                                'rationale': path.rationale,
+                                'confidence': path.confidence,
+                                'regulatory_relevance': path.regulatory_relevance
+                            }
+                            for path in rationale.inference_paths
+                        ],
+                        'voi_analysis': rationale.voi_analysis,
+                        'sensitivity_report': rationale.sensitivity_report,
+                        'regulatory_frameworks': rationale.regulatory_frameworks,
+                        'audit_trail': rationale.audit_trail
+                    })
+                except Exception as e:
+                    logger.error(f"Error generating regulatory rationale for alert {alert['id']}: {str(e)}")
+        
         response = {
             'timestamp': datetime.utcnow().isoformat(),
             'analysis_id': f"analysis_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}",
@@ -70,9 +118,10 @@ def analyze_trading_data():
                 'overall_risk': overall_risk
             },
             'alerts': alerts,
+            'regulatory_rationales': regulatory_rationales if include_regulatory_rationale else [],
             'processed_data_summary': {
                 'trades_analyzed': len(processed_data.get('trades', [])),
-                'timeframe': processed_data.get('timeframe'),
+                'timeframe': processed_data.get('timeframe', 'unknown'),
                 'instruments': processed_data.get('instruments', [])
             }
         }
@@ -147,6 +196,126 @@ def get_alerts_history():
     except Exception as e:
         logger.error(f"Error getting alerts history: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/api/v1/export/stor/<alert_id>', methods=['POST'])
+def export_stor_report(alert_id):
+    """Export alert in STOR format"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        # Process data and generate alert
+        processed_data = data_processor.process(data)
+        
+        # Calculate risk scores
+        insider_dealing_score = bayesian_engine.calculate_insider_dealing_risk(processed_data)
+        spoofing_score = bayesian_engine.calculate_spoofing_risk(processed_data)
+        overall_risk = risk_calculator.calculate_overall_risk(
+            insider_dealing_score, spoofing_score, processed_data
+        )
+        
+        # Generate alerts
+        alerts = alert_generator.generate_alerts(
+            processed_data, insider_dealing_score, spoofing_score, overall_risk
+        )
+        
+        # Find the specific alert
+        target_alert = None
+        for alert in alerts:
+            if alert['id'] == alert_id:
+                target_alert = alert
+                break
+        
+        if not target_alert:
+            return jsonify({'error': f'Alert {alert_id} not found'}), 404
+        
+        # Determine risk scores for the alert
+        if target_alert['type'] == 'INSIDER_DEALING':
+            risk_scores = insider_dealing_score
+        elif target_alert['type'] == 'SPOOFING':
+            risk_scores = spoofing_score
+        else:
+            risk_scores = {'overall_score': overall_risk}
+        
+        # Export STOR format
+        stor_record = alert_generator.export_stor_report(target_alert, risk_scores, processed_data)
+        
+        return jsonify({
+            'stor_record': {
+                'record_id': stor_record.record_id,
+                'timestamp': stor_record.timestamp,
+                'trader_id': stor_record.trader_id,
+                'instrument': stor_record.instrument,
+                'transaction_type': stor_record.transaction_type,
+                'suspicious_indicators': stor_record.suspicious_indicators,
+                'risk_score': stor_record.risk_score,
+                'regulatory_rationale': stor_record.regulatory_rationale,
+                'evidence_details': stor_record.evidence_details,
+                'compliance_officer_notes': stor_record.compliance_officer_notes
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error exporting STOR report: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/v1/export/csv/<alert_id>', methods=['POST'])
+def export_regulatory_csv(alert_id):
+    """Export regulatory rationale as CSV"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        # Process data and generate alert
+        processed_data = data_processor.process(data)
+        
+        # Calculate risk scores
+        insider_dealing_score = bayesian_engine.calculate_insider_dealing_risk(processed_data)
+        spoofing_score = bayesian_engine.calculate_spoofing_risk(processed_data)
+        overall_risk = risk_calculator.calculate_overall_risk(
+            insider_dealing_score, spoofing_score, processed_data
+        )
+        
+        # Generate alerts
+        alerts = alert_generator.generate_alerts(
+            processed_data, insider_dealing_score, spoofing_score, overall_risk
+        )
+        
+        # Find the specific alert
+        target_alert = None
+        for alert in alerts:
+            if alert['id'] == alert_id:
+                target_alert = alert
+                break
+        
+        if not target_alert:
+            return jsonify({'error': f'Alert {alert_id} not found'}), 404
+        
+        # Determine risk scores for the alert
+        if target_alert['type'] == 'INSIDER_DEALING':
+            risk_scores = insider_dealing_score
+        elif target_alert['type'] == 'SPOOFING':
+            risk_scores = spoofing_score
+        else:
+            risk_scores = {'overall_score': overall_risk}
+        
+        # Export CSV
+        filename = alert_generator.export_regulatory_csv(target_alert, risk_scores, processed_data)
+        
+        return jsonify({
+            'csv_export': {
+                'filename': filename,
+                'message': f'Regulatory report exported to {filename}'
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error exporting regulatory CSV: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @app.errorhandler(404)
 def not_found(error):

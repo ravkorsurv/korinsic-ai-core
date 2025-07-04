@@ -1,7 +1,9 @@
 import json
 from datetime import datetime, timedelta
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 import logging
+
+from .regulatory_explainability import RegulatoryExplainability, RegulatoryRationale, STORRecord
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +30,7 @@ class AlertGenerator:
         }
         
         self.alert_history = []
+        self.regulatory_explainability = RegulatoryExplainability()
     
     def generate_alerts(self, processed_data: Dict, insider_score: Dict, 
                        spoofing_score: Dict, overall_risk: float) -> List[Dict]:
@@ -154,17 +157,17 @@ class AlertGenerator:
             'severity': severity,
             'timestamp': datetime.utcnow().isoformat(),
             'risk_score': overall_risk,
-            'trader_id': data.get('trader_info', {}).get('id'),
+            'trader_id': data.get('trader_info', {}).get('id', 'unknown'),
             'description': f"Overall market abuse risk score of {overall_risk:.2f} exceeds threshold",
             'evidence': {
                 'risk_score': overall_risk,
                 'trades_count': len(data.get('trades', [])),
                 'orders_count': len(data.get('orders', [])),
-                'timeframe': data.get('timeframe')
+                'timeframe': data.get('timeframe', 'unknown')
             },
             'recommended_actions': self._get_overall_actions(severity),
             'instruments': data.get('instruments', []),
-            'timeframe': data.get('timeframe')
+            'timeframe': data.get('timeframe', 'unknown')
         }
         
         alerts.append(alert)
@@ -314,7 +317,7 @@ class AlertGenerator:
                 "Document patterns for trend analysis"
             ]
     
-    def get_historical_alerts(self, limit: int = 100, alert_type: str = None) -> List[Dict]:
+    def get_historical_alerts(self, limit: int = 100, alert_type: Optional[str] = None) -> List[Dict]:
         """Get historical alerts with optional filtering"""
         filtered_alerts = self.alert_history
         
@@ -364,3 +367,34 @@ class AlertGenerator:
         summary['instruments_affected'] = list(summary['instruments_affected'])
         
         return summary
+    
+    def generate_regulatory_rationale(self, alert: Dict, risk_scores: Dict, 
+                                    processed_data: Dict) -> RegulatoryRationale:
+        """Generate regulatory rationale for an alert"""
+        try:
+            return self.regulatory_explainability.generate_regulatory_rationale(
+                alert, risk_scores, processed_data
+            )
+        except Exception as e:
+            logger.error(f"Error generating regulatory rationale: {str(e)}")
+            raise
+    
+    def export_stor_report(self, alert: Dict, risk_scores: Dict, 
+                          processed_data: Dict) -> STORRecord:
+        """Export alert in STOR format"""
+        try:
+            rationale = self.generate_regulatory_rationale(alert, risk_scores, processed_data)
+            return self.regulatory_explainability.export_stor_format(rationale, processed_data)
+        except Exception as e:
+            logger.error(f"Error exporting STOR report: {str(e)}")
+            raise
+    
+    def export_regulatory_csv(self, alert: Dict, risk_scores: Dict, 
+                             processed_data: Dict, filename: Optional[str] = None) -> str:
+        """Export regulatory rationale as CSV report"""
+        try:
+            rationale = self.generate_regulatory_rationale(alert, risk_scores, processed_data)
+            return self.regulatory_explainability.export_csv_report(rationale, filename)
+        except Exception as e:
+            logger.error(f"Error exporting regulatory CSV: {str(e)}")
+            raise
