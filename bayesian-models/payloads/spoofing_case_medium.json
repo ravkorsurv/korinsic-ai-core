@@ -1,0 +1,9 @@
+{
+  "Quote_LargeLayered": true,
+  "Quote_CancelRateHigh": true,
+  "Quote_PriorToFill": false,
+  "Market_BBOShifted": true,
+  "Trade_OppositeSideFill": true,
+  "Intent_RepeatedPattern": false,
+  "PolicyExplained": false
+}

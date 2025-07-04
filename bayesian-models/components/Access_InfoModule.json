@@ -1,0 +1,16 @@
+{
+  "component_id": "Access_InfoModule",
+  "description": "Assesses likelihood of access to MNPI",
+  "inputs": ["News_Embargoed", "Comms_Anomaly", "Role_Sensitive", "HR_Events"],
+  "outputs": ["Access_Score"],
+  "cpt_definitions": {
+    "Access_Score": "noisy_or"
+  },
+  "node_types": {
+    "News_Embargoed": "binary",
+    "Comms_Anomaly": "binary",
+    "Role_Sensitive": "binary",
+    "HR_Events": "categorical",
+    "Access_Score": "ranked"
+  }
+}

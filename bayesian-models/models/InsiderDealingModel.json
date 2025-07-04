@@ -1,0 +1,5 @@
+{
+  "model_id": "InsiderDealingModel",
+  "components": ["Access_InfoModule", "Intent_Module", "Trade_TimingModule", "Market_ReactionModule", "Confounding_Explainer"],
+  "output_node": "InsiderDeal_Score"
+}
