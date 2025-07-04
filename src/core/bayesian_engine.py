@@ -11,12 +11,13 @@ logger = logging.getLogger(__name__)
 class BayesianEngine:
     """
     Core Bayesian inference engine for detecting market abuse patterns
-    using probabilistic graphical models
+    using probabilistic graphical models with latent intent modeling
     """
     
     def __init__(self):
         self.insider_dealing_model = None
         self.spoofing_model = None
+        self.insider_dealing_model_with_latent = None
         self.models_loaded = False
         self._load_models()
     
@@ -25,6 +26,7 @@ class BayesianEngine:
         try:
             self._create_insider_dealing_model()
             self._create_spoofing_model()
+            self._create_insider_dealing_model_with_latent()
             self.models_loaded = True
             logger.info("Bayesian models loaded successfully")
         except Exception as e:
@@ -234,6 +236,17 @@ class BayesianEngine:
         self.spoofing_model = model
         self.spoofing_inference = VariableElimination(model)
     
+    def _create_insider_dealing_model_with_latent(self):
+        """Create Bayesian network for insider dealing detection with latent intent"""
+        try:
+            from .model_construction import build_insider_dealing_bn_with_latent_intent
+            self.insider_dealing_model_with_latent = build_insider_dealing_bn_with_latent_intent()
+            self.insider_dealing_inference_with_latent = VariableElimination(self.insider_dealing_model_with_latent)
+            logger.info("Insider dealing model with latent intent loaded successfully")
+        except Exception as e:
+            logger.error(f"Error loading insider dealing model with latent intent: {str(e)}")
+            raise
+    
     def calculate_insider_dealing_risk(self, processed_data: Dict[str, Any]) -> Dict[str, float]:
         """Calculate insider dealing risk score using Bayesian inference"""
         try:
@@ -302,6 +315,55 @@ class BayesianEngine:
             
         except Exception as e:
             logger.error(f"Error calculating spoofing risk: {str(e)}")
+            return {'error': str(e)}
+    
+    def calculate_insider_dealing_risk_with_latent_intent(self, processed_data: Dict[str, Any]) -> Dict[str, float]:
+        """Calculate insider dealing risk score using Bayesian inference with latent intent modeling"""
+        try:
+            # Extract traditional features
+            trade_pattern = self._assess_trade_pattern(processed_data)
+            comms_intent = self._assess_comms_intent(processed_data)
+            pnl_drift = self._assess_pnl_drift(processed_data)
+            
+            # Extract converging evidence paths for latent intent
+            profit_motivation = self._assess_profit_motivation(processed_data)
+            access_pattern = self._assess_access_pattern(processed_data)
+            order_behavior = self._assess_order_behavior(processed_data)
+            comms_metadata = self._assess_comms_metadata(processed_data)
+            
+            # Set evidence for latent intent model
+            evidence = {
+                'trade_pattern': trade_pattern,
+                'comms_intent': comms_intent,
+                'pnl_drift': pnl_drift,
+                'profit_motivation': profit_motivation,
+                'access_pattern': access_pattern,
+                'order_behavior': order_behavior,
+                'comms_metadata': comms_metadata
+            }
+            
+            # Perform inference with latent intent
+            result = self.insider_dealing_inference_with_latent.query(['insider_dealing'], evidence=evidence)
+            
+            # Get latent intent probabilities
+            latent_result = self.insider_dealing_inference_with_latent.query(['latent_intent'], evidence=evidence)
+            
+            # Convert to risk scores
+            insider_dealing_prob = result.values[1]  # P(insider_dealing = yes)
+            latent_intent_probs = latent_result.values
+            
+            return {
+                'insider_dealing_probability': float(insider_dealing_prob),
+                'latent_intent_no': float(latent_intent_probs[0]),
+                'latent_intent_potential': float(latent_intent_probs[1]),
+                'latent_intent_clear': float(latent_intent_probs[2]),
+                'overall_score': float(insider_dealing_prob),
+                'evidence_factors': evidence,
+                'model_type': 'latent_intent'
+            }
+            
+        except Exception as e:
+            logger.error(f"Error calculating insider dealing risk with latent intent: {str(e)}")
             return {'error': str(e)}
     
     def _assess_material_info_access(self, data: Dict[str, Any]) -> int:
@@ -417,6 +479,103 @@ class BayesianEngine:
         if volume_imbalance > 0.7:
             return 2
         elif volume_imbalance > 0.4:
+            return 1
+        return 0
+    
+    def _assess_trade_pattern(self, data: Dict[str, Any]) -> int:
+        """Assess trade pattern (0: normal, 1: suspicious)"""
+        trades = data.get('trades', [])
+        if not trades:
+            return 0
+        
+        # Simple pattern detection
+        volumes = [trade.get('volume', 0) for trade in trades]
+        avg_volume = np.mean(volumes) if volumes else 0
+        historical_avg = data.get('historical_data', {}).get('avg_volume', avg_volume)
+        
+        if avg_volume > historical_avg * 3:
+            return 1
+        return 0
+    
+    def _assess_comms_intent(self, data: Dict[str, Any]) -> int:
+        """Assess communications intent (0: benign, 1: suspicious, 2: malicious)"""
+        # Placeholder - in real implementation, this would analyze communications data
+        comms_indicators = data.get('comms_indicators', [])
+        
+        if len(comms_indicators) > 5:
+            return 2
+        elif len(comms_indicators) > 2:
+            return 1
+        return 0
+    
+    def _assess_pnl_drift(self, data: Dict[str, Any]) -> int:
+        """Assess PnL drift (0: normal, 1: anomalous)"""
+        pnl_metrics = data.get('pnl_metrics', {})
+        drift_score = pnl_metrics.get('drift_score', 0)
+        
+        if drift_score > 0.1:  # 10% drift
+            return 1
+        return 0
+    
+    def _assess_profit_motivation(self, data: Dict[str, Any]) -> int:
+        """Assess profit motivation evidence (0: normal_profit, 1: unusual_profit, 2: suspicious_profit)"""
+        pnl_metrics = data.get('pnl_metrics', {})
+        profit_ratio = pnl_metrics.get('profit_ratio', 0)
+        profit_consistency = pnl_metrics.get('profit_consistency', 0)
+        
+        if profit_ratio > 0.3 and profit_consistency > 0.8:
+            return 2
+        elif profit_ratio > 0.15:
+            return 1
+        return 0
+    
+    def _assess_access_pattern(self, data: Dict[str, Any]) -> int:
+        """Assess access pattern evidence (0: normal_access, 1: unusual_access, 2: suspicious_access)"""
+        access_logs = data.get('access_logs', [])
+        trader_info = data.get('trader_info', {})
+        
+        # Count unusual access patterns
+        unusual_access_count = 0
+        for log in access_logs:
+            if log.get('access_type') in ['sensitive_data', 'restricted_area']:
+                unusual_access_count += 1
+        
+        if unusual_access_count > 5:
+            return 2
+        elif unusual_access_count > 2:
+            return 1
+        return 0
+    
+    def _assess_order_behavior(self, data: Dict[str, Any]) -> int:
+        """Assess order behavior evidence (0: normal_behavior, 1: unusual_behavior, 2: suspicious_behavior)"""
+        orders = data.get('orders', [])
+        trades = data.get('trades', [])
+        
+        if not orders:
+            return 0
+        
+        # Analyze order-to-trade ratio and timing patterns
+        order_count = len(orders)
+        trade_count = len(trades)
+        order_trade_ratio = order_count / trade_count if trade_count > 0 else 0
+        
+        if order_trade_ratio > 10:
+            return 2
+        elif order_trade_ratio > 5:
+            return 1
+        return 0
+    
+    def _assess_comms_metadata(self, data: Dict[str, Any]) -> int:
+        """Assess communications metadata evidence (0: normal_comms, 1: unusual_comms, 2: suspicious_comms)"""
+        comms_data = data.get('comms_data', {})
+        
+        # Analyze communication patterns
+        unusual_patterns = comms_data.get('unusual_patterns', 0)
+        sensitive_contacts = comms_data.get('sensitive_contacts', 0)
+        
+        if unusual_patterns > 3 or sensitive_contacts > 2:
+            return 2
+        elif unusual_patterns > 1 or sensitive_contacts > 0:
             return 1
         return 0
     

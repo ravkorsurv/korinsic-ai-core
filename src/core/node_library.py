@@ -62,6 +62,60 @@ class VarianceTunedIndicatorNode(EvidenceNode):
         states = ["normal", "anomalous"]
         super().__init__(name, states, description=description, fallback_prior=fallback_prior)
 
+# NEW: Latent Intent Nodes for Hidden Causality Modeling
+class LatentIntentNode(BayesianNode):
+    """
+    Node representing latent intent (unobservable core abusive intent).
+    This is the key innovation for modeling hidden causality.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["no_intent", "potential_intent", "clear_intent"]
+        super().__init__(name, states, cpt=None, description=description, fallback_prior=fallback_prior)
+    
+    def get_intent_strength(self, evidence_values: Dict[str, Any]) -> float:
+        """
+        Calculate intent strength based on converging evidence paths.
+        This implements the Kor.ai approach of inferring latent intent.
+        """
+        # Default implementation - should be overridden with domain-specific logic
+        return 0.5
+
+class ProfitMotivationNode(EvidenceNode):
+    """
+    Node representing profit motivation evidence (PnL drift, profit patterns).
+    One of the converging evidence paths for latent intent inference.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["normal_profit", "unusual_profit", "suspicious_profit"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class AccessPatternNode(EvidenceNode):
+    """
+    Node representing access pattern evidence (information access, timing).
+    One of the converging evidence paths for latent intent inference.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["normal_access", "unusual_access", "suspicious_access"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class OrderBehaviorNode(EvidenceNode):
+    """
+    Node representing order behavior evidence (order patterns, timing).
+    One of the converging evidence paths for latent intent inference.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["normal_behavior", "unusual_behavior", "suspicious_behavior"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class CommsMetadataNode(EvidenceNode):
+    """
+    Node representing communications metadata evidence.
+    One of the converging evidence paths for latent intent inference.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["normal_comms", "unusual_comms", "suspicious_comms"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
 # Utility for CPT normalization
 
 def normalize_cpt(cpt: Dict[str, List[float]]) -> Dict[str, List[float]]:
