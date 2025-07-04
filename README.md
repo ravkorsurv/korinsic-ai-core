@@ -7,6 +7,7 @@ Kor.ai is an AI-powered surveillance platform built to detect market abuse risks
 ## 🚀 Features
 
 - **Bayesian Risk Scoring**: Probabilistic models using pgmpy for insider dealing and spoofing detection
+- **Evidence Sufficiency Index (ESI)**: Measure how well-supported risk scores are based on input diversity, quality, and distribution
 - **Real-time Analysis**: REST API for analyzing trading data and generating risk scores
 - **Alert Generation**: Automated alert system with configurable thresholds and severity levels
 - **Scenario Simulation**: Built-in simulation capabilities for testing and validation
@@ -210,6 +211,54 @@ Key environment variables in `.env`:
 
 ---
 
+## 📊 Evidence Sufficiency Index (ESI)
+
+The Evidence Sufficiency Index (ESI) is a key feature that complements Bayesian risk scores by measuring how well-supported those scores are based on:
+
+- **Node Activation Ratio**: Proportion of active (populated) nodes in the Bayesian network
+- **Mean Confidence Score**: Average confidence level of inputs
+- **Fallback Ratio**: Proportion of nodes relying on priors or latent defaults
+- **Contribution Entropy**: Entropy of node contributions - measures distribution evenness
+- **Cross-Cluster Diversity**: Evidence spread across distinct node groups (trade, comms, PnL, etc.)
+
+### ESI Benefits
+
+- **Trust Calibration**: Helps analysts understand how well-supported risk scores are
+- **Filtering & Triage**: Filter alerts by ESI score to prioritize well-evidenced cases
+- **Enhanced Explainability**: Explain not just why an alert was scored as risky, but how trustworthy the evidence is
+- **Risk Score Adjustment**: Use ESI as multiplier: `Adjusted Risk = Risk Score × ESI`
+
+### Example ESI Output
+
+```json
+{
+  "evidence_sufficiency_index": 0.84,
+  "esi_badge": "Strong",
+  "node_count": 6,
+  "mean_confidence": "High",
+  "fallback_ratio": 0.0,
+  "contribution_spread": "Balanced",
+  "clusters": ["PnL", "MNPI", "TradePattern"],
+  "components": {
+    "node_activation_ratio": 0.83,
+    "mean_confidence_score": 0.85,
+    "fallback_ratio": 0.0,
+    "contribution_entropy": 0.92,
+    "cross_cluster_diversity": 0.71
+  }
+}
+```
+
+### UI Integration
+
+ESI is integrated into alerts and can be used for:
+- **Badges**: `ESI: Strong Evidence` on alert cards
+- **Filtering**: Show only alerts with `ESI > 0.7`
+- **Sorting**: Sort by ESI descending to prioritize well-evidenced alerts
+- **Explainability**: Detailed breakdown of evidence quality in tooltips
+
+---
+
 ## 🔍 Risk Assessment
 
 The platform calculates risk scores across multiple dimensions:
@@ -231,58 +280,63 @@ The platform calculates risk scores across multiple dimensions:
 
 ---
 
-## � Alert System
+## 🧠 Bayesian Risk Engine Pipeline Modules
 
-### Alert Types
-- `INSIDER_DEALING`: Potential insider trading detected
-- `SPOOFING`: Market manipulation patterns identified
-- `OVERALL_RISK`: Combined risk exceeds thresholds
+### Evidence Mapping
+Maps raw input data/events to Bayesian Network node states for risk models.
 
-### Severity Levels
-- `CRITICAL`: Immediate investigation required (≥0.8)
-- `HIGH`: Urgent review needed (≥0.6)
-- `MEDIUM`: Enhanced monitoring (≥0.4)
+**Usage:**
+```python
+from src.core.evidence_mapper import map_evidence
+mapped = map_evidence(raw_data)
+```
 
-### Alert Actions
-Each alert includes recommended actions based on severity and evidence.
+### Fallback Logic
+Handles missing or partial evidence using node fallback priors. Ensures robust inference even with incomplete data.
 
----
+**Usage:**
+```python
+from src.core.fallback_logic import apply_fallback_evidence
+completed_evidence = apply_fallback_evidence(mapped, node_defs)
+```
 
-## 🧪 Testing & Simulation
+### Complex Risk Aggregation & Scoring
+Computes overall risk scores from multiple evidence nodes using complex aggregation algorithms and configurable multi-node triggers.
 
-The platform includes comprehensive testing capabilities:
+**Features:**
+- **Multi-source evidence**: Trades, market data, HR, sales, communications, PnL
+- **Configurable node weights**: Different importance for different risk factors
+- **Multi-node triggers**: Alerts when multiple nodes are in high/critical states
+- **PnL loss detection**: Special handling for recent PnL spikes resulting in losses
+- **Exponential penalties**: Increased risk when multiple high-risk indicators are present
 
+**Usage:**
+```python
+from src.core.bayesian_engine import BayesianEngine
+from src.core.risk_aggregator import ComplexRiskAggregator
+
+engine = BayesianEngine()
+risk_result = engine.calculate_insider_dealing_risk(processed_data, node_defs=node_defs)
+
+# Access complex risk analysis
+print(f"Overall Score: {risk_result['overall_score']}")
+print(f"Risk Level: {risk_result['risk_level']}")
+print(f"High Nodes: {risk_result['high_nodes']}")
+print(f"Triggers: {risk_result['triggers']}")
+print(risk_result['explanation'])
+
+# Configure node weights
+aggregator = ComplexRiskAggregator()
+aggregator.update_node_config("pnl_loss_spike", weight=3.0)
+```
+
+### Testing
+Unit tests for evidence mapping, fallback logic, scoring, and explainability are in `tests/test_sample_data.py`.
+
+**Run tests:**
 ```bash
-# Test with sample data
 python tests/test_sample_data.py
-
-# Test API endpoints
-python sample_request.py
 ```
-
-Built-in scenario simulation for:
-- Insider dealing patterns
-- Spoofing behaviors
-- Mixed abuse scenarios
-
----
-
-## 🚀 Deployment
-
-### Docker Deployment
-```bash
-# Build image
-docker build -t kor-ai-surveillance .
-
-# Run container
-docker run -p 5000:5000 -e ENVIRONMENT=production kor-ai-surveillance
-```
-
-### Production Configuration
-- Set `ENVIRONMENT=production`
-- Configure proper logging directory
-- Set up database for alert persistence
-- Enable monitoring and health checks
 
 ---
 

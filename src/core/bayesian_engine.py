@@ -5,20 +5,26 @@ from pgmpy.factors.discrete import TabularCPD
 from pgmpy.inference import VariableElimination
 from typing import Dict, List, Any
 import logging
+from .fallback_logic import apply_fallback_evidence
+from .risk_aggregator import ComplexRiskAggregator
+from .evidence_sufficiency_index import EvidenceSufficiencyIndex
+from .regulatory_explainability import RegulatoryExplainability
+import os
 
 logger = logging.getLogger(__name__)
 
 class BayesianEngine:
     """
     Core Bayesian inference engine for detecting market abuse patterns
-    using probabilistic graphical models with latent intent modeling
+    using probabilistic graphical models
     """
     
     def __init__(self):
         self.insider_dealing_model = None
         self.spoofing_model = None
-        self.insider_dealing_model_with_latent = None
         self.models_loaded = False
+        self.risk_aggregator = ComplexRiskAggregator()
+        self.esi_calculator = EvidenceSufficiencyIndex()
         self._load_models()
     
     def _load_models(self):
@@ -26,7 +32,6 @@ class BayesianEngine:
         try:
             self._create_insider_dealing_model()
             self._create_spoofing_model()
-            self._create_insider_dealing_model_with_latent()
             self.models_loaded = True
             logger.info("Bayesian models loaded successfully")
         except Exception as e:
@@ -34,8 +39,33 @@ class BayesianEngine:
             raise
     
     def _create_insider_dealing_model(self):
-        """Create Bayesian network for insider dealing detection"""
+        """Create Bayesian network for insider dealing detection from config if available"""
+        config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../bayesian_model_config.json')
+        if os.path.exists(config_path):
+            with open(config_path, 'r') as f:
+                config = json.load(f)
+            if 'models' in config and 'insider_dealing' in config['models']:
+                model_config = config['models']['insider_dealing']
+                # Build network
+                model = BayesianNetwork(model_config['edges'])
+                # Add CPDs
+                for cpd in model_config['cpds']:
+                    kwargs = {
+                        'variable': cpd['variable'],
+                        'variable_card': len([n for n in model_config['nodes'] if n['name'] == cpd['variable']][0]['states']),
+                        'values': cpd['values']
+                    }
+                    if 'evidence' in cpd:
+                        kwargs['evidence'] = cpd['evidence']
+                        kwargs['evidence_card'] = [len([n for n in model_config['nodes'] if n['name'] == ev][0]['states']) for ev in cpd['evidence']]
+                    model.add_cpds(TabularCPD(**kwargs))
+                assert model.check_model()
+                self.insider_dealing_model = model
+                self.insider_dealing_inference = VariableElimination(model)
+                logger.info("Loaded insider dealing model from config: %s", config_path)
+                return
         
+        # fallback to old method
         # Define the network structure
         # Nodes: MaterialInfo, TradingActivity, Timing, Price Impact, Risk
         model = BayesianNetwork([
@@ -80,6 +110,48 @@ class BayesianEngine:
         cpd_price = TabularCPD(
             variable='PriceImpact',
             variable_card=3,
+            values=[
+                [0.8, 0.5, 0.2],  # Low impact
+                [0.15, 0.3, 0.3], # Medium impact
+                [0.05, 0.2, 0.5]  # High impact
+            ],
+            evidence=['TradingActivity'],
+            evidence_card=[3]
+        )
+        
+        # Risk of Insider Dealing (0: Low, 1: Medium, 2: High)
+        # Temporary fix: repeat the last 27 values 3 times to get 81 columns
+        base_low = [0.95, 0.9, 0.8, 0.85, 0.7, 0.5, 0.7, 0.5, 0.2,
+                    0.8, 0.7, 0.5, 0.6, 0.4, 0.2, 0.4, 0.2, 0.1,
+                    0.5, 0.3, 0.1, 0.3, 0.1, 0.05, 0.2, 0.05, 0.01]
+        base_med = [0.04, 0.08, 0.15, 0.12, 0.25, 0.35, 0.25, 0.35, 0.3,
+                    0.15, 0.25, 0.35, 0.3, 0.45, 0.5, 0.45, 0.5, 0.4,
+                    0.35, 0.5, 0.4, 0.5, 0.4, 0.35, 0.5, 0.35, 0.24]
+        base_high = [0.01, 0.02, 0.05, 0.03, 0.05, 0.15, 0.05, 0.15, 0.5,
+                     0.05, 0.05, 0.15, 0.1, 0.15, 0.3, 0.15, 0.3, 0.5,
+                     0.15, 0.2, 0.5, 0.2, 0.5, 0.6, 0.3, 0.6, 0.75]
+
+        cpd_risk = TabularCPD(
+            variable='Risk',
+            variable_card=3,
+            values=[
+                base_low * 3,   # 27 * 3 = 81
+                base_med * 3,
+                base_high * 3
+            ],
+            evidence=['MaterialInfo', 'TradingActivity', 'Timing', 'PriceImpact'],
+            evidence_card=[3, 3, 3, 3]
+        )
+        
+        # Add CPDs to model
+        model.add_cpds(cpd_material, cpd_trading, cpd_timing, cpd_price, cpd_risk)
+        
+        # Validate model
+        assert model.check_model()
+        
+        self.insider_dealing_model = model
+        self.insider_dealing_inference = VariableElimination(model)
+        logger.info("Loaded insider dealing model from config: %s", config_path)
             values=[
                 [0.8, 0.5, 0.2],  # Low impact
                 [0.15, 0.3, 0.3], # Medium impact
@@ -150,8 +222,32 @@ class BayesianEngine:
         self.insider_dealing_inference = VariableElimination(model)
     
     def _create_spoofing_model(self):
-        """Create Bayesian network for spoofing detection"""
-        
+        """Create Bayesian network for spoofing detection from config if available"""
+        config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../bayesian_model_config.json')
+        if os.path.exists(config_path):
+            with open(config_path, 'r') as f:
+                config = json.load(f)
+            if 'models' in config and 'spoofing' in config['models']:
+                model_config = config['models']['spoofing']
+                # Build network
+                model = BayesianNetwork(model_config['edges'])
+                # Add CPDs
+                for cpd in model_config['cpds']:
+                    kwargs = {
+                        'variable': cpd['variable'],
+                        'variable_card': len([n for n in model_config['nodes'] if n['name'] == cpd['variable']][0]['states']),
+                        'values': cpd['values']
+                    }
+                    if 'evidence' in cpd:
+                        kwargs['evidence'] = cpd['evidence']
+                        kwargs['evidence_card'] = [len([n for n in model_config['nodes'] if n['name'] == ev][0]['states']) for ev in cpd['evidence']]
+                    model.add_cpds(TabularCPD(**kwargs))
+                assert model.check_model()
+                self.spoofing_model = model
+                self.spoofing_inference = VariableElimination(model)
+                logger.info("Loaded spoofing model from config: %s", config_path)
+                return
+        # fallback to old method
         # Define the network structure
         # Nodes: OrderPattern, CancellationRate, PriceMovement, VolumeRatio, Risk
         model = BayesianNetwork([
@@ -236,19 +332,12 @@ class BayesianEngine:
         self.spoofing_model = model
         self.spoofing_inference = VariableElimination(model)
     
-    def _create_insider_dealing_model_with_latent(self):
-        """Create Bayesian network for insider dealing detection with latent intent"""
-        try:
-            from .model_construction import build_insider_dealing_bn_with_latent_intent
-            self.insider_dealing_model_with_latent = build_insider_dealing_bn_with_latent_intent()
-            self.insider_dealing_inference_with_latent = VariableElimination(self.insider_dealing_model_with_latent)
-            logger.info("Insider dealing model with latent intent loaded successfully")
-        except Exception as e:
-            logger.error(f"Error loading insider dealing model with latent intent: {str(e)}")
-            raise
-    
-    def calculate_insider_dealing_risk(self, processed_data: Dict[str, Any]) -> Dict[str, float]:
-        """Calculate insider dealing risk score using Bayesian inference"""
+    def calculate_insider_dealing_risk(self, processed_data: Dict[str, Any], node_defs: Dict[str, Any] = None) -> Dict[str, Any]:
+        """
+        Calculate insider dealing risk score using Bayesian inference and complex aggregation.
+        Uses fallback logic for missing evidence if node_defs is provided.
+        Returns risk probabilities, overall score, evidence factors, and explanation.
+        """
         try:
             # Extract features from processed data
             material_info = self._assess_material_info_access(processed_data)
@@ -263,27 +352,89 @@ class BayesianEngine:
                 'Timing': timing,
                 'PriceImpact': price_impact
             }
+            # Apply fallback logic for missing evidence
+            if node_defs:
+                evidence, fallback_usage = apply_fallback_evidence(evidence, node_defs)
+            else:
+                fallback_usage = {}
+            
+            # Calculate ESI
+            esi_result = self.esi_calculator.calculate_esi(
+                evidence=processed_data,
+                node_states=evidence,
+                fallback_usage=fallback_usage
+            )
             
             # Perform inference
             result = self.insider_dealing_inference.query(['Risk'], evidence=evidence)
             
             # Convert to risk scores
-            risk_probabilities = result.values
+            risk_probabilities = result.values if result else [0.8, 0.15, 0.05]
             
-            return {
+            # Basic Bayesian risk score
+            bayesian_risk = {
                 'low_risk': float(risk_probabilities[0]),
                 'medium_risk': float(risk_probabilities[1]),
                 'high_risk': float(risk_probabilities[2]),
-                'overall_score': float(risk_probabilities[1] * 0.5 + risk_probabilities[2] * 1.0),
-                'evidence_factors': evidence
+                'overall_score': float(risk_probabilities[1] * 0.5 + risk_probabilities[2] * 1.0)
+            }
+            
+            # Map additional evidence for complex aggregation
+            from .evidence_mapper import map_evidence
+            mapped_evidence = map_evidence(processed_data)
+            
+            # Apply market news contextualization to suppress false alerts
+            news_context = mapped_evidence.get('market_news_context', 2)  # Default to unexplained
+            if news_context == 0:  # Explained move
+                logger.info("Market news context: Explained move detected - suppressing alerts")
+                # Reduce risk scores for explained moves
+                bayesian_risk['overall_score'] *= 0.5
+                risk_probabilities = [p * 0.5 for p in risk_probabilities]
+            elif news_context == 1:  # Partially explained
+                logger.info("Market news context: Partially explained move - reducing alerts")
+                # Moderate reduction for partially explained moves
+                bayesian_risk['overall_score'] *= 0.75
+                risk_probabilities = [p * 0.75 for p in risk_probabilities]
+            else:  # Unexplained move
+                logger.info("Market news context: Unexplained move - maintaining full alert sensitivity")
+            
+            # Compute complex overall risk score
+            complex_risk = self.risk_aggregator.compute_overall_risk_score(mapped_evidence, bayesian_risk)
+            
+            return {
+                'low_risk': bayesian_risk['low_risk'],
+                'medium_risk': bayesian_risk['medium_risk'],
+                'high_risk': bayesian_risk['high_risk'],
+                'overall_score': complex_risk['overall_score'],
+                'risk_level': complex_risk['risk_level'],
+                'evidence_factors': evidence,
+                'mapped_evidence': mapped_evidence,
+                'explanation': complex_risk['explanation'],
+                'triggers': complex_risk['triggers'],
+                'node_scores': complex_risk['node_scores'],
+                'esi': esi_result
             }
             
         except Exception as e:
             logger.error(f"Error calculating insider dealing risk: {str(e)}")
             return {'error': str(e)}
+
+    def explain_risk_score(self, model_type: str, evidence: Dict[str, Any], risk_probabilities: Any) -> str:
+        """
+        Provide a human-readable explanation for the risk score, including which evidence contributed most and any fallbacks used.
+        """
+        explanation = f"Model: {model_type}\n"
+        explanation += f"Risk probabilities: Low={risk_probabilities[0]:.2f}, Medium={risk_probabilities[1]:.2f}, High={risk_probabilities[2]:.2f}\n"
+        explanation += "Evidence used:\n"
+        for k, v in evidence.items():
+            explanation += f"  - {k}: {v}\n"
+        # Highlight the most influential evidence (simple: highest state index)
+        max_factor = max(evidence, key=lambda k: evidence[k])
+        explanation += f"Most influential evidence: {max_factor} (state {evidence[max_factor]})\n"
+        return explanation
     
-    def calculate_spoofing_risk(self, processed_data: Dict[str, Any]) -> Dict[str, float]:
-        """Calculate spoofing risk score using Bayesian inference"""
+    def calculate_spoofing_risk(self, processed_data: Dict[str, Any], node_defs: Dict[str, Any] = None) -> Dict[str, Any]:
+        """Calculate spoofing risk score using Bayesian inference and market news context"""
         try:
             # Extract features from processed data
             order_pattern = self._assess_order_pattern(processed_data)
@@ -298,72 +449,72 @@ class BayesianEngine:
                 'PriceMovement': price_movement,
                 'VolumeRatio': volume_ratio
             }
+            # Apply fallback logic for missing evidence
+            if node_defs:
+                evidence, fallback_usage = apply_fallback_evidence(evidence, node_defs)
+            else:
+                fallback_usage = {}
+            
+            # Calculate ESI
+            esi_result = self.esi_calculator.calculate_esi(
+                evidence=processed_data,
+                node_states=evidence,
+                fallback_usage=fallback_usage
+            )
             
             # Perform inference
             result = self.spoofing_inference.query(['Risk'], evidence=evidence)
             
             # Convert to risk scores
-            risk_probabilities = result.values
+            risk_probabilities = result.values if result else [0.8, 0.15, 0.05]
             
-            return {
+            # Basic Bayesian risk score
+            bayesian_risk = {
                 'low_risk': float(risk_probabilities[0]),
                 'medium_risk': float(risk_probabilities[1]),
                 'high_risk': float(risk_probabilities[2]),
-                'overall_score': float(risk_probabilities[1] * 0.5 + risk_probabilities[2] * 1.0),
-                'evidence_factors': evidence
+                'overall_score': float(risk_probabilities[1] * 0.5 + risk_probabilities[2] * 1.0)
+            }
+            
+            # Map additional evidence for complex aggregation
+            from .evidence_mapper import map_evidence
+            mapped_evidence = map_evidence(processed_data)
+            
+            # Apply market news contextualization to suppress false alerts
+            news_context = mapped_evidence.get('market_news_context', 2)  # Default to unexplained
+            if news_context == 0:  # Explained move
+                logger.info("Market news context: Explained move detected - suppressing spoofing alerts")
+                # Reduce risk scores for explained moves
+                bayesian_risk['overall_score'] *= 0.5
+                risk_probabilities = [p * 0.5 for p in risk_probabilities]
+            elif news_context == 1:  # Partially explained
+                logger.info("Market news context: Partially explained move - reducing spoofing alerts")
+                # Moderate reduction for partially explained moves
+                bayesian_risk['overall_score'] *= 0.75
+                risk_probabilities = [p * 0.75 for p in risk_probabilities]
+            else:  # Unexplained move
+                logger.info("Market news context: Unexplained move - maintaining full spoofing alert sensitivity")
+            
+            # Compute complex overall risk score
+            complex_risk = self.risk_aggregator.compute_overall_risk_score(mapped_evidence, bayesian_risk)
+            
+            return {
+                'low_risk': bayesian_risk['low_risk'],
+                'medium_risk': bayesian_risk['medium_risk'],
+                'high_risk': bayesian_risk['high_risk'],
+                'overall_score': complex_risk['overall_score'],
+                'risk_level': complex_risk['risk_level'],
+                'evidence_factors': evidence,
+                'mapped_evidence': mapped_evidence,
+                'explanation': complex_risk['explanation'],
+                'triggers': complex_risk['triggers'],
+                'node_scores': complex_risk['node_scores'],
+                'news_context': news_context,
+                'esi': esi_result
             }
             
         except Exception as e:
             logger.error(f"Error calculating spoofing risk: {str(e)}")
-            return {'error': str(e)}
-    
-    def calculate_insider_dealing_risk_with_latent_intent(self, processed_data: Dict[str, Any]) -> Dict[str, float]:
-        """Calculate insider dealing risk score using Bayesian inference with latent intent modeling"""
-        try:
-            # Extract traditional features
-            trade_pattern = self._assess_trade_pattern(processed_data)
-            comms_intent = self._assess_comms_intent(processed_data)
-            pnl_drift = self._assess_pnl_drift(processed_data)
-            
-            # Extract converging evidence paths for latent intent
-            profit_motivation = self._assess_profit_motivation(processed_data)
-            access_pattern = self._assess_access_pattern(processed_data)
-            order_behavior = self._assess_order_behavior(processed_data)
-            comms_metadata = self._assess_comms_metadata(processed_data)
-            
-            # Set evidence for latent intent model
-            evidence = {
-                'trade_pattern': trade_pattern,
-                'comms_intent': comms_intent,
-                'pnl_drift': pnl_drift,
-                'profit_motivation': profit_motivation,
-                'access_pattern': access_pattern,
-                'order_behavior': order_behavior,
-                'comms_metadata': comms_metadata
-            }
-            
-            # Perform inference with latent intent
-            result = self.insider_dealing_inference_with_latent.query(['insider_dealing'], evidence=evidence)
-            
-            # Get latent intent probabilities
-            latent_result = self.insider_dealing_inference_with_latent.query(['latent_intent'], evidence=evidence)
-            
-            # Convert to risk scores
-            insider_dealing_prob = result.values[1]  # P(insider_dealing = yes)
-            latent_intent_probs = latent_result.values
-            
-            return {
-                'insider_dealing_probability': float(insider_dealing_prob),
-                'latent_intent_no': float(latent_intent_probs[0]),
-                'latent_intent_potential': float(latent_intent_probs[1]),
-                'latent_intent_clear': float(latent_intent_probs[2]),
-                'overall_score': float(insider_dealing_prob),
-                'evidence_factors': evidence,
-                'model_type': 'latent_intent'
-            }
-            
-        except Exception as e:
-            logger.error(f"Error calculating insider dealing risk with latent intent: {str(e)}")
             return {'error': str(e)}
     
     def _assess_material_info_access(self, data: Dict[str, Any]) -> int:
@@ -404,14 +555,22 @@ class BayesianEngine:
         # Simple timing assessment - check if trades occurred shortly before announcements
         suspicious_timing_count = 0
         for event in material_events:
-            event_time = event.get('timestamp')
+            event_time_str = event.get('timestamp')
             for trade in trades:
-                trade_time = trade.get('timestamp')
+                trade_time_str = trade.get('timestamp')
                 # If trade occurred 1-7 days before material event
-                if event_time and trade_time:
-                    time_diff = (event_time - trade_time) / (24 * 3600)  # days
-                    if 1 <= time_diff <= 7:
-                        suspicious_timing_count += 1
+                if event_time_str and trade_time_str:
+                    try:
+                        # Convert string timestamps to datetime objects
+                        from datetime import datetime
+                        event_time = datetime.fromisoformat(event_time_str.replace('Z', '+00:00'))
+                        trade_time = datetime.fromisoformat(trade_time_str.replace('Z', '+00:00'))
+                        time_diff = (event_time - trade_time).total_seconds() / (24 * 3600)  # days
+                        if 1 <= time_diff <= 7:
+                            suspicious_timing_count += 1
+                    except (ValueError, TypeError):
+                        # If timestamp parsing fails, skip this comparison
+                        continue
         
         if suspicious_timing_count > 3:
             return 2
@@ -479,103 +638,6 @@ class BayesianEngine:
         if volume_imbalance > 0.7:
             return 2
         elif volume_imbalance > 0.4:
-            return 1
-        return 0
-    
-    def _assess_trade_pattern(self, data: Dict[str, Any]) -> int:
-        """Assess trade pattern (0: normal, 1: suspicious)"""
-        trades = data.get('trades', [])
-        if not trades:
-            return 0
-        
-        # Simple pattern detection
-        volumes = [trade.get('volume', 0) for trade in trades]
-        avg_volume = np.mean(volumes) if volumes else 0
-        historical_avg = data.get('historical_data', {}).get('avg_volume', avg_volume)
-        
-        if avg_volume > historical_avg * 3:
-            return 1
-        return 0
-    
-    def _assess_comms_intent(self, data: Dict[str, Any]) -> int:
-        """Assess communications intent (0: benign, 1: suspicious, 2: malicious)"""
-        # Placeholder - in real implementation, this would analyze communications data
-        comms_indicators = data.get('comms_indicators', [])
-        
-        if len(comms_indicators) > 5:
-            return 2
-        elif len(comms_indicators) > 2:
-            return 1
-        return 0
-    
-    def _assess_pnl_drift(self, data: Dict[str, Any]) -> int:
-        """Assess PnL drift (0: normal, 1: anomalous)"""
-        pnl_metrics = data.get('pnl_metrics', {})
-        drift_score = pnl_metrics.get('drift_score', 0)
-        
-        if drift_score > 0.1:  # 10% drift
-            return 1
-        return 0
-    
-    def _assess_profit_motivation(self, data: Dict[str, Any]) -> int:
-        """Assess profit motivation evidence (0: normal_profit, 1: unusual_profit, 2: suspicious_profit)"""
-        pnl_metrics = data.get('pnl_metrics', {})
-        profit_ratio = pnl_metrics.get('profit_ratio', 0)
-        profit_consistency = pnl_metrics.get('profit_consistency', 0)
-        
-        if profit_ratio > 0.3 and profit_consistency > 0.8:
-            return 2
-        elif profit_ratio > 0.15:
-            return 1
-        return 0
-    
-    def _assess_access_pattern(self, data: Dict[str, Any]) -> int:
-        """Assess access pattern evidence (0: normal_access, 1: unusual_access, 2: suspicious_access)"""
-        access_logs = data.get('access_logs', [])
-        trader_info = data.get('trader_info', {})
-        
-        # Count unusual access patterns
-        unusual_access_count = 0
-        for log in access_logs:
-            if log.get('access_type') in ['sensitive_data', 'restricted_area']:
-                unusual_access_count += 1
-        
-        if unusual_access_count > 5:
-            return 2
-        elif unusual_access_count > 2:
-            return 1
-        return 0
-    
-    def _assess_order_behavior(self, data: Dict[str, Any]) -> int:
-        """Assess order behavior evidence (0: normal_behavior, 1: unusual_behavior, 2: suspicious_behavior)"""
-        orders = data.get('orders', [])
-        trades = data.get('trades', [])
-        
-        if not orders:
-            return 0
-        
-        # Analyze order-to-trade ratio and timing patterns
-        order_count = len(orders)
-        trade_count = len(trades)
-        order_trade_ratio = order_count / trade_count if trade_count > 0 else 0
-        
-        if order_trade_ratio > 10:
-            return 2
-        elif order_trade_ratio > 5:
-            return 1
-        return 0
-    
-    def _assess_comms_metadata(self, data: Dict[str, Any]) -> int:
-        """Assess communications metadata evidence (0: normal_comms, 1: unusual_comms, 2: suspicious_comms)"""
-        comms_data = data.get('comms_data', {})
-        
-        # Analyze communication patterns
-        unusual_patterns = comms_data.get('unusual_patterns', 0)
-        sensitive_contacts = comms_data.get('sensitive_contacts', 0)
-        
-        if unusual_patterns > 3 or sensitive_contacts > 2:
-            return 2
-        elif unusual_patterns > 1 or sensitive_contacts > 0:
             return 1
         return 0
     
