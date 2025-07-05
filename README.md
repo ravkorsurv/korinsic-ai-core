@@ -197,16 +197,49 @@ print(f"Alerts: {len(result['alerts'])}")
 
 ---
 
-## ⚙️ Configuration Options
+## ⚙️ Configuration
 
-Key environment variables in `.env`:
+The platform uses an advanced configuration system with environment-specific settings:
 
-- `ENVIRONMENT`: development/production
+### Configuration Structure
+```
+config/
+├── base.json              # Base configuration
+├── development.json       # Development overrides  
+├── production.json        # Production overrides
+├── testing.json          # Testing overrides
+├── models/                # Model configurations
+└── deployment/            # Deployment configurations
+```
+
+### Environment Variables
+
+Override configuration with environment variables:
+
+- `ENVIRONMENT`: development/production/testing (default: development)
 - `DEBUG`: Enable debug mode
 - `PORT`: Server port (default: 5000)
+- `HOST`: Server host (default: 0.0.0.0)
+- `LOG_LEVEL`: Logging level (DEBUG/INFO/WARNING/ERROR)
+- `DATABASE_URL`: Database connection string
+- `REDIS_URL`: Redis connection string
 - `INSIDER_HIGH_THRESHOLD`: High risk threshold for insider dealing
 - `SPOOFING_HIGH_THRESHOLD`: High risk threshold for spoofing
-- `LOG_LEVEL`: Logging level (DEBUG/INFO/WARNING/ERROR)
+
+### Usage Examples
+
+**Development:**
+```bash
+export ENVIRONMENT=development
+python src/app.py
+```
+
+**Production:**
+```bash
+export ENVIRONMENT=production
+export DATABASE_URL=postgresql://...
+python src/app.py
+```
 
 ---
 

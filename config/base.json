@@ -1,0 +1,68 @@
+{
+  "application": {
+    "name": "kor-ai-surveillance-platform",
+    "version": "1.0.0",
+    "description": "AI-powered surveillance platform for market abuse detection"
+  },
+  "server": {
+    "host": "0.0.0.0",
+    "port": 5000,
+    "debug": false
+  },
+  "risk_thresholds": {
+    "insider_dealing": {
+      "low": 0.3,
+      "medium": 0.6,
+      "high": 0.7
+    },
+    "spoofing": {
+      "low": 0.4,
+      "medium": 0.6,
+      "high": 0.8
+    },
+    "overall_risk": {
+      "low": 0.3,
+      "medium": 0.5,
+      "high": 0.7
+    }
+  },
+  "models": {
+    "bayesian_engine": "pgmpy",
+    "model_config_path": "config/models/bayesian_models.json",
+    "model_update_interval": 86400,
+    "fallback_evidence_enabled": true,
+    "esi_enabled": true,
+    "latent_intent_enabled": true
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    "file_rotation": true,
+    "max_file_size": "10MB",
+    "backup_count": 5
+  },
+  "alerts": {
+    "generation_enabled": true,
+    "max_alerts_per_analysis": 10,
+    "storage_enabled": false,
+    "export_formats": ["json", "csv", "stor"]
+  },
+  "features": {
+    "regulatory_explainability": true,
+    "scenario_simulation": true,
+    "historical_analysis": true,
+    "real_time_processing": false
+  },
+  "security": {
+    "cors_enabled": true,
+    "cors_origins": ["http://localhost:3000"],
+    "rate_limiting": false,
+    "authentication": false
+  },
+  "performance": {
+    "request_timeout": 30,
+    "max_concurrent_requests": 100,
+    "cache_enabled": false,
+    "cache_ttl": 3600
+  }
+}
