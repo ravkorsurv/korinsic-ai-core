@@ -53,12 +53,22 @@ def calculate_dqsi_score():
         enabled_dimensions = data.get('enabled_dimensions', [])
         include_recommendations = data.get('include_recommendations', True)
         
-        # Create DQSI configuration
+        # Create DQSI configuration with role-aware support
         config = DQSIConfig()
         if custom_weights:
             config.weights.update(custom_weights)
         if enabled_dimensions:
             config.enabled_dimensions = enabled_dimensions
+        
+        # Role-aware configuration
+        if 'role_aware' in data:
+            config.role_aware = data['role_aware']
+        if 'role' in data:
+            config.role = data['role']
+        if 'quality_level' in data:
+            config.quality_level = data['quality_level']
+        if 'comparison_types' in data:
+            config.comparison_types = data['comparison_types']
         
         # Initialize DQSI calculator with custom config
         dqsi_calculator = DataQualitySufficiencyIndex(config)
@@ -66,25 +76,47 @@ def calculate_dqsi_score():
         # Process data
         processed_data = _process_input_data(dataset)
         
-        # Calculate DQSI metrics
-        metrics = dqsi_calculator.calculate_dqsi(processed_data, dimension_configs)
+        # Calculate DQSI metrics - use enhanced method if role-aware is enabled
+        if config.role_aware:
+            # Enhanced calculation with role-aware and comparison types
+            enhanced_results = dqsi_calculator.calculate_dqsi_enhanced(processed_data, dimension_configs)
+            
+            # Build enhanced response
+            response = {
+                'success': True,
+                'calculation_type': 'enhanced',
+                'role': config.role,
+                'quality_level': config.quality_level,
+                'enhanced_results': enhanced_results,
+                'timestamp': datetime.utcnow().isoformat()
+            }
+            
+            # Add recommendations if requested
+            if include_recommendations:
+                response['recommendations'] = _get_enhanced_recommendations(enhanced_results)
+        else:
+            # Traditional calculation
+            metrics = dqsi_calculator.calculate_dqsi(processed_data, dimension_configs)
+            
+            # Generate comprehensive report
+            report = dqsi_calculator.generate_report(metrics, include_details=True)
+            
+            # Get improvement recommendations if requested
+            recommendations = []
+            if include_recommendations:
+                recommendations = dqsi_calculator.get_improvement_recommendations(metrics)
+            
+            # Build response
+            response = DQSIResponseSchema().build_response(
+                metrics=metrics,
+                report=report,
+                recommendations=recommendations
+            )
+            response['calculation_type'] = 'traditional'
         
-        # Generate comprehensive report
-        report = dqsi_calculator.generate_report(metrics, include_details=True)
-        
-        # Get improvement recommendations if requested
-        recommendations = []
-        if include_recommendations:
-            recommendations = dqsi_calculator.get_improvement_recommendations(metrics)
-        
-        # Build response
-        response = DQSIResponseSchema().build_response(
-            metrics=metrics,
-            report=report,
-            recommendations=recommendations
-        )
-        
-        logger.info(f"DQSI calculated: {metrics.overall_score:.3f} for dataset with {_get_data_size(processed_data)} records")
+        # Log results
+        overall_score = enhanced_results.get('overall_score', 0.0) if config.role_aware else metrics.overall_score
+        logger.info(f"DQSI calculated: {overall_score:.3f} for dataset with {_get_data_size(processed_data)} records")
         return jsonify(response)
         
     except Exception as e:
@@ -596,3 +628,121 @@ def _perform_validation(metrics: Any, thresholds: Dict[str, Any]) -> Dict[str, A
     except Exception as e:
         logger.error(f"Error performing validation: {e}")
         return {'overall_pass': False, 'error': str(e)}
+
+
+def _get_enhanced_recommendations(enhanced_results: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Generate improvement recommendations for enhanced DQSI results"""
+    try:
+        recommendations = []
+        
+        # Check overall score
+        overall_score = enhanced_results.get('overall_score', 0.0)
+        dimension_results = enhanced_results.get('dimension_results', {})
+        
+        for dimension, result in dimension_results.items():
+            if hasattr(result, 'overall_score'):
+                score = result.overall_score
+            else:
+                score = result.get('overall_score', 0.0) if isinstance(result, dict) else 0.0
+            
+            if score < 0.8:
+                # Generate role-aware recommendations
+                role = enhanced_results.get('role', 'consumer')
+                quality_level = enhanced_results.get('quality_level', 'foundational')
+                
+                rec = {
+                    'dimension': dimension,
+                    'current_score': round(score, 3),
+                    'target_score': 0.9,
+                    'priority': 'high' if score < 0.5 else 'medium',
+                    'role': role,
+                    'quality_level': quality_level,
+                    'suggestions': _get_role_aware_suggestions(dimension, score, role, quality_level)
+                }
+                
+                # Add sub-dimension specific recommendations
+                if hasattr(result, 'sub_dimensions') and getattr(result, 'sub_dimensions', None):
+                    rec['sub_dimension_details'] = []
+                    for sub_dim in result.sub_dimensions:
+                        if hasattr(sub_dim, 'score') and sub_dim.score < 0.8:
+                            rec['sub_dimension_details'].append({
+                                'name': sub_dim.name,
+                                'score': round(sub_dim.score, 3),
+                                'comparison_type': sub_dim.comparison_type,
+                                'measurement_type': sub_dim.measurement_type
+                            })
+                
+                recommendations.append(rec)
+        
+        # Sort by priority and score
+        recommendations.sort(key=lambda x: (x['priority'] == 'high', -x['current_score']))
+        
+        return recommendations
+        
+    except Exception as e:
+        logger.error(f"Error generating enhanced recommendations: {e}")
+        return []
+
+
+def _get_role_aware_suggestions(dimension: str, score: float, role: str, quality_level: str) -> List[str]:
+    """Get role-aware improvement suggestions"""
+    
+    base_suggestions = {
+        'completeness': [
+            "Review data collection processes",
+            "Implement mandatory field validation",
+            "Add data completeness monitoring"
+        ],
+        'accuracy': [
+            "Implement data validation rules",
+            "Add reference data checks",
+            "Review data entry processes"
+        ],
+        'consistency': [
+            "Standardize data formats",
+            "Implement data transformation rules",
+            "Add cross-system validation"
+        ],
+        'validity': [
+            "Add format validation",
+            "Implement constraint checking",
+            "Review data schema definitions"
+        ],
+        'uniqueness': [
+            "Implement duplicate detection",
+            "Add unique constraints",
+            "Review data deduplication"
+        ],
+        'timeliness': [
+            "Implement real-time processing",
+            "Add freshness monitoring",
+            "Review data pipeline performance"
+        ]
+    }
+    
+    # Role-specific suggestions
+    if role == 'producer':
+        if quality_level == 'enhanced':
+            base_suggestions[dimension].extend([
+                "Implement golden source validation",
+                "Add cross-system comparison checks",
+                "Set up trend-based monitoring"
+            ])
+        else:
+            base_suggestions[dimension].extend([
+                "Implement reference table validation",
+                "Add basic cross-system checks"
+            ])
+    else:  # consumer
+        if quality_level == 'enhanced':
+            base_suggestions[dimension].extend([
+                "Add trend analysis monitoring",
+                "Implement cross-system validation"
+            ])
+        else:
+            base_suggestions[dimension].extend([
+                "Focus on foundational data profiling",
+                "Implement basic quality checks"
+            ])
+    
+    return base_suggestions.get(dimension, ["Review data quality processes"])
