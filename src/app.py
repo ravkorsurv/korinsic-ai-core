@@ -9,8 +9,10 @@ from core.bayesian_engine import BayesianEngine
 from core.data_processor import DataProcessor
 from core.alert_generator import AlertGenerator
 from core.risk_calculator import RiskCalculator
+from core.trading_data_service import TradingDataService
 from utils.config import Config
 from utils.logger import setup_logger
+from api.v1.routes.trading_data import trading_data_bp
 
 # Initialize core components
 config = Config()
@@ -28,6 +30,10 @@ bayesian_engine = BayesianEngine()
 data_processor = DataProcessor()
 alert_generator = AlertGenerator()
 risk_calculator = RiskCalculator()
+trading_data_service = TradingDataService()
+
+# Register blueprints
+app.register_blueprint(trading_data_bp, url_prefix='/api/v1')
 
 @app.route('/health', methods=['GET'])
 def health_check():
