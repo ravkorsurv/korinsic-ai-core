@@ -1,0 +1,106 @@
+{
+  "kubernetes": {
+    "namespace": "kor-ai-surveillance",
+    "deployment": {
+      "name": "surveillance-platform",
+      "replicas": 3,
+      "image": "kor-ai-surveillance-platform:latest",
+      "ports": [
+        {
+          "name": "http",
+          "containerPort": 5000,
+          "protocol": "TCP"
+        }
+      ],
+      "resources": {
+        "requests": {
+          "cpu": "250m",
+          "memory": "512Mi"
+        },
+        "limits": {
+          "cpu": "1000m",
+          "memory": "2Gi"
+        }
+      },
+      "environment": [
+        {
+          "name": "ENVIRONMENT",
+          "value": "production"
+        },
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": {
+            "secretKeyRef": {
+              "name": "db-credentials",
+              "key": "url"
+            }
+          }
+        },
+        {
+          "name": "REDIS_URL",
+          "valueFrom": {
+            "secretKeyRef": {
+              "name": "redis-credentials",
+              "key": "url"
+            }
+          }
+        }
+      ],
+      "volumeMounts": [
+        {
+          "name": "config",
+          "mountPath": "/app/config"
+        }
+      ]
+    },
+    "service": {
+      "name": "surveillance-platform-service",
+      "type": "LoadBalancer",
+      "ports": [
+        {
+          "name": "http",
+          "port": 80,
+          "targetPort": 5000,
+          "protocol": "TCP"
+        }
+      ]
+    },
+    "configMap": {
+      "name": "surveillance-config",
+      "files": [
+        "config/production.json",
+        "config/models/bayesian_models.json"
+      ]
+    },
+    "secrets": [
+      {
+        "name": "db-credentials",
+        "keys": ["url", "username", "password"]
+      },
+      {
+        "name": "redis-credentials",
+        "keys": ["url"]
+      }
+    ],
+    "ingress": {
+      "enabled": true,
+      "hosts": [
+        {
+          "host": "surveillance-api.kor-ai.com",
+          "paths": [
+            {
+              "path": "/",
+              "pathType": "Prefix"
+            }
+          ]
+        }
+      ],
+      "tls": [
+        {
+          "secretName": "surveillance-tls",
+          "hosts": ["surveillance-api.kor-ai.com"]
+        }
+      ]
+    }
+  }
+}

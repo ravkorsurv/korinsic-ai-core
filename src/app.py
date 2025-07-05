@@ -12,18 +12,18 @@ from core.risk_calculator import RiskCalculator
 from utils.config import Config
 from utils.logger import setup_logger
 
+# Initialize core components
+config = Config()
+
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app, origins=[
-    "http://localhost:3000",
-    "https://kor-ai-alert-ui.amplifyapp.com"
-], allow_headers=["Content-Type", "Authorization"])
+
+# Setup CORS with configuration
+cors_origins = config.get_security_config().get('cors_origins', ['http://localhost:3000'])
+CORS(app, origins=cors_origins, allow_headers=["Content-Type", "Authorization"])
 
 # Setup logging
 logger = setup_logger()
-
-# Initialize core components
-config = Config()
 bayesian_engine = BayesianEngine()
 data_processor = DataProcessor()
 alert_generator = AlertGenerator()
@@ -329,8 +329,13 @@ def internal_error(error):
     return jsonify({'error': 'Internal server error'}), 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    debug = os.environ.get('DEBUG', 'False').lower() == 'true'
+    server_config = config.get_server_config()
     
-    logger.info(f"Starting Kor.ai Surveillance Platform on port {port}")
-    app.run(host='0.0.0.0', port=port, debug=debug)
+    port = server_config.get('port', 5000)
+    host = server_config.get('host', '0.0.0.0')
+    debug = server_config.get('debug', False)
+    
+    logger.info(f"Starting Kor.ai Surveillance Platform on {host}:{port} (debug={debug})")
+    logger.info(f"Environment: {config.environment}")
+    
+    app.run(host=host, port=port, debug=debug)

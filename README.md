@@ -1,57 +1,322 @@
-# Kor.ai – Surveillance Platform Core
+# Kor.ai – AI-Powered Surveillance Platform
 
-Kor.ai is an AI-powered surveillance platform built to detect market abuse risks such as insider dealing and spoofing, with a focus on commodities and energy trading. This repository contains the core logic, Bayesian inference engine, data mapping, and service orchestration for alert generation.
-
----
-
-## 🚀 Features
-
-- **Bayesian Risk Scoring**: Probabilistic models using pgmpy for insider dealing and spoofing detection
-- **Evidence Sufficiency Index (ESI)**: Measure how well-supported risk scores are based on input diversity, quality, and distribution
-- **Real-time Analysis**: REST API for analyzing trading data and generating risk scores
-- **Alert Generation**: Automated alert system with configurable thresholds and severity levels
-- **Scenario Simulation**: Built-in simulation capabilities for testing and validation
-- **Modular Architecture**: Clean separation of data processing, risk calculation, and alert generation
-- **Comprehensive Logging**: Structured logging with multiple levels and file rotation
-- **Cloud-Ready**: Designed for deployment in microservice or serverless environments
+Kor.ai is a professional-grade AI surveillance platform designed to detect market abuse risks including insider dealing and spoofing. This repository contains the core analytical engine, Bayesian inference system, and service orchestration components.
 
 ---
 
-## 📁 Project Structure
+## 📁 Repository Structure
+
+The codebase follows enterprise-grade architecture with clear separation of concerns:
 
 ```
 kor-ai-core/
-├── src/
-│   ├── app.py                 # Main Flask application
-│   │   ├── core/
-│   │   │   ├── bayesian_engine.py # Bayesian inference engine
-│   │   │   ├── data_processor.py  # Data processing pipeline
-│   │   │   ├── alert_generator.py # Alert generation system
-│   │   │   └── risk_calculator.py # Risk calculation engine
-│   │   └── utils/
-│   │       ├── config.py          # Configuration management
-│   │       └── logger.py          # Logging setup
-│   ├── tests/
-│   │   └── test_sample_data.py    # Sample test data and scenarios
-│   ├── requirements.txt           # Python dependencies
-│   ├── .env.example              # Environment configuration template
-│   ├── run_server.py             # Server runner script
-│   └── sample_request.py         # API testing script
+├── src/                          # Core application source code
+│   ├── app.py                   # Main Flask application entry point
+│   ├── api/                     # API layer with versioning
+│   │   └── v1/                  # API version 1
+│   │       ├── routes/          # REST endpoints by domain
+│   │       ├── middleware/      # Request/response middleware
+│   │       └── schemas/         # Input/output validation schemas
+│   ├── core/                    # Core business logic
+│   │   ├── engines/            # Bayesian inference engines
+│   │   ├── processors/         # Data processing pipeline
+│   │   └── services/           # Business service coordination
+│   ├── models/                  # Data models and ML components
+│   │   ├── bayesian/           # Bayesian inference models
+│   │   ├── data/               # Data structure definitions
+│   │   └── shared/             # Shared model utilities
+│   └── utils/                  # Common utilities and helpers
+├── tests/                       # Comprehensive test suite
+│   ├── unit/                   # Unit tests with mocking
+│   ├── integration/            # Component integration tests
+│   ├── e2e/                    # End-to-end workflow tests
+│   ├── performance/            # Load and performance tests
+│   ├── fixtures/               # Test data and scenarios
+│   └── utils/                  # Test utilities and helpers
+├── config/                     # Configuration management
+│   ├── *.json                  # Environment-specific configs
+│   ├── models/                 # Model configuration files
+│   └── deployment/             # Deployment configurations
+├── docs/                       # Documentation
+│   ├── development/            # Development guides
+│   └── models/                 # Model documentation
+├── scripts/                    # Automation scripts
+│   ├── development/            # Development utilities
+│   ├── deployment/             # Deployment automation
+│   ├── data/                   # Data management scripts
+│   └── maintenance/            # System maintenance
+├── deployment/                 # Container and cloud configs
+├── archive/                    # Archived/legacy components
+├── requirements.txt            # Python dependencies
+├── Dockerfile                  # Container configuration
+├── .gitignore                  # Git ignore patterns
+└── pytest.ini                 # Test configuration
 ```
 
 ---
 
-## 🧪 Quick Start
+## 🧭 Navigating the Codebase
 
-### 1. Installation
+### Understanding the Architecture
+
+**🚀 Application Entry Point**
+- **`src/app.py`** - Flask application initialization, CORS setup, route registration
+
+**🌐 API Layer** (`src/api/v1/`)
+- **`routes/`** - RESTful endpoints organized by business domain
+- **`middleware/`** - Request validation, error handling, authentication
+- **`schemas/`** - Request/response validation using marshmallow
+
+**⚙️ Core Business Logic** (`src/core/`)
+- **`engines/`** - Bayesian inference engine, risk calculation algorithms
+- **`processors/`** - Data transformation and evidence mapping
+- **`services/`** - High-level business logic coordination
+
+**🧠 Models** (`src/models/`)
+- **`bayesian/`** - Probabilistic models for risk detection
+- **`data/`** - Data structure definitions and validators
+- **`shared/`** - Common components and utilities
+
+### Key Navigation Points
+
+1. **Start Here:** `src/app.py` - Main application entry
+2. **API Contracts:** `src/api/v1/routes/analysis.py` - Primary endpoints
+3. **Core Engine:** `src/core/engines/bayesian_engine.py` - Inference logic
+4. **Model Implementation:** `src/models/bayesian/insider_dealing/model.py`
+5. **Configuration:** `config/base.json` - System settings
+6. **Test Setup:** `tests/conftest.py` - Test configuration
+
+### Development Workflow
 
 ```bash
+# 1. Environment Setup
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+
+# 2. Configuration
+cp .env.example .env
+# Edit .env with your settings
+
+# 3. Development Server
+python scripts/development/run_server.py
+
+# 4. Testing
+python scripts/development/run_tests.py
+
+# 5. API Testing
+curl -X POST http://localhost:5000/api/v1/analyze \
+  -H "Content-Type: application/json" \
+  -d @tests/fixtures/sample_request.json
+```
+
+---
+
+## 🐳 Containerization & Deployment
+
+### Docker Configuration
+
+**Dockerfile** optimized for production deployment:
+
+```dockerfile
+FROM python:3.9-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+EXPOSE 5000
+CMD ["python", "src/app.py"]
+```
+
+### Container Operations
+
+```bash
+# Build container
+docker build -t kor-ai-core .
+
+# Development mode
+docker run -p 5000:5000 \
+  -e ENVIRONMENT=development \
+  -e DEBUG=true \
+  kor-ai-core
+
+# Production mode
+docker run -p 5000:5000 \
+  -e ENVIRONMENT=production \
+  -e DATABASE_URL=postgresql://... \
+  -e REDIS_URL=redis://... \
+  kor-ai-core
+```
+
+### Environment Configuration
+
+**Required Environment Variables:**
+- `ENVIRONMENT` - deployment environment (development/production/testing)
+- `PORT` - server port (default: 5000)
+- `HOST` - server host (default: 0.0.0.0)
+
+**Optional Environment Variables:**
+- `DATABASE_URL` - database connection string
+- `REDIS_URL` - Redis connection string
+- `LOG_LEVEL` - logging verbosity (DEBUG/INFO/WARNING/ERROR)
+- `DEBUG` - enable debug mode (development only)
+- `INSIDER_HIGH_THRESHOLD` - risk threshold for insider dealing
+- `SPOOFING_HIGH_THRESHOLD` - risk threshold for spoofing
+
+### Docker Compose for Local Development
+
+```yaml
+version: '3.8'
+services:
+  kor-ai-core:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=true
+    depends_on:
+      - redis
+      - postgres
+    volumes:
+      - .:/app
+      - /app/venv
+  
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+  
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=korai
+      - POSTGRES_USER=korai
+      - POSTGRES_PASSWORD=korai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+```
+
+### Production Deployment
+
+**Kubernetes Deployment:**
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kor-ai-core
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: kor-ai-core
+  template:
+    metadata:
+      labels:
+        app: kor-ai-core
+    spec:
+      containers:
+      - name: kor-ai-core
+        image: kor-ai-core:latest
+        ports:
+        - containerPort: 5000
+        env:
+        - name: ENVIRONMENT
+          value: "production"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: kor-ai-secrets
+              key: database-url
+```
+
+---
+
+## 🌿 Branch Strategy & Git Workflow
+
+### Branch Structure
+
+**Primary Branches:**
+- `main` - Production-ready code, protected branch
+- `develop` - Integration branch (if using GitFlow)
+
+**Working Branches:**
+- `feature/[description]` - New features and enhancements
+- `bugfix/[description]` - Bug fixes and patches
+- `hotfix/[description]` - Critical production fixes
+- `refactor/[description]` - Code refactoring
+- `docs/[description]` - Documentation updates
+- `test/[description]` - Test improvements
+
+### Development Workflow
+
+**Feature Development:**
+```bash
+git checkout main
+git pull origin main
+git checkout -b feature/new-spoofing-detection
+# ... implement feature ...
+git add .
+git commit -m "feat: Add spoofing pattern detection"
+git push origin feature/new-spoofing-detection
+# Create Pull Request
+```
+
+**Bug Fixes:**
+```bash
+git checkout -b bugfix/fix-bayesian-inference
+# ... fix issue ...
+git commit -m "fix: Correct probability calculation in Bayesian engine"
+git push origin bugfix/fix-bayesian-inference
+# Create Pull Request
+```
+
+**Hotfixes:**
+```bash
+git checkout main
+git checkout -b hotfix/critical-security-patch
+# ... apply fix ...
+git commit -m "hotfix: Patch security vulnerability in auth"
+git push origin hotfix/critical-security-patch
+# Create urgent Pull Request
+```
+
+### Pull Request Process
+
+1. **Create descriptive PR** with clear title and description
+2. **Automated checks** - CI/CD pipeline runs tests
+3. **Code review** - Team member review required
+4. **Documentation** - Update docs if API/behavior changes
+5. **Merge strategy** - Squash commits for clean history
+
+### Current Branch Status
+
+**Active Branches:**
+- `main` - ✅ Keep (production baseline)
+- `cursor/update-readme-and-clean-up-branches-9f08` - 🔄 Current work
+
+**Branches for Cleanup:**
+- `cursor/write-complete-code-f9b6` - ❌ Delete (work merged)
+- `init/github-pr-bot-service` - 📦 Archive (historical reference)
+
+---
+
+## 🚀 Quick Start Guide
+
+### 1. Clone and Setup
+
+```bash
+# Clone repository
 git clone https://github.com/your-org/kor-ai-core.git
 cd kor-ai-core
 
 # Create virtual environment
 python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate  # Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
@@ -63,42 +328,46 @@ pip install -r requirements.txt
 # Copy environment template
 cp .env.example .env
 
-# Edit configuration as needed
-nano .env
+# Edit configuration
+nano .env  # or use your preferred editor
 ```
 
-### 3. Run the Server
+### 3. Run Application
 
 ```bash
-# Using the runner script
-python run_server.py
+# Using development script (recommended)
+python scripts/development/run_server.py
 
-# Or directly
+# Or run directly
 python src/app.py
+
+# Or using Docker
+docker build -t kor-ai-core .
+docker run -p 5000:5000 kor-ai-core
 ```
 
-The server will start on `http://localhost:5000`
-
-### 4. Test the API
+### 4. Verify Installation
 
 ```bash
-# Run sample API tests
-python sample_request.py
+# Health check
+curl http://localhost:5000/health
 
-# Or test individual components
-python tests/test_sample_data.py
+# Run tests
+python scripts/development/run_tests.py
 ```
 
 ---
 
-## 📖 API Endpoints
+## 📖 API Reference
 
-### Health Check
+### Core Endpoints
+
+**Health Check**
 ```http
 GET /health
 ```
 
-### Analyze Trading Data
+**Risk Analysis**
 ```http
 POST /api/v1/analyze
 Content-Type: application/json
@@ -112,250 +381,256 @@ Content-Type: application/json
 }
 ```
 
-### Simulate Scenarios
+**Batch Processing**
 ```http
-POST /api/v1/simulate
+POST /api/v1/analyze/batch
 Content-Type: application/json
 
 {
-  "scenario_type": "insider_dealing",
-  "parameters": {
-    "num_trades": 50,
-    "seed": 42
-  }
+  "datasets": [
+    {
+      "id": "dataset_1",
+      "trades": [...],
+      "orders": [...],
+      ...
+    }
+  ]
 }
 ```
 
-### Get Model Information
+**Real-time Analysis**
 ```http
-GET /api/v1/models/info
-```
+POST /api/v1/analyze/realtime
+Content-Type: application/json
 
-### Get Alert History
-```http
-GET /api/v1/alerts/history?limit=100&type=INSIDER_DEALING
-```
-
----
-
-## 🔬 Example Usage
-
-### Analyzing Insider Dealing
-
-```python
-import requests
-
-data = {
-    "trades": [
-        {
-            "id": "trade_001",
-            "timestamp": "2024-01-15T10:30:00Z",
-            "instrument": "ENERGY_CORP",
-            "volume": 100000,
-            "price": 50.25,
-            "side": "buy",
-            "trader_id": "exec_trader_001"
-        }
-    ],
-    "trader_info": {
-        "id": "exec_trader_001",
-        "role": "executive",
-        "access_level": "high"
-    },
-    "material_events": [
-        {
-            "id": "event_001",
-            "timestamp": "2024-01-16T09:00:00Z",
-            "type": "earnings_announcement",
-            "instruments_affected": ["ENERGY_CORP"]
-        }
-    ]
+{
+  "stream_data": {...},
+  "analysis_config": {...}
 }
-
-response = requests.post(
-    "http://localhost:5000/api/v1/analyze",
-    json=data
-)
-
-result = response.json()
-print(f"Risk Score: {result['risk_scores']['insider_dealing']['overall_score']}")
-print(f"Alerts: {len(result['alerts'])}")
 ```
 
----
-
-## ⚙️ Configuration Options
-
-Key environment variables in `.env`:
-
-- `ENVIRONMENT`: development/production
-- `DEBUG`: Enable debug mode
-- `PORT`: Server port (default: 5000)
-- `INSIDER_HIGH_THRESHOLD`: High risk threshold for insider dealing
-- `SPOOFING_HIGH_THRESHOLD`: High risk threshold for spoofing
-- `LOG_LEVEL`: Logging level (DEBUG/INFO/WARNING/ERROR)
-
----
-
-## 🧠 Bayesian Models
-
-### Insider Dealing Model
-- **Nodes**: MaterialInfo, TradingActivity, Timing, PriceImpact, Risk
-- **Features**: Access to material information, unusual trading patterns, suspicious timing
-- **Inference**: Variable elimination using pgmpy
-
-### Spoofing Model  
-- **Nodes**: OrderPattern, CancellationRate, PriceMovement, VolumeRatio, Risk
-- **Features**: Layered orders, high cancellation rates, volume imbalances
-- **Inference**: Probabilistic assessment of market manipulation
-
----
-
-## 📊 Evidence Sufficiency Index (ESI)
-
-The Evidence Sufficiency Index (ESI) is a key feature that complements Bayesian risk scores by measuring how well-supported those scores are based on:
-
-- **Node Activation Ratio**: Proportion of active (populated) nodes in the Bayesian network
-- **Mean Confidence Score**: Average confidence level of inputs
-- **Fallback Ratio**: Proportion of nodes relying on priors or latent defaults
-- **Contribution Entropy**: Entropy of node contributions - measures distribution evenness
-- **Cross-Cluster Diversity**: Evidence spread across distinct node groups (trade, comms, PnL, etc.)
-
-### ESI Benefits
-
-- **Trust Calibration**: Helps analysts understand how well-supported risk scores are
-- **Filtering & Triage**: Filter alerts by ESI score to prioritize well-evidenced cases
-- **Enhanced Explainability**: Explain not just why an alert was scored as risky, but how trustworthy the evidence is
-- **Risk Score Adjustment**: Use ESI as multiplier: `Adjusted Risk = Risk Score × ESI`
-
-### Example ESI Output
+### Response Format
 
 ```json
 {
-  "evidence_sufficiency_index": 0.84,
-  "esi_badge": "Strong",
-  "node_count": 6,
-  "mean_confidence": "High",
-  "fallback_ratio": 0.0,
-  "contribution_spread": "Balanced",
-  "clusters": ["PnL", "MNPI", "TradePattern"],
-  "components": {
-    "node_activation_ratio": 0.83,
-    "mean_confidence_score": 0.85,
-    "fallback_ratio": 0.0,
-    "contribution_entropy": 0.92,
-    "cross_cluster_diversity": 0.71
+  "status": "success",
+  "data": {
+    "analysis_id": "uuid",
+    "risk_scores": {
+      "insider_dealing": {
+        "overall_score": 0.73,
+        "confidence": "High",
+        "contributing_factors": [...]
+      }
+    },
+    "evidence_sufficiency_index": 0.84,
+    "alerts": [...]
   }
 }
 ```
 
-### UI Integration
-
-ESI is integrated into alerts and can be used for:
-- **Badges**: `ESI: Strong Evidence` on alert cards
-- **Filtering**: Show only alerts with `ESI > 0.7`
-- **Sorting**: Sort by ESI descending to prioritize well-evidenced alerts
-- **Explainability**: Detailed breakdown of evidence quality in tooltips
-
 ---
 
-## 🔍 Risk Assessment
+## ⚙️ Configuration System
 
-The platform calculates risk scores across multiple dimensions:
+### Configuration Files
 
-1. **Base Risk Scores** (0.0 - 1.0)
-   - Insider Dealing Risk
-   - Spoofing Risk
-
-2. **Contextual Multipliers**
-   - Trader role and access level
-   - Trading volume patterns
-   - Market conditions
-   - Behavioral indicators
-
-3. **Overall Risk Score**
-   - Weighted combination of base scores
-   - Applied contextual adjustments
-   - Final score capped at 1.0
-
----
-
-## 🧠 Bayesian Risk Engine Pipeline Modules
-
-### Evidence Mapping
-Maps raw input data/events to Bayesian Network node states for risk models.
-
-**Usage:**
-```python
-from src.core.evidence_mapper import map_evidence
-mapped = map_evidence(raw_data)
+```
+config/
+├── base.json              # Base configuration
+├── development.json       # Development overrides
+├── production.json        # Production overrides
+├── testing.json          # Test configuration
+├── models/                # Model configurations
+│   └── bayesian_models.json
+└── deployment/            # Deployment settings
 ```
 
-### Fallback Logic
-Handles missing or partial evidence using node fallback priors. Ensures robust inference even with incomplete data.
+### Environment Variables
 
-**Usage:**
-```python
-from src.core.fallback_logic import apply_fallback_evidence
-completed_evidence = apply_fallback_evidence(mapped, node_defs)
-```
+Configuration can be overridden via environment variables:
 
-### Complex Risk Aggregation & Scoring
-Computes overall risk scores from multiple evidence nodes using complex aggregation algorithms and configurable multi-node triggers.
-
-**Features:**
-- **Multi-source evidence**: Trades, market data, HR, sales, communications, PnL
-- **Configurable node weights**: Different importance for different risk factors
-- **Multi-node triggers**: Alerts when multiple nodes are in high/critical states
-- **PnL loss detection**: Special handling for recent PnL spikes resulting in losses
-- **Exponential penalties**: Increased risk when multiple high-risk indicators are present
-
-**Usage:**
-```python
-from src.core.bayesian_engine import BayesianEngine
-from src.core.risk_aggregator import ComplexRiskAggregator
-
-engine = BayesianEngine()
-risk_result = engine.calculate_insider_dealing_risk(processed_data, node_defs=node_defs)
-
-# Access complex risk analysis
-print(f"Overall Score: {risk_result['overall_score']}")
-print(f"Risk Level: {risk_result['risk_level']}")
-print(f"High Nodes: {risk_result['high_nodes']}")
-print(f"Triggers: {risk_result['triggers']}")
-print(risk_result['explanation'])
-
-# Configure node weights
-aggregator = ComplexRiskAggregator()
-aggregator.update_node_config("pnl_loss_spike", weight=3.0)
-```
-
-### Testing
-Unit tests for evidence mapping, fallback logic, scoring, and explainability are in `tests/test_sample_data.py`.
-
-**Run tests:**
 ```bash
-python tests/test_sample_data.py
+# Core settings
+ENVIRONMENT=production
+DEBUG=false
+PORT=5000
+HOST=0.0.0.0
+
+# Database
+DATABASE_URL=postgresql://user:pass@host:5432/db
+
+# Redis
+REDIS_URL=redis://localhost:6379
+
+# Logging
+LOG_LEVEL=INFO
+
+# Model thresholds
+INSIDER_HIGH_THRESHOLD=0.7
+SPOOFING_HIGH_THRESHOLD=0.8
+```
+
+### Configuration Usage
+
+```python
+from src.utils.config import ConfigManager
+
+config = ConfigManager()
+db_host = config.get('database.host')
+threshold = config.get('models.insider_dealing.high_threshold')
 ```
 
 ---
 
-## 📊 Monitoring & Logging
+## � Testing Framework
 
-- **Structured Logging**: JSON format for production environments
-- **Log Rotation**: Automatic file rotation and cleanup
-- **Error Tracking**: Separate error logs for debugging
-- **Performance Metrics**: Request timing and resource usage
+### Test Structure
+
+```
+tests/
+├── unit/                   # Fast, isolated tests
+├── integration/            # Component interaction tests
+├── e2e/                    # Full workflow tests
+├── performance/            # Load and stress tests
+├── fixtures/               # Test data and scenarios
+└── utils/                  # Test utilities
+```
+
+### Running Tests
+
+```bash
+# All tests
+python scripts/development/run_tests.py
+
+# Specific test types
+python scripts/development/run_tests.py --mode unit
+python scripts/development/run_tests.py --mode integration
+python scripts/development/run_tests.py --mode e2e
+
+# With coverage
+python scripts/development/run_tests.py --mode coverage
+
+# Performance tests
+python scripts/development/run_tests.py --mode performance
+```
+
+### Test Fixtures
+
+Located in `tests/fixtures/`:
+- `sample_request.json` - Example API request
+- `trader_profiles.json` - Test trader data
+- `market_events.json` - Sample market events
+- `expected_responses.json` - Expected analysis outputs
+
+---
+
+## 🔧 Development Tools
+
+### Code Quality
+
+```bash
+# Linting
+flake8 src/ tests/
+
+# Type checking
+mypy src/
+
+# Security scanning
+bandit -r src/
+
+# Dependency checking
+safety check
+```
+
+### Development Scripts
+
+```bash
+# Start development server
+python scripts/development/run_server.py
+
+# Run test suite
+python scripts/development/run_tests.py
+
+# Generate test data
+python scripts/development/generate_test_data.py
+
+# Database migrations
+python scripts/development/migrate_db.py
+```
+
+---
+
+## 📊 Monitoring & Observability
+
+### Logging
+
+The application uses structured logging with JSON format in production:
+
+```python
+from src.utils.logger import get_logger
+
+logger = get_logger(__name__)
+logger.info("Analysis completed", extra={
+    "analysis_id": "123",
+    "risk_score": 0.85,
+    "duration_ms": 250
+})
+```
+
+### Metrics
+
+Key metrics to monitor:
+- Request latency and throughput
+- Analysis success/failure rates
+- Risk score distributions
+- Model performance metrics
+
+### Health Checks
+
+```bash
+# Application health
+curl http://localhost:5000/health
+
+# Database connectivity
+curl http://localhost:5000/health/db
+
+# Model status
+curl http://localhost:5000/health/models
+```
 
 ---
 
 ## 🤝 Contributing
 
+### Getting Started
+
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create a feature branch
+3. Make your changes
+4. Add tests and documentation
+5. Submit a pull request
+
+### Code Standards
+
+- Follow PEP 8 for Python code
+- Add type hints for new functions
+- Include docstrings for public APIs
+- Write tests for new functionality
+- Update documentation as needed
+
+### Development Setup
+
+```bash
+# Install development dependencies
+pip install -r requirements-dev.txt
+
+# Setup pre-commit hooks
+pre-commit install
+
+# Run quality checks
+python scripts/development/quality_check.py
+```
 
 ---
 
@@ -367,75 +642,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-For support and questions:
-- Create an issue on GitHub
-- Contact the development team
-- Review the documentation and examples
+For questions and support:
+- 📧 Create an issue on GitHub
+- 📖 Check the documentation in `docs/`
+- 💬 Contact the development team
 
 ---
 
-## 🔮 Roadmap
-
-- [ ] Enhanced ML models with deep learning
-- [ ] Real-time streaming data processing
-- [ ] Advanced visualization dashboard  
-- [ ] Integration with major trading platforms
-- [ ] Regulatory reporting automation
-- [ ] Multi-language support
-
-## Hidden Causality & Latent Intent (Kor.ai Approach)
-
-### Overview
-
-Traditional risk models can only use observable evidence. The Kor.ai approach introduces **latent intent nodes** to model unobservable abusive intent, inferred from converging evidence paths (e.g., profit, access, order behavior, comms metadata).
-
-- **LatentIntentNode**: Represents unobservable intent to manipulate/abuse.
-- **Converging Evidence Nodes**: ProfitMotivationNode, AccessPatternNode, OrderBehaviorNode, CommsMetadataNode.
-- **Hidden Causality**: The model infers intent from indirect evidence, improving detection of sophisticated abuse.
-
-### API Usage
-
-To use the latent intent model in risk analysis, add the `use_latent_intent` flag to your request:
-
-```json
-POST /api/v1/analyze
-{
-  "trades": [...],
-  "orders": [...],
-  ...,
-  "use_latent_intent": true
-}
-```
-
-- If `use_latent_intent` is `true`, the system uses the advanced model with hidden causality and latent intent.
-- The response will include latent intent probabilities and enhanced risk assessment.
-
-### Example Response
-
-```json
-{
-  "risk_scores": {
-    "insider_dealing": {
-      "insider_dealing_probability": 0.03,
-      "latent_intent_no": 0.95,
-      "latent_intent_potential": 0.04,
-      "latent_intent_clear": 0.01,
-      "overall_score": 0.03,
-      "evidence_factors": { ... },
-      "model_type": "latent_intent"
-    },
-    ...
-  },
-  ...
-}
-```
-
-### Model Structure
-
-- Evidence nodes (profit, access, order behavior, comms) → **latent_intent** (hidden node) → risk_factor → outcome
-- The model can be extended for other abuse types (e.g., spoofing) in the future.
-
-### Benefits
-- Detects sophisticated abuse where intent is not directly observable
-- Models indirect, converging evidence
-- More robust to adversarial evasion
+*This README serves as your primary navigation guide for the Kor.ai surveillance platform. For detailed technical documentation, see the `docs/` directory.*
