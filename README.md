@@ -23,20 +23,33 @@ Kor.ai is an AI-powered surveillance platform built to detect market abuse risks
 kor-ai-core/
 ├── src/
 │   ├── app.py                 # Main Flask application
-│   │   ├── core/
-│   │   │   ├── bayesian_engine.py # Bayesian inference engine
-│   │   │   ├── data_processor.py  # Data processing pipeline
-│   │   │   ├── alert_generator.py # Alert generation system
-│   │   │   └── risk_calculator.py # Risk calculation engine
-│   │   └── utils/
-│   │       ├── config.py          # Configuration management
-│   │       └── logger.py          # Logging setup
-│   ├── tests/
-│   │   └── test_sample_data.py    # Sample test data and scenarios
-│   ├── requirements.txt           # Python dependencies
-│   ├── .env.example              # Environment configuration template
-│   ├── run_server.py             # Server runner script
-│   └── sample_request.py         # API testing script
+│   ├── core/
+│   │   ├── bayesian_engine.py # Bayesian inference engine
+│   │   ├── data_processor.py  # Data processing pipeline
+│   │   ├── alert_generator.py # Alert generation system
+│   │   └── risk_calculator.py # Risk calculation engine
+│   └── utils/
+│       ├── config.py          # Configuration management
+│       └── logger.py          # Logging setup
+├── tests/
+│   ├── unit/                  # Unit tests
+│   ├── integration/           # Integration tests
+│   ├── e2e/                   # End-to-end tests
+│   ├── performance/           # Performance tests
+│   └── conftest.py            # Shared test configuration
+├── docs/
+│   ├── api/                   # API documentation
+│   ├── models/                # Model documentation
+│   ├── deployment/            # Deployment guides
+│   └── development/           # Development notes
+├── scripts/
+│   ├── development/           # Development scripts
+│   ├── deployment/            # Deployment scripts
+│   └── data/                  # Data management scripts
+├── config/                    # Configuration files
+├── deployment/                # Deployment configurations
+├── requirements.txt           # Python dependencies
+└── .env.example              # Environment configuration template
 ```
 
 ---
@@ -71,7 +84,7 @@ nano .env
 
 ```bash
 # Using the runner script
-python run_server.py
+python scripts/development/run_server.py
 
 # Or directly
 python src/app.py
@@ -83,7 +96,7 @@ The server will start on `http://localhost:5000`
 
 ```bash
 # Run sample API tests
-python sample_request.py
+python scripts/development/sample_request.py
 
 # Or test individual components
 python tests/test_sample_data.py
@@ -184,16 +197,49 @@ print(f"Alerts: {len(result['alerts'])}")
 
 ---
 
-## ⚙️ Configuration Options
+## ⚙️ Configuration
 
-Key environment variables in `.env`:
+The platform uses an advanced configuration system with environment-specific settings:
 
-- `ENVIRONMENT`: development/production
+### Configuration Structure
+```
+config/
+├── base.json              # Base configuration
+├── development.json       # Development overrides  
+├── production.json        # Production overrides
+├── testing.json          # Testing overrides
+├── models/                # Model configurations
+└── deployment/            # Deployment configurations
+```
+
+### Environment Variables
+
+Override configuration with environment variables:
+
+- `ENVIRONMENT`: development/production/testing (default: development)
 - `DEBUG`: Enable debug mode
 - `PORT`: Server port (default: 5000)
+- `HOST`: Server host (default: 0.0.0.0)
+- `LOG_LEVEL`: Logging level (DEBUG/INFO/WARNING/ERROR)
+- `DATABASE_URL`: Database connection string
+- `REDIS_URL`: Redis connection string
 - `INSIDER_HIGH_THRESHOLD`: High risk threshold for insider dealing
 - `SPOOFING_HIGH_THRESHOLD`: High risk threshold for spoofing
-- `LOG_LEVEL`: Logging level (DEBUG/INFO/WARNING/ERROR)
+
+### Usage Examples
+
+**Development:**
+```bash
+export ENVIRONMENT=development
+python src/app.py
+```
+
+**Production:**
+```bash
+export ENVIRONMENT=production
+export DATABASE_URL=postgresql://...
+python src/app.py
+```
 
 ---
 

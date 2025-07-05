@@ -1,0 +1,50 @@
+{
+  "extends": "base.json",
+  "environment": "production",
+  "server": {
+    "debug": false,
+    "host": "0.0.0.0"
+  },
+  "logging": {
+    "level": "WARNING",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    "file_rotation": true,
+    "max_file_size": "50MB",
+    "backup_count": 10
+  },
+  "models": {
+    "model_update_interval": 86400
+  },
+  "features": {
+    "real_time_processing": true,
+    "scenario_simulation": false
+  },
+  "security": {
+    "cors_origins": [
+      "https://kor-ai-alert-ui.amplifyapp.com",
+      "https://surveillance.kor-ai.com"
+    ],
+    "rate_limiting": true,
+    "authentication": true
+  },
+  "performance": {
+    "request_timeout": 30,
+    "max_concurrent_requests": 200,
+    "cache_enabled": true,
+    "cache_ttl": 3600
+  },
+  "alerts": {
+    "max_alerts_per_analysis": 50,
+    "storage_enabled": true
+  },
+  "database": {
+    "url": "${DATABASE_URL}",
+    "pool_size": 20,
+    "max_overflow": 30,
+    "echo": false
+  },
+  "redis": {
+    "url": "${REDIS_URL}",
+    "connection_pool_size": 10
+  }
+}
