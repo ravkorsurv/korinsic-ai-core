@@ -1,0 +1,45 @@
+{
+  "extends": "base.json",
+  "environment": "development",
+  "server": {
+    "debug": true,
+    "port": 5000
+  },
+  "logging": {
+    "level": "DEBUG",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s"
+  },
+  "models": {
+    "model_update_interval": 300
+  },
+  "features": {
+    "real_time_processing": false,
+    "scenario_simulation": true
+  },
+  "security": {
+    "cors_origins": [
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://127.0.0.1:3000"
+    ],
+    "rate_limiting": false,
+    "authentication": false
+  },
+  "performance": {
+    "request_timeout": 60,
+    "max_concurrent_requests": 50,
+    "cache_enabled": true,
+    "cache_ttl": 600
+  },
+  "alerts": {
+    "max_alerts_per_analysis": 20,
+    "storage_enabled": true
+  },
+  "database": {
+    "url": "sqlite:///dev_surveillance.db",
+    "echo": true
+  },
+  "redis": {
+    "url": "redis://localhost:6379/0"
+  }
+}

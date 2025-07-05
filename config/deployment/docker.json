@@ -1,0 +1,58 @@
+{
+  "docker": {
+    "image": "kor-ai-surveillance-platform",
+    "version": "latest",
+    "ports": {
+      "app": 5000,
+      "health": 8080
+    },
+    "environment_variables": [
+      "ENVIRONMENT",
+      "DATABASE_URL",
+      "REDIS_URL",
+      "LOG_LEVEL",
+      "DEBUG",
+      "INSIDER_HIGH_THRESHOLD",
+      "SPOOFING_HIGH_THRESHOLD"
+    ],
+    "volumes": [
+      {
+        "host": "./config",
+        "container": "/app/config"
+      },
+      {
+        "host": "./logs",
+        "container": "/app/logs"
+      }
+    ],
+    "healthcheck": {
+      "endpoint": "/health",
+      "interval": "30s",
+      "timeout": "10s",
+      "retries": 3
+    }
+  },
+  "compose": {
+    "services": {
+      "app": {
+        "build": ".",
+        "ports": ["5000:5000"],
+        "depends_on": ["redis", "db"]
+      },
+      "redis": {
+        "image": "redis:7-alpine",
+        "ports": ["6379:6379"]
+      },
+      "db": {
+        "image": "postgres:15-alpine",
+        "environment": [
+          "POSTGRES_DB=surveillance",
+          "POSTGRES_USER=kor_ai",
+          "POSTGRES_PASSWORD=${DB_PASSWORD}"
+        ],
+        "ports": ["5432:5432"],
+        "volumes": ["postgres_data:/var/lib/postgresql/data"]
+      }
+    }
+  }
+}
