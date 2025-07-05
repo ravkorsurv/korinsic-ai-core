@@ -23,20 +23,33 @@ Kor.ai is an AI-powered surveillance platform built to detect market abuse risks
 kor-ai-core/
 ├── src/
 │   ├── app.py                 # Main Flask application
-│   │   ├── core/
-│   │   │   ├── bayesian_engine.py # Bayesian inference engine
-│   │   │   ├── data_processor.py  # Data processing pipeline
-│   │   │   ├── alert_generator.py # Alert generation system
-│   │   │   └── risk_calculator.py # Risk calculation engine
-│   │   └── utils/
-│   │       ├── config.py          # Configuration management
-│   │       └── logger.py          # Logging setup
-│   ├── tests/
-│   │   └── test_sample_data.py    # Sample test data and scenarios
-│   ├── requirements.txt           # Python dependencies
-│   ├── .env.example              # Environment configuration template
-│   ├── run_server.py             # Server runner script
-│   └── sample_request.py         # API testing script
+│   ├── core/
+│   │   ├── bayesian_engine.py # Bayesian inference engine
+│   │   ├── data_processor.py  # Data processing pipeline
+│   │   ├── alert_generator.py # Alert generation system
+│   │   └── risk_calculator.py # Risk calculation engine
+│   └── utils/
+│       ├── config.py          # Configuration management
+│       └── logger.py          # Logging setup
+├── tests/
+│   ├── unit/                  # Unit tests
+│   ├── integration/           # Integration tests
+│   ├── e2e/                   # End-to-end tests
+│   ├── performance/           # Performance tests
+│   └── conftest.py            # Shared test configuration
+├── docs/
+│   ├── api/                   # API documentation
+│   ├── models/                # Model documentation
+│   ├── deployment/            # Deployment guides
+│   └── development/           # Development notes
+├── scripts/
+│   ├── development/           # Development scripts
+│   ├── deployment/            # Deployment scripts
+│   └── data/                  # Data management scripts
+├── config/                    # Configuration files
+├── deployment/                # Deployment configurations
+├── requirements.txt           # Python dependencies
+└── .env.example              # Environment configuration template
 ```
 
 ---
@@ -71,7 +84,7 @@ nano .env
 
 ```bash
 # Using the runner script
-python run_server.py
+python scripts/development/run_server.py
 
 # Or directly
 python src/app.py
@@ -83,7 +96,7 @@ The server will start on `http://localhost:5000`
 
 ```bash
 # Run sample API tests
-python sample_request.py
+python scripts/development/sample_request.py
 
 # Or test individual components
 python tests/test_sample_data.py
