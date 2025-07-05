@@ -1,12 +1,12 @@
-# Kor.ai – Surveillance Platform Core
+# Kor.ai – AI-Powered Surveillance Platform
 
-Kor.ai is an AI-powered surveillance platform built to detect market abuse risks such as insider dealing and spoofing, with a focus on commodities and energy trading. This repository contains the core logic, Bayesian inference engine, data mapping, and service orchestration for alert generation.
+Kor.ai is a professional-grade AI surveillance platform designed to detect market abuse risks including insider dealing and spoofing. This repository contains the core analytical engine, Bayesian inference system, and service orchestration components.
 
 ---
 
-## 📁 Project Structure
+## 📁 Repository Structure
 
-The codebase follows a professional enterprise architecture with clear separation of concerns:
+The codebase follows enterprise-grade architecture with clear separation of concerns:
 
 ```
 kor-ai-core/
@@ -14,102 +14,108 @@ kor-ai-core/
 │   ├── app.py                   # Main Flask application entry point
 │   ├── api/                     # API layer with versioning
 │   │   └── v1/                  # API version 1
-│   │       ├── routes/          # API endpoints by functional area
+│   │       ├── routes/          # REST endpoints by domain
 │   │       ├── middleware/      # Request/response middleware
-│   │       └── schemas/         # Request/response schemas
+│   │       └── schemas/         # Input/output validation schemas
 │   ├── core/                    # Core business logic
-│   │   ├── engines/            # Analytical engines
-│   │   ├── processors/         # Data processing components
-│   │   └── services/           # Business service layer
-│   ├── models/                  # Data models and ML models
+│   │   ├── engines/            # Bayesian inference engines
+│   │   ├── processors/         # Data processing pipeline
+│   │   └── services/           # Business service coordination
+│   ├── models/                  # Data models and ML components
 │   │   ├── bayesian/           # Bayesian inference models
-│   │   ├── data/               # Data model definitions
-│   │   └── shared/             # Shared model components
-│   └── utils/                  # Utility functions and helpers
+│   │   ├── data/               # Data structure definitions
+│   │   └── shared/             # Shared model utilities
+│   └── utils/                  # Common utilities and helpers
 ├── tests/                       # Comprehensive test suite
-│   ├── unit/                   # Unit tests
-│   ├── integration/            # Integration tests
-│   ├── e2e/                    # End-to-end tests
-│   ├── performance/            # Performance tests
-│   ├── fixtures/               # Test data fixtures
+│   ├── unit/                   # Unit tests with mocking
+│   ├── integration/            # Component integration tests
+│   ├── e2e/                    # End-to-end workflow tests
+│   ├── performance/            # Load and performance tests
+│   ├── fixtures/               # Test data and scenarios
 │   └── utils/                  # Test utilities and helpers
 ├── config/                     # Configuration management
-│   ├── base.json              # Base configuration
-│   ├── development.json       # Development environment
-│   ├── production.json        # Production environment
-│   ├── testing.json           # Testing environment
-│   ├── models/                # Model-specific configurations
-│   └── deployment/            # Deployment configurations
+│   ├── *.json                  # Environment-specific configs
+│   ├── models/                 # Model configuration files
+│   └── deployment/             # Deployment configurations
 ├── docs/                       # Documentation
-│   ├── api/                   # API documentation
-│   ├── models/                # Model documentation
-│   ├── deployment/            # Deployment guides
-│   ├── development/           # Development guides
-│   └── architecture/          # Architecture documentation
-├── scripts/                    # Utility scripts
-│   ├── development/           # Development scripts
-│   ├── deployment/            # Deployment scripts
-│   ├── data/                  # Data management scripts
-│   └── maintenance/           # Maintenance scripts
-├── deployment/                 # Deployment configurations
-├── archive/                   # Archived/legacy files
-├── requirements.txt           # Python dependencies
-├── Dockerfile                 # Container configuration
-├── .env.example              # Environment configuration template
-└── pytest.ini               # Test configuration
+│   ├── development/            # Development guides
+│   └── models/                 # Model documentation
+├── scripts/                    # Automation scripts
+│   ├── development/            # Development utilities
+│   ├── deployment/             # Deployment automation
+│   ├── data/                   # Data management scripts
+│   └── maintenance/            # System maintenance
+├── deployment/                 # Container and cloud configs
+├── archive/                    # Archived/legacy components
+├── requirements.txt            # Python dependencies
+├── Dockerfile                  # Container configuration
+├── .gitignore                  # Git ignore patterns
+└── pytest.ini                 # Test configuration
 ```
 
 ---
 
 ## 🧭 Navigating the Codebase
 
-### Core Components
+### Understanding the Architecture
 
-**Entry Point:** `src/app.py`
-- Main Flask application
-- CORS configuration
-- API route registration
-- Server initialization
+**🚀 Application Entry Point**
+- **`src/app.py`** - Flask application initialization, CORS setup, route registration
 
-**API Layer:** `src/api/v1/`
-- **Routes:** Organized by functional area (analysis, alerts, health)
-- **Middleware:** Request validation, error handling, logging
-- **Schemas:** Request/response validation and documentation
+**🌐 API Layer** (`src/api/v1/`)
+- **`routes/`** - RESTful endpoints organized by business domain
+- **`middleware/`** - Request validation, error handling, authentication
+- **`schemas/`** - Request/response validation using marshmallow
 
-**Business Logic:** `src/core/`
-- **Engines:** Bayesian inference engine, risk calculation
-- **Processors:** Data processing pipeline, evidence mapping
-- **Services:** High-level business logic coordination
+**⚙️ Core Business Logic** (`src/core/`)
+- **`engines/`** - Bayesian inference engine, risk calculation algorithms
+- **`processors/`** - Data transformation and evidence mapping
+- **`services/`** - High-level business logic coordination
 
-**Models:** `src/models/`
-- **Bayesian:** Probabilistic models for risk detection
-- **Data:** Data structure definitions and validators
-- **Shared:** Common model components and utilities
+**🧠 Models** (`src/models/`)
+- **`bayesian/`** - Probabilistic models for risk detection
+- **`data/`** - Data structure definitions and validators
+- **`shared/`** - Common components and utilities
 
-### Key Files to Understand
+### Key Navigation Points
 
-1. **`src/app.py`** - Application entry point
-2. **`src/api/v1/routes/analysis.py`** - Main API endpoints
-3. **`src/core/engines/bayesian_engine.py`** - Core inference engine
-4. **`src/models/bayesian/insider_dealing/model.py`** - Insider dealing model
-5. **`config/base.json`** - Base configuration
-6. **`tests/conftest.py`** - Test configuration and fixtures
+1. **Start Here:** `src/app.py` - Main application entry
+2. **API Contracts:** `src/api/v1/routes/analysis.py` - Primary endpoints
+3. **Core Engine:** `src/core/engines/bayesian_engine.py` - Inference logic
+4. **Model Implementation:** `src/models/bayesian/insider_dealing/model.py`
+5. **Configuration:** `config/base.json` - System settings
+6. **Test Setup:** `tests/conftest.py` - Test configuration
 
 ### Development Workflow
 
-1. **Configuration:** Start with `config/` files for environment setup
-2. **API Testing:** Use `scripts/development/` for testing endpoints
-3. **Model Development:** Work in `src/models/bayesian/` for new models
-4. **Testing:** Use `tests/` with comprehensive test utilities
-5. **Documentation:** Update `docs/` for changes
+```bash
+# 1. Environment Setup
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+
+# 2. Configuration
+cp .env.example .env
+# Edit .env with your settings
+
+# 3. Development Server
+python scripts/development/run_server.py
+
+# 4. Testing
+python scripts/development/run_tests.py
+
+# 5. API Testing
+curl -X POST http://localhost:5000/api/v1/analyze \
+  -H "Content-Type: application/json" \
+  -d @tests/fixtures/sample_request.json
+```
 
 ---
 
-## 🐳 Containerization
+## 🐳 Containerization & Deployment
 
 ### Docker Configuration
 
-**Dockerfile** is configured for production deployment:
+**Dockerfile** optimized for production deployment:
 
 ```dockerfile
 FROM python:3.9-slim
@@ -121,35 +127,42 @@ EXPOSE 5000
 CMD ["python", "src/app.py"]
 ```
 
-### Build and Run
+### Container Operations
 
 ```bash
-# Build the container
+# Build container
 docker build -t kor-ai-core .
 
-# Run in development mode
-docker run -p 5000:5000 -e ENVIRONMENT=development kor-ai-core
+# Development mode
+docker run -p 5000:5000 \
+  -e ENVIRONMENT=development \
+  -e DEBUG=true \
+  kor-ai-core
 
-# Run in production mode
-docker run -p 5000:5000 -e ENVIRONMENT=production -e DATABASE_URL=... kor-ai-core
+# Production mode
+docker run -p 5000:5000 \
+  -e ENVIRONMENT=production \
+  -e DATABASE_URL=postgresql://... \
+  -e REDIS_URL=redis://... \
+  kor-ai-core
 ```
 
-### Environment Variables
+### Environment Configuration
 
-Key environment variables for containerized deployment:
+**Required Environment Variables:**
+- `ENVIRONMENT` - deployment environment (development/production/testing)
+- `PORT` - server port (default: 5000)
+- `HOST` - server host (default: 0.0.0.0)
 
-- `ENVIRONMENT`: `development|production|testing`
-- `PORT`: Server port (default: 5000)
-- `HOST`: Server host (default: 0.0.0.0)
-- `DATABASE_URL`: Database connection string
-- `REDIS_URL`: Redis connection string
-- `LOG_LEVEL`: Logging level
-- `INSIDER_HIGH_THRESHOLD`: Risk threshold configuration
-- `SPOOFING_HIGH_THRESHOLD`: Risk threshold configuration
+**Optional Environment Variables:**
+- `DATABASE_URL` - database connection string
+- `REDIS_URL` - Redis connection string
+- `LOG_LEVEL` - logging verbosity (DEBUG/INFO/WARNING/ERROR)
+- `DEBUG` - enable debug mode (development only)
+- `INSIDER_HIGH_THRESHOLD` - risk threshold for insider dealing
+- `SPOOFING_HIGH_THRESHOLD` - risk threshold for spoofing
 
-### Docker Compose (Optional)
-
-For local development with dependencies:
+### Docker Compose for Local Development
 
 ```yaml
 version: '3.8'
@@ -160,100 +173,150 @@ services:
       - "5000:5000"
     environment:
       - ENVIRONMENT=development
+      - DEBUG=true
     depends_on:
       - redis
       - postgres
+    volumes:
+      - .:/app
+      - /app/venv
+  
   redis:
-    image: redis:alpine
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+  
   postgres:
-    image: postgres:13
+    image: postgres:15-alpine
     environment:
       - POSTGRES_DB=korai
       - POSTGRES_USER=korai
       - POSTGRES_PASSWORD=korai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+```
+
+### Production Deployment
+
+**Kubernetes Deployment:**
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kor-ai-core
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: kor-ai-core
+  template:
+    metadata:
+      labels:
+        app: kor-ai-core
+    spec:
+      containers:
+      - name: kor-ai-core
+        image: kor-ai-core:latest
+        ports:
+        - containerPort: 5000
+        env:
+        - name: ENVIRONMENT
+          value: "production"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: kor-ai-secrets
+              key: database-url
 ```
 
 ---
 
-## 🌿 Branch Strategy & Development Workflow
+## 🌿 Branch Strategy & Git Workflow
 
 ### Branch Structure
 
-**Main Branches:**
-- `main` - Production-ready code, stable releases
-- `develop` - Integration branch for features (optional)
+**Primary Branches:**
+- `main` - Production-ready code, protected branch
+- `develop` - Integration branch (if using GitFlow)
 
-**Feature Branches:**
-- `feature/[feature-name]` - New features
-- `bugfix/[bug-description]` - Bug fixes
-- `hotfix/[urgent-fix]` - Production hotfixes
-- `refactor/[refactor-description]` - Code refactoring
-- `docs/[documentation-update]` - Documentation updates
+**Working Branches:**
+- `feature/[description]` - New features and enhancements
+- `bugfix/[description]` - Bug fixes and patches
+- `hotfix/[description]` - Critical production fixes
+- `refactor/[description]` - Code refactoring
+- `docs/[description]` - Documentation updates
+- `test/[description]` - Test improvements
 
 ### Development Workflow
 
-1. **Feature Development:**
-   ```bash
-   git checkout main
-   git pull origin main
-   git checkout -b feature/new-detection-model
-   # ... make changes ...
-   git add .
-   git commit -m "Add spoofing detection model"
-   git push origin feature/new-detection-model
-   # Create PR to main
-   ```
+**Feature Development:**
+```bash
+git checkout main
+git pull origin main
+git checkout -b feature/new-spoofing-detection
+# ... implement feature ...
+git add .
+git commit -m "feat: Add spoofing pattern detection"
+git push origin feature/new-spoofing-detection
+# Create Pull Request
+```
 
-2. **Bug Fixes:**
-   ```bash
-   git checkout -b bugfix/fix-bayesian-inference
-   # ... fix bug ...
-   git push origin bugfix/fix-bayesian-inference
-   # Create PR to main
-   ```
+**Bug Fixes:**
+```bash
+git checkout -b bugfix/fix-bayesian-inference
+# ... fix issue ...
+git commit -m "fix: Correct probability calculation in Bayesian engine"
+git push origin bugfix/fix-bayesian-inference
+# Create Pull Request
+```
 
-3. **Hotfixes:**
-   ```bash
-   git checkout main
-   git checkout -b hotfix/critical-security-fix
-   # ... fix critical issue ...
-   git push origin hotfix/critical-security-fix
-   # Create PR to main with urgent label
-   ```
+**Hotfixes:**
+```bash
+git checkout main
+git checkout -b hotfix/critical-security-patch
+# ... apply fix ...
+git commit -m "hotfix: Patch security vulnerability in auth"
+git push origin hotfix/critical-security-patch
+# Create urgent Pull Request
+```
 
 ### Pull Request Process
 
-1. **Create PR** with descriptive title and description
-2. **Code Review** by team members
-3. **Tests** must pass (automated CI/CD)
-4. **Documentation** updated if needed
-5. **Merge** to main after approval
+1. **Create descriptive PR** with clear title and description
+2. **Automated checks** - CI/CD pipeline runs tests
+3. **Code review** - Team member review required
+4. **Documentation** - Update docs if API/behavior changes
+5. **Merge strategy** - Squash commits for clean history
 
-### Branch Cleanup
+### Current Branch Status
 
 **Active Branches:**
-- `main` - Keep (production)
-- `cursor/suggest-structural-improvements-without-disruption-4682` - Merge to main then delete
+- `main` - ✅ Keep (production baseline)
+- `cursor/update-readme-and-clean-up-branches-9f08` - 🔄 Current work
 
-**Branches to Clean Up:**
-- `cursor/confirm-task-completion-731a` - Delete (completed task)
-- `cursor/create-comprehensive-data-model-54a0` - Delete (integrated)
-- `cursor/write-complete-code-f9b6` - Delete (integrated)
-- `init/github-pr-bot-service` - Keep for reference or archive
+**Branches for Cleanup:**
+- `cursor/write-complete-code-f9b6` - ❌ Delete (work merged)
+- `init/github-pr-bot-service` - 📦 Archive (historical reference)
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start Guide
 
-### 1. Installation
+### 1. Clone and Setup
 
 ```bash
+# Clone repository
 git clone https://github.com/your-org/kor-ai-core.git
 cd kor-ai-core
 
 # Create virtual environment
 python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate  # Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
@@ -265,45 +328,46 @@ pip install -r requirements.txt
 # Copy environment template
 cp .env.example .env
 
-# Edit configuration as needed
-nano .env
+# Edit configuration
+nano .env  # or use your preferred editor
 ```
 
-### 3. Run the Server
+### 3. Run Application
 
 ```bash
-# Using the development script
+# Using development script (recommended)
 python scripts/development/run_server.py
 
-# Or run tests first
-python scripts/development/run_tests.py
-
-# Or directly
+# Or run directly
 python src/app.py
+
+# Or using Docker
+docker build -t kor-ai-core .
+docker run -p 5000:5000 kor-ai-core
 ```
 
-The server will start on `http://localhost:5000`
-
-### 4. Test the API
+### 4. Verify Installation
 
 ```bash
-# Run comprehensive tests
-python scripts/development/run_tests.py --mode all
+# Health check
+curl http://localhost:5000/health
 
-# Or test specific components
-python scripts/development/run_tests.py --mode unit
+# Run tests
+python scripts/development/run_tests.py
 ```
 
 ---
 
-## 📖 API Endpoints
+## 📖 API Reference
 
-### Health Check
+### Core Endpoints
+
+**Health Check**
 ```http
 GET /health
 ```
 
-### Analyze Trading Data
+**Risk Analysis**
 ```http
 POST /api/v1/analyze
 Content-Type: application/json
@@ -317,7 +381,7 @@ Content-Type: application/json
 }
 ```
 
-### Batch Analysis
+**Batch Processing**
 ```http
 POST /api/v1/analyze/batch
 Content-Type: application/json
@@ -334,7 +398,7 @@ Content-Type: application/json
 }
 ```
 
-### Real-time Analysis
+**Real-time Analysis**
 ```http
 POST /api/v1/analyze/realtime
 Content-Type: application/json
@@ -345,42 +409,67 @@ Content-Type: application/json
 }
 ```
 
-### Get Alert History
-```http
-GET /api/v1/alerts/history?limit=100&type=INSIDER_DEALING
+### Response Format
+
+```json
+{
+  "status": "success",
+  "data": {
+    "analysis_id": "uuid",
+    "risk_scores": {
+      "insider_dealing": {
+        "overall_score": 0.73,
+        "confidence": "High",
+        "contributing_factors": [...]
+      }
+    },
+    "evidence_sufficiency_index": 0.84,
+    "alerts": [...]
+  }
+}
 ```
 
 ---
 
-## ⚙️ Configuration Management
+## ⚙️ Configuration System
 
-The platform uses an advanced configuration system with environment-specific settings:
+### Configuration Files
 
-### Configuration Structure
 ```
 config/
 ├── base.json              # Base configuration
-├── development.json       # Development overrides  
+├── development.json       # Development overrides
 ├── production.json        # Production overrides
-├── testing.json          # Testing overrides
+├── testing.json          # Test configuration
 ├── models/                # Model configurations
 │   └── bayesian_models.json
-└── deployment/            # Deployment configurations
+└── deployment/            # Deployment settings
 ```
 
 ### Environment Variables
 
-Override configuration with environment variables:
+Configuration can be overridden via environment variables:
 
-- `ENVIRONMENT`: development/production/testing (default: development)
-- `DEBUG`: Enable debug mode
-- `PORT`: Server port (default: 5000)
-- `HOST`: Server host (default: 0.0.0.0)
-- `LOG_LEVEL`: Logging level (DEBUG/INFO/WARNING/ERROR)
-- `DATABASE_URL`: Database connection string
-- `REDIS_URL`: Redis connection string
-- `INSIDER_HIGH_THRESHOLD`: High risk threshold for insider dealing
-- `SPOOFING_HIGH_THRESHOLD`: High risk threshold for spoofing
+```bash
+# Core settings
+ENVIRONMENT=production
+DEBUG=false
+PORT=5000
+HOST=0.0.0.0
+
+# Database
+DATABASE_URL=postgresql://user:pass@host:5432/db
+
+# Redis
+REDIS_URL=redis://localhost:6379
+
+# Logging
+LOG_LEVEL=INFO
+
+# Model thresholds
+INSIDER_HIGH_THRESHOLD=0.7
+SPOOFING_HIGH_THRESHOLD=0.8
+```
 
 ### Configuration Usage
 
@@ -388,165 +477,160 @@ Override configuration with environment variables:
 from src.utils.config import ConfigManager
 
 config = ConfigManager()
-# Access configuration with dot notation
 db_host = config.get('database.host')
-# Environment-specific values
-debug_mode = config.get('debug', default=False)
+threshold = config.get('models.insider_dealing.high_threshold')
 ```
 
 ---
 
-## 🧠 Bayesian Models
+## � Testing Framework
 
-### Model Architecture
+### Test Structure
 
-The platform uses a sophisticated Bayesian inference system located in `src/models/bayesian/`:
-
-**Insider Dealing Model** (`src/models/bayesian/insider_dealing/`)
-- **Nodes**: MaterialInfo, TradingActivity, Timing, PriceImpact, Risk
-- **Features**: Access to material information, unusual trading patterns, suspicious timing
-- **Inference**: Variable elimination using pgmpy
-
-**Spoofing Model** (Future - `src/models/bayesian/spoofing/`)
-- **Nodes**: OrderPattern, CancellationRate, PriceMovement, VolumeRatio, Risk
-- **Features**: Layered orders, high cancellation rates, volume imbalances
-
-**Shared Components** (`src/models/bayesian/shared/`)
-- **Node Library**: Common node definitions and utilities
-- **Model Builder**: Framework for constructing Bayesian networks
-- **Fallback Logic**: Handling missing evidence
-
-### Model Registry
-
-```python
-from src.models.bayesian.registry import BayesianModelRegistry
-
-registry = BayesianModelRegistry()
-model = registry.get_model('insider_dealing')
-result = model.analyze(evidence)
 ```
-
----
-
-## 📊 Evidence Sufficiency Index (ESI)
-
-The Evidence Sufficiency Index (ESI) measures how well-supported risk scores are based on:
-
-- **Node Activation Ratio**: Proportion of active nodes in the Bayesian network
-- **Mean Confidence Score**: Average confidence level of inputs
-- **Fallback Ratio**: Proportion of nodes using fallback priors
-- **Contribution Entropy**: Distribution evenness of node contributions
-- **Cross-Cluster Diversity**: Evidence spread across node groups
-
-### ESI Integration
-
-```json
-{
-  "evidence_sufficiency_index": 0.84,
-  "esi_badge": "Strong",
-  "risk_scores": {
-    "insider_dealing": {
-      "overall_score": 0.73,
-      "confidence": "High"
-    }
-  }
-}
+tests/
+├── unit/                   # Fast, isolated tests
+├── integration/            # Component interaction tests
+├── e2e/                    # Full workflow tests
+├── performance/            # Load and stress tests
+├── fixtures/               # Test data and scenarios
+└── utils/                  # Test utilities
 ```
-
----
-
-## 🧪 Testing Framework
-
-### Test Organization
-
-**Unit Tests** (`tests/unit/`)
-- Individual component testing
-- Mock-based isolation
-- Fast execution
-
-**Integration Tests** (`tests/integration/`)
-- Component interaction testing
-- Database integration
-- API endpoint testing
-
-**End-to-End Tests** (`tests/e2e/`)
-- Full workflow testing
-- Real scenario simulation
-- Performance validation
-
-**Performance Tests** (`tests/performance/`)
-- Load testing
-- Memory usage analysis
-- Response time measurement
-
-### Test Utilities
-
-**Test Fixtures** (`tests/fixtures/`)
-- Sample data sets
-- Mock configurations
-- Test scenarios
-
-**Test Helpers** (`tests/utils/`)
-- Custom assertions
-- Data generators
-- Mock factories
 
 ### Running Tests
 
 ```bash
-# Run all tests
+# All tests
 python scripts/development/run_tests.py
 
-# Run specific test types
+# Specific test types
 python scripts/development/run_tests.py --mode unit
 python scripts/development/run_tests.py --mode integration
 python scripts/development/run_tests.py --mode e2e
 
-# Run with coverage
+# With coverage
 python scripts/development/run_tests.py --mode coverage
+
+# Performance tests
+python scripts/development/run_tests.py --mode performance
+```
+
+### Test Fixtures
+
+Located in `tests/fixtures/`:
+- `sample_request.json` - Example API request
+- `trader_profiles.json` - Test trader data
+- `market_events.json` - Sample market events
+- `expected_responses.json` - Expected analysis outputs
+
+---
+
+## 🔧 Development Tools
+
+### Code Quality
+
+```bash
+# Linting
+flake8 src/ tests/
+
+# Type checking
+mypy src/
+
+# Security scanning
+bandit -r src/
+
+# Dependency checking
+safety check
+```
+
+### Development Scripts
+
+```bash
+# Start development server
+python scripts/development/run_server.py
+
+# Run test suite
+python scripts/development/run_tests.py
+
+# Generate test data
+python scripts/development/generate_test_data.py
+
+# Database migrations
+python scripts/development/migrate_db.py
 ```
 
 ---
 
-## 📊 Monitoring & Logging
+## 📊 Monitoring & Observability
 
-**Structured Logging** (`src/utils/logger.py`)
-- JSON format for production
-- Environment-specific configuration
-- Multiple log levels and handlers
+### Logging
 
-**Configuration-Driven Logging**
-- File rotation and cleanup
-- Separate error logs
-- Performance metrics logging
+The application uses structured logging with JSON format in production:
 
-**Usage:**
 ```python
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
-logger.info("Risk analysis completed", extra={"risk_score": 0.85})
+logger.info("Analysis completed", extra={
+    "analysis_id": "123",
+    "risk_score": 0.85,
+    "duration_ms": 250
+})
+```
+
+### Metrics
+
+Key metrics to monitor:
+- Request latency and throughput
+- Analysis success/failure rates
+- Risk score distributions
+- Model performance metrics
+
+### Health Checks
+
+```bash
+# Application health
+curl http://localhost:5000/health
+
+# Database connectivity
+curl http://localhost:5000/health/db
+
+# Model status
+curl http://localhost:5000/health/models
 ```
 
 ---
 
 ## 🤝 Contributing
 
-1. **Fork** the repository
-2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
-3. **Follow** the coding standards and add tests
-4. **Update** documentation if needed
-5. **Commit** your changes (`git commit -m 'Add amazing feature'`)
-6. **Push** to the branch (`git push origin feature/amazing-feature`)
-7. **Create** a Pull Request with detailed description
+### Getting Started
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests and documentation
+5. Submit a pull request
 
 ### Code Standards
 
 - Follow PEP 8 for Python code
-- Add type hints where appropriate
-- Include docstrings for functions and classes
-- Write comprehensive tests
-- Update configuration if needed
+- Add type hints for new functions
+- Include docstrings for public APIs
+- Write tests for new functionality
+- Update documentation as needed
+
+### Development Setup
+
+```bash
+# Install development dependencies
+pip install -r requirements-dev.txt
+
+# Setup pre-commit hooks
+pre-commit install
+
+# Run quality checks
+python scripts/development/quality_check.py
+```
 
 ---
 
@@ -558,21 +642,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-For support and questions:
-- Create an issue on GitHub
-- Review the documentation in `docs/`
-- Check the development guides in `docs/development/`
-- Contact the development team
+For questions and support:
+- 📧 Create an issue on GitHub
+- 📖 Check the documentation in `docs/`
+- 💬 Contact the development team
 
 ---
 
-## 🔮 Roadmap
-
-- [ ] Enhanced ML models with deep learning
-- [ ] Real-time streaming data processing
-- [ ] Advanced visualization dashboard  
-- [ ] Integration with major trading platforms
-- [ ] Regulatory reporting automation
-- [ ] Multi-language support
-- [ ] Cloud-native deployment options
-- [ ] Advanced model explainability features
+*This README serves as your primary navigation guide for the Kor.ai surveillance platform. For detailed technical documentation, see the `docs/` directory.*
