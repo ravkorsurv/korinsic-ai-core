@@ -9,6 +9,10 @@ The Data Quality Sufficiency Index (DQSI) is a comprehensive, modular data quali
 ### Core Capabilities
 
 - **Multi-dimensional Quality Assessment**: Evaluates data across 6 standard quality dimensions
+- **Role-aware Assessment**: Tailored quality standards for producers vs consumers
+- **Comparison Type Support**: Multiple validation approaches (None, Reference Table, Golden Source, Cross-System, Trend)
+- **Sub-dimension Analysis**: Detailed breakdown with measurement and comparison types
+- **Quality Level Modes**: Foundational vs Enhanced assessment capabilities
 - **Configurable Scoring**: Customizable weights and thresholds for different use cases
 - **Flexible Data Input**: Supports DataFrames, dictionaries, lists, and various data formats
 - **Real-time Monitoring**: Time-series analysis and alerting capabilities
@@ -46,6 +50,61 @@ The Data Quality Sufficiency Index (DQSI) is a comprehensive, modular data quali
    - Data freshness and currency
    - Configurable age thresholds
    - Timestamp-based analysis
+
+### Role-Aware Quality Assessment
+
+The DQSI system supports role-aware quality assessment, allowing different quality standards based on whether the system is acting as a data producer or consumer, and the level of quality assurance required.
+
+#### Roles
+
+- **Producer**: Systems that generate or output data (e.g., alert generation systems, case management)
+  - Implements comprehensive quality checks including golden source validation
+  - Responsible for data accuracy and completeness at the source
+  - Enhanced quality standards with cross-system and trend-based validation
+
+- **Consumer**: Systems that receive and process data (e.g., downstream analysis, reporting)
+  - Focuses on foundational data quality for processing needs
+  - Emphasizes data completeness, validity, and timeliness
+  - Streamlined checks optimized for data consumption workflows
+
+#### Quality Levels
+
+- **Foundational**: Basic data quality checks essential for operations
+  - Core dimensions: Completeness, Validity, Timeliness
+  - Comparison types: None, Reference Table
+  - Suitable for most consumer applications
+
+- **Enhanced**: Comprehensive quality assessment for critical systems
+  - All dimensions: Completeness, Accuracy, Consistency, Validity, Uniqueness, Timeliness
+  - All comparison types: None, Reference Table, Golden Source, Cross-System, Trend
+  - Required for producer systems and critical data flows
+
+#### Comparison Types
+
+1. **None**: Basic profiling without external validation
+   - Consumer profiles only (count, shape, violations)
+   - No baseline comparison required
+   - Suitable for foundational quality checks
+
+2. **Reference Table**: Validation against static lookup tables
+   - Checked against predefined lists (e.g., valid desk codes, instrument types)
+   - Applicable when local reference data is available
+   - Common for data standardization checks
+
+3. **Golden Source**: Validation against authoritative system-of-record
+   - Compared with upstream master systems (e.g., FO platform, CRM)
+   - Highest level of accuracy validation
+   - Typically used by producer systems
+
+4. **Cross-System**: Consistency validation across multiple feeds
+   - Compared across different data sources for consistency
+   - Validates timestamps, trade IDs, and other cross-cutting data
+   - Important for data integration scenarios
+
+5. **Trend**: Historical comparison and anomaly detection
+   - Compared to rolling averages and historical patterns
+   - Detects volume anomalies, latency spikes, and quality degradation
+   - Useful for monitoring and alerting
 
 ## API Endpoints
 
@@ -91,14 +150,30 @@ Calculate DQSI score for a single dataset.
     "validity": 0.4
   },
   "enabled_dimensions": ["completeness", "accuracy", "validity"],
-  "include_recommendations": true
+  "include_recommendations": true,
+  "role_aware": true,
+  "role": "producer",
+  "quality_level": "enhanced",
+  "comparison_types": {
+    "completeness": {
+      "data_presence": "none",
+      "field_coverage": "reference_table",
+      "mandatory_fields": "golden_source"
+    },
+    "accuracy": {
+      "data_type": "none",
+      "format": "reference_table",
+      "cross_validation": "cross_system"
+    }
+  }
 }
 ```
 
-**Response:**
+**Response (Traditional):**
 ```json
 {
   "timestamp": "2024-01-01T10:00:00Z",
+  "calculation_type": "traditional",
   "dqsi_score": 0.85,
   "dimension_scores": {
     "completeness": 1.0,
@@ -106,26 +181,87 @@ Calculate DQSI score for a single dataset.
     "validity": 0.9
   },
   "status": "good",
-  "report": {
+  "recommendations": []
+}
+```
+
+**Response (Role-Aware Enhanced):**
+```json
+{
+  "success": true,
+  "calculation_type": "enhanced",
+  "role": "producer",
+  "quality_level": "enhanced",
+  "enhanced_results": {
     "overall_score": 0.85,
     "overall_status": "good",
+    "role": "producer",
+    "quality_level": "enhanced",
+    "role_aware": true,
+    "dimension_results": {
+      "completeness": {
+        "dimension": "completeness",
+        "overall_score": 1.0,
+        "sub_dimensions": [
+          {
+            "name": "data_presence",
+            "score": 1.0,
+            "comparison_type": "none",
+            "measurement_type": "presence_check",
+            "details": {"missing_count": 0}
+          },
+          {
+            "name": "field_coverage", 
+            "score": 0.95,
+            "comparison_type": "reference_table",
+            "measurement_type": "coverage_check",
+            "details": {"coverage_ratio": 0.95}
+          }
+        ],
+        "role": "producer",
+        "quality_level": "enhanced"
+      }
+    },
     "dimension_scores": {
       "completeness": 1.0,
       "accuracy": 0.8,
       "validity": 0.9
     },
-    "dimension_statuses": {
-      "completeness": "excellent",
-      "accuracy": "good",
-      "validity": "excellent"
-    },
     "weights_used": {
       "completeness": 0.3,
       "accuracy": 0.3,
       "validity": 0.4
-    }
+    },
+    "comparison_types_used": {
+      "completeness": {
+        "data_presence": "none",
+        "field_coverage": "reference_table"
+      }
+    },
+    "timestamp": "2024-01-01T10:00:00Z"
   },
-  "recommendations": []
+  "recommendations": [
+    {
+      "dimension": "accuracy",
+      "current_score": 0.8,
+      "target_score": 0.9,
+      "priority": "medium",
+      "role": "producer", 
+      "quality_level": "enhanced",
+      "suggestions": [
+        "Implement data validation rules with golden source validation"
+      ],
+      "sub_dimension_details": [
+        {
+          "name": "format",
+          "score": 0.75,
+          "comparison_type": "reference_table",
+          "measurement_type": "format_check"
+        }
+      ]
+    }
+  ],
+  "timestamp": "2024-01-01T10:00:00Z"
 }
 ```
 
@@ -401,6 +537,67 @@ dimension_configs = {
 
 # Calculate metrics
 metrics = dqsi.calculate_dqsi(data, dimension_configs)
+```
+
+### Role-Aware Configuration
+
+```python
+# Producer configuration (enhanced quality checks)
+producer_config = DQSIConfig(
+    role_aware=True,
+    role='producer',
+    quality_level='enhanced',
+    weights={
+        'completeness': 0.30,
+        'accuracy': 0.25,
+        'validity': 0.20,
+        'consistency': 0.15,
+        'uniqueness': 0.05,
+        'timeliness': 0.05
+    },
+    comparison_types={
+        'completeness': {
+            'data_presence': 'none',
+            'field_coverage': 'reference_table',
+            'mandatory_fields': 'golden_source'
+        },
+        'accuracy': {
+            'data_type': 'none',
+            'format': 'reference_table',
+            'cross_validation': 'cross_system'
+        }
+    }
+)
+
+# Consumer configuration (foundational checks)
+consumer_config = DQSIConfig(
+    role_aware=True,
+    role='consumer',
+    quality_level='foundational',
+    weights={
+        'completeness': 0.50,
+        'validity': 0.30,
+        'timeliness': 0.20
+    }
+)
+
+# Create calculators for both roles
+producer_dqsi = DataQualitySufficiencyIndex(producer_config)
+consumer_dqsi = DataQualitySufficiencyIndex(consumer_config)
+
+# Enhanced calculation with sub-dimensions
+producer_results = producer_dqsi.calculate_dqsi_enhanced(data, dimension_configs)
+consumer_results = consumer_dqsi.calculate_dqsi_enhanced(data, dimension_configs)
+
+# Access sub-dimension results
+for dim_name, dim_result in producer_results['dimension_results'].items():
+    print(f"\n{dim_name} Dimension:")
+    print(f"  Overall Score: {dim_result.overall_score:.3f}")
+    
+    for sub_dim in dim_result.sub_dimensions:
+        print(f"    {sub_dim.name}: {sub_dim.score:.3f}")
+        print(f"      Measurement: {sub_dim.measurement_type}")
+        print(f"      Comparison: {sub_dim.comparison_type}")
 ```
 
 ### Report Generation

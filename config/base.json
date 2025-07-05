@@ -59,6 +59,78 @@
       "uniqueness",
       "timeliness"
     ],
+    "role_aware": false,
+    "role": "consumer",
+    "quality_level": "foundational",
+    "comparison_types": {
+      "completeness": {
+        "data_presence": "none",
+        "field_coverage": "reference_table",
+        "mandatory_fields": "reference_table",
+        "cross_system_coverage": "cross_system"
+      },
+      "accuracy": {
+        "data_type": "none",
+        "format": "reference_table",
+        "range": "reference_table",
+        "business_rules": "golden_source",
+        "cross_validation": "cross_system"
+      },
+      "consistency": {
+        "format_consistency": "none",
+        "pattern_consistency": "none",
+        "cross_system": "cross_system",
+        "temporal_consistency": "trend",
+        "referential_integrity": "reference_table"
+      },
+      "validity": {
+        "format_check": "reference_table",
+        "constraint_check": "golden_source",
+        "business_rule_validation": "golden_source",
+        "regulatory_compliance": "golden_source",
+        "schema_validation": "reference_table"
+      },
+      "uniqueness": {
+        "duplicate_check": "none",
+        "primary_key_uniqueness": "none",
+        "cross_reference": "cross_system",
+        "fuzzy_duplicates": "none",
+        "business_key_uniqueness": "reference_table"
+      },
+      "timeliness": {
+        "freshness": "trend",
+        "availability": "none",
+        "latency": "cross_system",
+        "update_frequency": "trend",
+        "processing_time": "trend"
+      }
+    },
+    "role_profiles": {
+      "consumer": {
+        "foundational": {
+          "description": "Basic data quality checks for data consumers",
+          "dimensions": ["completeness", "validity", "timeliness"],
+          "comparison_types": ["none", "reference_table"]
+        },
+        "enhanced": {
+          "description": "Extended checks including cross-system validation",
+          "dimensions": ["completeness", "accuracy", "consistency", "validity", "uniqueness", "timeliness"],
+          "comparison_types": ["none", "reference_table", "cross_system", "trend"]
+        }
+      },
+      "producer": {
+        "foundational": {
+          "description": "Comprehensive checks for data producers",
+          "dimensions": ["completeness", "accuracy", "consistency", "validity", "uniqueness", "timeliness"],
+          "comparison_types": ["none", "reference_table", "golden_source"]
+        },
+        "enhanced": {
+          "description": "Full surveillance-grade quality assessment",
+          "dimensions": ["completeness", "accuracy", "consistency", "validity", "uniqueness", "timeliness"],
+          "comparison_types": ["none", "reference_table", "golden_source", "cross_system", "trend"]
+        }
+      }
+    },
     "alerting_thresholds": {
       "critical": 0.4,
       "warning": 0.6,
