@@ -254,6 +254,49 @@ class ErrorResponseSchema(BaseResponseSchema):
         return response
 
 
+class DQSIResponseSchema(BaseResponseSchema):
+    """Schema for DQSI response formatting."""
+    
+    def build_response(self, metrics=None, report=None, 
+                      recommendations=None, **kwargs) -> Dict[str, Any]:
+        """
+        Build DQSI response.
+        
+        Args:
+            metrics: DQSI metrics object
+            report: DQSI report
+            recommendations: Improvement recommendations
+            
+        Returns:
+            Formatted DQSI response
+        """
+        response = {
+            'timestamp': datetime.utcnow().isoformat(),
+            'dqsi_score': metrics.overall_score if metrics else 0.0,
+            'dimension_scores': metrics.dimension_scores if metrics else {},
+            'report': report or {},
+            'recommendations': recommendations or []
+        }
+        
+        if metrics:
+            response['status'] = self._get_status_from_score(metrics.overall_score)
+        
+        return response
+    
+    def _get_status_from_score(self, score: float) -> str:
+        """Get status label from score."""
+        if score >= 0.9:
+            return 'excellent'
+        elif score >= 0.8:
+            return 'good'
+        elif score >= 0.6:
+            return 'fair'
+        elif score >= 0.4:
+            return 'poor'
+        else:
+            return 'critical'
+
+
 class HealthResponseSchema(BaseResponseSchema):
     """Schema for health check response formatting."""
     
