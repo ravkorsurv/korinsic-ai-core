@@ -12,7 +12,7 @@ Main configuration file for Bayesian models including:
 - Probability distributions
 
 ### `bayesian_model_config_backup.json`
-Backup configuration file for Bayesian models.
+Backup of the original Bayesian model configuration file (preserved for reference).
 
 ## Configuration Structure
 
