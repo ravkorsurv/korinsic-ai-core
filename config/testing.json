@@ -1,0 +1,57 @@
+{
+  "extends": "base.json",
+  "environment": "testing",
+  "server": {
+    "debug": true,
+    "port": 5001
+  },
+  "logging": {
+    "level": "CRITICAL",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    "file_rotation": false
+  },
+  "models": {
+    "model_update_interval": 0,
+    "fallback_evidence_enabled": true,
+    "esi_enabled": true,
+    "latent_intent_enabled": true
+  },
+  "features": {
+    "real_time_processing": false,
+    "scenario_simulation": true
+  },
+  "security": {
+    "cors_origins": ["*"],
+    "rate_limiting": false,
+    "authentication": false
+  },
+  "performance": {
+    "request_timeout": 10,
+    "max_concurrent_requests": 10,
+    "cache_enabled": false,
+    "cache_ttl": 0
+  },
+  "alerts": {
+    "max_alerts_per_analysis": 5,
+    "storage_enabled": false
+  },
+  "database": {
+    "url": "sqlite:///:memory:",
+    "echo": false
+  },
+  "redis": {
+    "url": "redis://localhost:6379/15"
+  },
+  "risk_thresholds": {
+    "insider_dealing": {
+      "low": 0.2,
+      "medium": 0.5,
+      "high": 0.6
+    },
+    "spoofing": {
+      "low": 0.3,
+      "medium": 0.5,
+      "high": 0.7
+    }
+  }
+}
