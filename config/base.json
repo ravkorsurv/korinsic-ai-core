@@ -34,6 +34,37 @@
     "esi_enabled": true,
     "latent_intent_enabled": true
   },
+  "dqsi": {
+    "enabled": true,
+    "weights": {
+      "completeness": 0.25,
+      "accuracy": 0.20,
+      "consistency": 0.15,
+      "validity": 0.15,
+      "uniqueness": 0.15,
+      "timeliness": 0.10
+    },
+    "thresholds": {
+      "excellent": {"min": 0.9, "max": 1.0},
+      "good": {"min": 0.8, "max": 0.9},
+      "fair": {"min": 0.6, "max": 0.8},
+      "poor": {"min": 0.4, "max": 0.6},
+      "critical": {"min": 0.0, "max": 0.4}
+    },
+    "enabled_dimensions": [
+      "completeness",
+      "accuracy",
+      "consistency",
+      "validity",
+      "uniqueness",
+      "timeliness"
+    ],
+    "alerting_thresholds": {
+      "critical": 0.4,
+      "warning": 0.6,
+      "target": 0.8
+    }
+  },
   "logging": {
     "level": "INFO",
     "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
