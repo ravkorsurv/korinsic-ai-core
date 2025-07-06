@@ -1,0 +1,60 @@
+Sheet,A,B,C,D,E,F,G,H,I,J
+Raw_Data,KDE_Name,Risk_Level,Tier,Total_Records,Null_Records,Valid_Format,Valid_Range,Fresh_Records,Expected_Vol,Actual_Vol
+Raw_Data,trader_id,High,Foundational,10000,200,9700,,,,
+Raw_Data,trade_time,High,Foundational,10000,150,9800,9850,8500,,
+Raw_Data,notional,High,Foundational,10000,100,,9850,,,
+Raw_Data,quantity,Medium,Foundational,10000,300,,9600,,,
+Raw_Data,price,Medium,Foundational,10000,50,,9900,,,
+Raw_Data,instrument,Low,Foundational,10000,200,9500,,,,
+Raw_Data,synthetic_timeliness,High,Foundational,,,,,,, 
+Raw_Data,synthetic_coverage,High,Foundational,,,,,50000,48500
+Raw_Data,cross_system_accuracy,High,Enhanced,10000,0,,6500,,,
+Raw_Data,consistency_validation,Medium,Enhanced,10000,0,,7200,,,
+,,,,,,,,,,
+SubDim_Calc,KDE_Name,Null_Rate,Null_Score,Format_Rate,Format_Score,Range_Rate,Range_Score,Fresh_Rate,Fresh_Score,Dimensions_Count
+SubDim_Calc,trader_id,=Raw_Data!E2/Raw_Data!D2,=IF(B13=0,1,IF(B13<=0.02,0.95,IF(B13<=0.05,0.9,IF(B13<=0.1,0.8,IF(B13<=0.2,0.6,IF(B13<=0.5,0.3,0.1)))))),=IF(Raw_Data!F2="",0,Raw_Data!F2/(Raw_Data!D2-Raw_Data!E2)),=IF(D13=0,0,IF(D13>=0.98,1,IF(D13>=0.95,0.9,IF(D13>=0.85,0.8,IF(D13>=0.75,0.7,IF(D13>=0.6,0.5,IF(D13>=0.4,0.3,0.1))))))),=IF(Raw_Data!G2="",0,Raw_Data!G2/Raw_Data!D2),=IF(F13=0,0,IF(F13>=0.98,1,IF(F13>=0.95,0.9,IF(F13>=0.85,0.8,IF(F13>=0.75,0.7,IF(F13>=0.6,0.5,0.3)))))),=IF(Raw_Data!H2="",0,Raw_Data!H2/Raw_Data!D2),=IF(H13=0,0,IF(H13>=0.9,1,IF(H13>=0.7,0.8,IF(H13>=0.5,0.6,0.3)))),=COUNTIF(C13:I13,">0")
+SubDim_Calc,trade_time,=Raw_Data!E3/Raw_Data!D3,=IF(B14=0,1,IF(B14<=0.02,0.95,IF(B14<=0.05,0.9,IF(B14<=0.1,0.8,IF(B14<=0.2,0.6,IF(B14<=0.5,0.3,0.1)))))),=IF(Raw_Data!F3="",0,Raw_Data!F3/(Raw_Data!D3-Raw_Data!E3)),=IF(D14=0,0,IF(D14>=0.98,1,IF(D14>=0.95,0.9,IF(D14>=0.85,0.8,IF(D14>=0.75,0.7,IF(D14>=0.6,0.5,IF(D14>=0.4,0.3,0.1))))))),=IF(Raw_Data!G3="",0,Raw_Data!G3/Raw_Data!D3),=IF(F14=0,0,IF(F14>=0.98,1,IF(F14>=0.95,0.9,IF(F14>=0.85,0.8,IF(F14>=0.75,0.7,IF(F14>=0.6,0.5,0.3)))))),=IF(Raw_Data!H3="",0,Raw_Data!H3/Raw_Data!D3),=IF(H14=0,0,IF(H14>=0.9,1,IF(H14>=0.7,0.8,IF(H14>=0.5,0.6,0.3)))),=COUNTIF(C14:I14,">0")
+SubDim_Calc,notional,=Raw_Data!E4/Raw_Data!D4,=IF(B15=0,1,IF(B15<=0.02,0.95,IF(B15<=0.05,0.9,IF(B15<=0.1,0.8,IF(B15<=0.2,0.6,IF(B15<=0.5,0.3,0.1)))))),=IF(Raw_Data!F4="",0,Raw_Data!F4/(Raw_Data!D4-Raw_Data!E4)),=IF(D15=0,0,IF(D15>=0.98,1,IF(D15>=0.95,0.9,IF(D15>=0.85,0.8,IF(D15>=0.75,0.7,IF(D15>=0.6,0.5,IF(D15>=0.4,0.3,0.1))))))),=IF(Raw_Data!G4="",0,Raw_Data!G4/Raw_Data!D4),=IF(F15=0,0,IF(F15>=0.98,1,IF(F15>=0.95,0.9,IF(F15>=0.85,0.8,IF(F15>=0.75,0.7,IF(F15>=0.6,0.5,0.3)))))),=IF(Raw_Data!H4="",0,Raw_Data!H4/Raw_Data!D4),=IF(H15=0,0,IF(H15>=0.9,1,IF(H15>=0.7,0.8,IF(H15>=0.5,0.6,0.3)))),=COUNTIF(C15:I15,">0")
+SubDim_Calc,quantity,=Raw_Data!E5/Raw_Data!D5,=IF(B16=0,1,IF(B16<=0.02,0.95,IF(B16<=0.05,0.9,IF(B16<=0.1,0.8,IF(B16<=0.2,0.6,IF(B16<=0.5,0.3,0.1)))))),=IF(Raw_Data!F5="",0,Raw_Data!F5/(Raw_Data!D5-Raw_Data!E5)),=IF(D16=0,0,IF(D16>=0.98,1,IF(D16>=0.95,0.9,IF(D16>=0.85,0.8,IF(D16>=0.75,0.7,IF(D16>=0.6,0.5,IF(D16>=0.4,0.3,0.1))))))),=IF(Raw_Data!G5="",0,Raw_Data!G5/Raw_Data!D5),=IF(F16=0,0,IF(F16>=0.98,1,IF(F16>=0.95,0.9,IF(F16>=0.85,0.8,IF(F16>=0.75,0.7,IF(F16>=0.6,0.5,0.3)))))),=IF(Raw_Data!H5="",0,Raw_Data!H5/Raw_Data!D5),=IF(H16=0,0,IF(H16>=0.9,1,IF(H16>=0.7,0.8,IF(H16>=0.5,0.6,0.3)))),=COUNTIF(C16:I16,">0")
+SubDim_Calc,price,=Raw_Data!E6/Raw_Data!D6,=IF(B17=0,1,IF(B17<=0.02,0.95,IF(B17<=0.05,0.9,IF(B17<=0.1,0.8,IF(B17<=0.2,0.6,IF(B17<=0.5,0.3,0.1)))))),=IF(Raw_Data!F6="",0,Raw_Data!F6/(Raw_Data!D6-Raw_Data!E6)),=IF(D17=0,0,IF(D17>=0.98,1,IF(D17>=0.95,0.9,IF(D17>=0.85,0.8,IF(D17>=0.75,0.7,IF(D17>=0.6,0.5,IF(D17>=0.4,0.3,0.1))))))),=IF(Raw_Data!G6="",0,Raw_Data!G6/Raw_Data!D6),=IF(F17=0,0,IF(F17>=0.98,1,IF(F17>=0.95,0.9,IF(F17>=0.85,0.8,IF(F17>=0.75,0.7,IF(F17>=0.6,0.5,0.3)))))),=IF(Raw_Data!H6="",0,Raw_Data!H6/Raw_Data!D6),=IF(H17=0,0,IF(H17>=0.9,1,IF(H17>=0.7,0.8,IF(H17>=0.5,0.6,0.3)))),=COUNTIF(C17:I17,">0")
+SubDim_Calc,instrument,=Raw_Data!E7/Raw_Data!D7,=IF(B18=0,1,IF(B18<=0.02,0.95,IF(B18<=0.05,0.9,IF(B18<=0.1,0.8,IF(B18<=0.2,0.6,IF(B18<=0.5,0.3,0.1)))))),=IF(Raw_Data!F7="",0,Raw_Data!F7/(Raw_Data!D7-Raw_Data!E7)),=IF(D18=0,0,IF(D18>=0.98,1,IF(D18>=0.95,0.9,IF(D18>=0.85,0.8,IF(D18>=0.75,0.7,IF(D18>=0.6,0.5,IF(D18>=0.4,0.3,0.1))))))),=IF(Raw_Data!G7="",0,Raw_Data!G7/Raw_Data!D7),=IF(F18=0,0,IF(F18>=0.98,1,IF(F18>=0.95,0.9,IF(F18>=0.85,0.8,IF(F18>=0.75,0.7,IF(F18>=0.6,0.5,0.3)))))),=IF(Raw_Data!H7="",0,Raw_Data!H7/Raw_Data!D7),=IF(H18=0,0,IF(H18>=0.9,1,IF(H18>=0.7,0.8,IF(H18>=0.5,0.6,0.3)))),=COUNTIF(C18:I18,">0")
+SubDim_Calc,synthetic_timeliness,,,,,,,,0.783,1
+SubDim_Calc,synthetic_coverage,,,,,,,,,=((Raw_Data!J9/Raw_Data!I9)+(14/15))/2,1
+SubDim_Calc,cross_system_accuracy,=Raw_Data!E10/Raw_Data!D10,=IF(B21=0,1,IF(B21<=0.02,0.95,IF(B21<=0.05,0.9,IF(B21<=0.1,0.8,IF(B21<=0.2,0.6,IF(B21<=0.5,0.3,0.1)))))),=IF(Raw_Data!F10="",0,Raw_Data!F10/(Raw_Data!D10-Raw_Data!E10)),=IF(D21=0,0,IF(D21>=0.98,1,IF(D21>=0.95,0.9,IF(D21>=0.85,0.8,IF(D21>=0.75,0.7,IF(D21>=0.6,0.5,IF(D21>=0.4,0.3,0.1))))))),=IF(Raw_Data!G10="",0,Raw_Data!G10/Raw_Data!D10),=IF(F21=0,0,IF(F21>=0.98,1,IF(F21>=0.95,0.9,IF(F21>=0.85,0.8,IF(F21>=0.75,0.7,IF(F21>=0.6,0.5,0.3)))))),=IF(Raw_Data!H10="",0,Raw_Data!H10/Raw_Data!D10),=IF(H21=0,0,IF(H21>=0.9,1,IF(H21>=0.7,0.8,IF(H21>=0.5,0.6,0.3)))),=COUNTIF(C21:I21,">0")
+SubDim_Calc,consistency_validation,=Raw_Data!E11/Raw_Data!D11,=IF(B22=0,1,IF(B22<=0.02,0.95,IF(B22<=0.05,0.9,IF(B22<=0.1,0.8,IF(B22<=0.2,0.6,IF(B22<=0.5,0.3,0.1)))))),=IF(Raw_Data!F11="",0,Raw_Data!F11/(Raw_Data!D11-Raw_Data!E11)),=IF(D22=0,0,IF(D22>=0.98,1,IF(D22>=0.95,0.9,IF(D22>=0.85,0.8,IF(D22>=0.75,0.7,IF(D22>=0.6,0.5,IF(D22>=0.4,0.3,0.1))))))),=IF(Raw_Data!G11="",0,Raw_Data!G11/Raw_Data!D11),=IF(F22=0,0,IF(F22>=0.98,1,IF(F22>=0.95,0.9,IF(F22>=0.85,0.8,IF(F22>=0.75,0.7,IF(F22>=0.6,0.5,0.3)))))),=IF(Raw_Data!H11="",0,Raw_Data!H11/Raw_Data!D11),=IF(H22=0,0,IF(H22>=0.9,1,IF(H22>=0.7,0.8,IF(H22>=0.5,0.6,0.3)))),=COUNTIF(C22:I22,">0")
+,,,,,,,,,,
+KDE_Scores,KDE_Name,Completeness,Conformity,Timeliness,Coverage,Accuracy,Uniqueness,Consistency,KDE_Score
+KDE_Scores,trader_id,=IF(COUNTIF(SubDim_Calc!C13,SubDim_Calc!E13)=0,0,AVERAGE(SubDim_Calc!C13,SubDim_Calc!E13)),=IF(COUNTIF(SubDim_Calc!E13,SubDim_Calc!G13)=0,0,AVERAGE(SubDim_Calc!E13,SubDim_Calc!G13)),,,,,,=IF(SubDim_Calc!J13=0,0,(C26*1+D26*1)/SubDim_Calc!J13)
+KDE_Scores,trade_time,=IF(COUNTIF(SubDim_Calc!C14,SubDim_Calc!E14)=0,0,AVERAGE(SubDim_Calc!C14,SubDim_Calc!E14)),=IF(COUNTIF(SubDim_Calc!E14,SubDim_Calc!G14)=0,0,AVERAGE(SubDim_Calc!E14,SubDim_Calc!G14)),=SubDim_Calc!I14,,,,,=IF(SubDim_Calc!J14=0,0,(C27*1+D27*1+E27*1)/SubDim_Calc!J14)
+KDE_Scores,notional,=IF(COUNTIF(SubDim_Calc!C15,SubDim_Calc!E15)=0,0,AVERAGE(SubDim_Calc!C15,SubDim_Calc!E15)),,,,=SubDim_Calc!G15,,,=IF(SubDim_Calc!J15=0,0,(C28*1+G28*0.75)/(1+0.75))
+KDE_Scores,quantity,=IF(COUNTIF(SubDim_Calc!C16,SubDim_Calc!E16)=0,0,AVERAGE(SubDim_Calc!C16,SubDim_Calc!E16)),,,,,,=IF(SubDim_Calc!J16=0,0,C29*1)
+KDE_Scores,price,=IF(COUNTIF(SubDim_Calc!C17,SubDim_Calc!E17)=0,0,AVERAGE(SubDim_Calc!C17,SubDim_Calc!E17)),,,,=SubDim_Calc!G17,,,=IF(SubDim_Calc!J17=0,0,(C30*1+G30*0.75)/(1+0.75))
+KDE_Scores,instrument,=IF(COUNTIF(SubDim_Calc!C18,SubDim_Calc!E18)=0,0,AVERAGE(SubDim_Calc!C18,SubDim_Calc!E18)),=IF(COUNTIF(SubDim_Calc!E18,SubDim_Calc!G18)=0,0,AVERAGE(SubDim_Calc!E18,SubDim_Calc!G18)),,,,=SubDim_Calc!G18,,=IF(SubDim_Calc!J18=0,0,(C31*1+D31*1+H31*0.75)/(1+1+0.75))
+KDE_Scores,synthetic_timeliness,,,=SubDim_Calc!I19,,,,,=SubDim_Calc!I19
+KDE_Scores,synthetic_coverage,,,,=SubDim_Calc!I20,,,,=SubDim_Calc!I20
+KDE_Scores,cross_system_accuracy,=IF(COUNTIF(SubDim_Calc!C21,SubDim_Calc!E21)=0,0,AVERAGE(SubDim_Calc!C21,SubDim_Calc!E21)),,,,=SubDim_Calc!G21,,,=IF(SubDim_Calc!J21=0,0,(C34*1+G34*0.75)/(1+0.75))
+KDE_Scores,consistency_validation,=IF(COUNTIF(SubDim_Calc!C22,SubDim_Calc!E22)=0,0,AVERAGE(SubDim_Calc!C22,SubDim_Calc!E22)),,,,,=SubDim_Calc!G22,=IF(SubDim_Calc!J22=0,0,(C35*1+I35*0.75)/(1+0.75))
+,,,,,,,,,,
+Final_DQSI,KDE_Name,KDE_Score,Risk_Weight,Tier_Weight,Effective_Weight,Weighted_Contrib,Is_Critical,Expected_Result
+Final_DQSI,trader_id,=KDE_Scores!I26,=IF(Raw_Data!B2="High",3,IF(Raw_Data!B2="Medium",2,1)),=IF(Raw_Data!C2="Enhanced",0.75,1),=C39*D39,=B39*E39,TRUE,0.988
+Final_DQSI,trade_time,=KDE_Scores!I27,=IF(Raw_Data!B3="High",3,IF(Raw_Data!B3="Medium",2,1)),=IF(Raw_Data!C3="Enhanced",0.75,1),=C40*D40,=B40*E40,TRUE,0.853
+Final_DQSI,notional,=KDE_Scores!I28,=IF(Raw_Data!B4="High",3,IF(Raw_Data!B4="Medium",2,1)),=IF(Raw_Data!C4="Enhanced",0.75,1),=C41*D41,=B41*E41,TRUE,0.933
+Final_DQSI,quantity,=KDE_Scores!I29,=IF(Raw_Data!B5="High",3,IF(Raw_Data!B5="Medium",2,1)),=IF(Raw_Data!C5="Enhanced",0.75,1),=C42*D42,=B42*E42,FALSE,0.887
+Final_DQSI,price,=KDE_Scores!I30,=IF(Raw_Data!B6="High",3,IF(Raw_Data!B6="Medium",2,1)),=IF(Raw_Data!C6="Enhanced",0.75,1),=C43*D43,=B43*E43,FALSE,0.725
+Final_DQSI,instrument,=KDE_Scores!I31,=IF(Raw_Data!B7="High",3,IF(Raw_Data!B7="Medium",2,1)),=IF(Raw_Data!C7="Enhanced",0.75,1),=C44*D44,=B44*E44,FALSE,0.680
+Final_DQSI,synthetic_timeliness,=KDE_Scores!I32,=IF(Raw_Data!B8="High",3,IF(Raw_Data!B8="Medium",2,1)),=IF(Raw_Data!C8="Enhanced",0.75,1),=C45*D45,=B45*E45,TRUE,0.783
+Final_DQSI,synthetic_coverage,=KDE_Scores!I33,=IF(Raw_Data!B9="High",3,IF(Raw_Data!B9="Medium",2,1)),=IF(Raw_Data!C9="Enhanced",0.75,1),=C46*D46,=B46*E46,TRUE,0.950
+Final_DQSI,cross_system_accuracy,=KDE_Scores!I34,=IF(Raw_Data!B10="High",3,IF(Raw_Data!B10="Medium",2,1)),=IF(Raw_Data!C10="Enhanced",0.75,1),=C47*D47,=B47*E47,FALSE,0.650
+Final_DQSI,consistency_validation,=KDE_Scores!I35,=IF(Raw_Data!B11="High",3,IF(Raw_Data!B11="Medium",2,1)),=IF(Raw_Data!C11="Enhanced",0.75,1),=C48*D48,=B48*E48,FALSE,0.720
+,,,,,,,,,,
+Summary,Metric,Value,Formula,Interpretation,Target
+Summary,Total_Contribution,=SUM(Final_DQSI!F39:F48),=SUM(Final_DQSI!F39:F48),Sum of all weighted contributions,
+Summary,Total_Weight,=SUM(Final_DQSI!E39:E48),=SUM(Final_DQSI!E39:E48),Sum of all effective weights,
+Summary,Raw_DQSI_Score,=B51/B52,=Total_Contribution/Total_Weight,Raw DQSI before critical cap,
+Summary,Critical_KDE_Min,=MIN(IF(Final_DQSI!G39:G48=TRUE,Final_DQSI!B39:B48)),{=MIN(IF(Final_DQSI!G39:G48=TRUE,Final_DQSI!B39:B48))},Minimum critical KDE score,≥0.5
+Summary,Critical_KDE_Check,=IF(B54<0.5,"FAILED","PASSED"),=IF(Critical_KDE_Min<0.5,"FAILED","PASSED"),Critical KDE validation,PASSED
+Summary,Final_DQSI_Score,=IF(B55="FAILED",MIN(B53,0.75),B53),=IF(Critical_Check="FAILED",MIN(Raw_DQSI,0.75),Raw_DQSI),Final DQSI with cap applied,0.839
+Summary,DQSI_Percentage,=B56*100,=Final_DQSI_Score*100,DQSI as percentage,83.9%
+Summary,Quality_Status,=IF(B56>=0.8,"GOOD",IF(B56>=0.7,"ACCEPTABLE",IF(B56>=0.5,"POOR","CRITICAL"))),Quality interpretation based on score,GOOD rating,GOOD
+Summary,Confidence_Index,=0.9*0.95*0.925*IF(B55="FAILED",0.85,1),Base*Mode*Imputation*Critical factors,Confidence in DQSI score,79.1%
+Summary,Strategy_Used,Role-Aware Producer,7 dimensions / 17 sub-dimensions,Full validation framework,Producer
