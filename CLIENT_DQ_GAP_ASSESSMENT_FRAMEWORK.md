@@ -1,37 +1,83 @@
 # Client Data Quality Gap Assessment Framework
 
 ## 🎯 Overview
-This framework provides a structured approach to assess current data quality practices at client sites and implement the DQSI scoring system tailored to their specific environment.
+This framework provides a structured approach to assess current data quality practices at client sites and implement the DQSI scoring system tailored to their specific environment with **mixed-role support**.
 
 ## 📋 Phase 1: Current State Assessment
 
-### 1.1 Data Infrastructure Discovery
+### 1.1 Data Flow Discovery & Role Mapping
 **What to Assess:**
 - **Data Sources**: Trading systems, order management, settlement, reference data
 - **Data Flows**: Real-time feeds, batch processes, manual inputs
-- **System Architecture**: Producer vs consumer systems identification
+- **System Architecture**: **Mixed-role identification by data flow**
 - **Integration Points**: APIs, file transfers, databases, message queues
 
 **Key Questions:**
 ```
-• Which systems PRODUCE data (alerts, cases, trades)?
-• Which systems CONSUME data for processing?
+• Which data flows are CONSUMED (external sources)?
+• Which data flows are PRODUCED (internal generation)?
 • What are the critical data feeds and their SLAs?
 • Where do data quality issues typically occur?
 ```
 
-### 1.2 Existing DQ Practices Inventory
-**Current Capabilities Assessment:**
+### 1.2 Role-Based Data Flow Mapping
+**Mixed-Role Architecture Assessment:**
 
-| Area | Assessment Questions | DQSI Mapping |
-|------|---------------------|--------------|
-| **Completeness** | Do you check for missing fields? How? | null_presence, field_population |
-| **Conformity** | Do you validate data types and formats? | data_type, format, length, range |
-| **Timeliness** | Do you monitor data freshness/delays? | freshness, lag_detection |
-| **Coverage** | Do you track volume drops or gaps? | volume_profile, volume_reconciliation |
-| **Accuracy** | Do you validate against golden sources? | precision, value_accuracy |
-| **Uniqueness** | Do you check for duplicates? | duplicate_detection |
-| **Consistency** | Do you validate across systems? | internal_consistency, cross_system_consistency |
+| Data Flow Type | Role | Source/Destination | DQSI Strategy |
+|----------------|------|-------------------|---------------|
+| **Market Data** | Consumer | Bloomberg, Reuters, Exchange feeds | Consumer validation |
+| **Trading Data** | Consumer | OMS, Settlement systems | Consumer validation |
+| **Reference Data** | Consumer | Vendor feeds, master data | Consumer validation |
+| **Alert Data** | Producer | Surveillance system output | Producer validation |
+| **Case Data** | Producer | Compliance case management | Producer validation |
+| **Regulatory Reports** | Producer | Internal report generation | Producer validation |
+
+**Example Client Architecture:**
+```yaml
+# Mixed-Role Data Flow Configuration
+data_flows:
+  # CONSUMER FLOWS - Foundational dimensions focus
+  market_data:
+    role: consumer
+    source: "Bloomberg/Reuters"
+    dimensions: [completeness, conformity, timeliness, coverage]
+    
+  trading_data:
+    role: consumer  
+    source: "OMS/Settlement"
+    dimensions: [completeness, conformity, timeliness, coverage]
+    
+  reference_data:
+    role: consumer
+    source: "Vendor feeds"
+    dimensions: [completeness, conformity, timeliness, coverage]
+    
+  # PRODUCER FLOWS - Full 7 dimensions
+  surveillance_alerts:
+    role: producer
+    destination: "Case Management System"
+    dimensions: [completeness, conformity, timeliness, coverage, accuracy, uniqueness, consistency]
+    
+  compliance_cases:
+    role: producer
+    destination: "Regulatory Reporting"
+    dimensions: [completeness, conformity, timeliness, coverage, accuracy, uniqueness, consistency]
+    
+  regulatory_reports:
+    role: producer
+    destination: "External regulators"
+    dimensions: [completeness, conformity, timeliness, coverage, accuracy, uniqueness, consistency]
+```
+
+### 1.3 Existing DQ Practices Inventory
+**Current Capabilities Assessment by Data Flow:**
+
+| Data Flow | Current Capability | DQSI Mapping | Role-Specific Focus |
+|-----------|-------------------|--------------|-------------------|
+| **Market Data (Consumer)** | Basic feed monitoring | freshness, volume_profile | Input validation only |
+| **Trading Data (Consumer)** | ETL null checks | null_presence, data_type | Input validation only |
+| **Alert Data (Producer)** | Manual review | ALL sub-dimensions | Full validation required |
+| **Case Data (Producer)** | Workflow validation | ALL sub-dimensions | Full validation required |
 
 ### 1.3 Technology Stack Assessment
 **Current Tooling:**
@@ -49,98 +95,133 @@ This framework provides a structured approach to assess current data quality pra
 
 ## 📊 Phase 2: DQSI Configuration Elements
 
-### 2.1 KDE Identification & Risk Mapping
-**Client-Specific KDE Discovery:**
+### 2.1 KDE Identification & Role-Specific Risk Mapping
+**Data Flow-Specific KDE Discovery:**
 
 ```yaml
-# Example Client KDE Configuration
-kde_risk_tiers:
-  # High Risk (weight: 3) - Business Critical
-  trader_id: high
-  order_timestamp: high
-  client_id: high          # If client-facing
-  notional: high           # If high-value trading
-  
-  # Medium Risk (weight: 2) - Important
-  trade_time: medium
-  quantity: medium
-  price: medium
-  venue: medium            # If multi-venue
-  
-  # Low Risk (weight: 1) - Supporting
-  desk_id: low
-  instrument: low
-  settlement_date: low
-  
-  # Client-Specific KDEs
-  regulatory_flag: high    # If heavily regulated
-  counterparty: medium     # If counterparty risk focus
-  portfolio: low           # If portfolio tracking
+# Mixed-Role KDE Configuration
+kde_mappings:
+  # CONSUMER DATA FLOWS
+  market_data_flow:
+    role: consumer
+    kdes:
+      price: {risk: high, weight: 3, validation: input_only}
+      volume: {risk: medium, weight: 2, validation: input_only}
+      timestamp: {risk: high, weight: 3, validation: input_only}
+      
+  trading_data_flow:
+    role: consumer  
+    kdes:
+      trader_id: {risk: high, weight: 3, validation: input_only}
+      trade_time: {risk: high, weight: 3, validation: input_only}
+      notional: {risk: medium, weight: 2, validation: input_only}
+      
+  # PRODUCER DATA FLOWS  
+  alert_data_flow:
+    role: producer
+    kdes:
+      alert_id: {risk: high, weight: 3, validation: full_validation}
+      alert_type: {risk: high, weight: 3, validation: full_validation}
+      confidence_score: {risk: high, weight: 3, validation: full_validation}
+      trader_id: {risk: high, weight: 3, validation: full_validation}
+      
+  case_data_flow:
+    role: producer
+    kdes:
+      case_id: {risk: high, weight: 3, validation: full_validation}
+      case_status: {risk: high, weight: 3, validation: full_validation}
+      evidence_score: {risk: high, weight: 3, validation: full_validation}
+      related_alerts: {risk: medium, weight: 2, validation: full_validation}
 ```
 
-### 2.2 Strategy Selection Based on Client Profile
+### 2.2 Mixed-Role Strategy Configuration
 
-#### **Client Type Assessment:**
+#### **Client Type Assessment with Data Flow Granularity:**
 
-| Client Profile | Strategy | Rationale |
-|----------------|----------|-----------|
-| **Startup Trading Firm** | Fallback | Limited resources, basic compliance needs |
-| **Mid-Size Investment Bank** | Role-Aware (Consumer) | Some validation, foundational focus |
-| **Large Investment Bank** | Role-Aware (Producer) | Full validation, regulatory requirements |
-| **Regulatory Entity** | Role-Aware (Producer) | Maximum validation, audit trails |
+| Client Profile | Consumer Strategy | Producer Strategy | Implementation |
+|----------------|-------------------|-------------------|----------------|
+| **Startup Trading Firm** | Fallback | Role-Aware (Basic) | Limited producer capabilities |
+| **Mid-Size Investment Bank** | Role-Aware Consumer | Role-Aware Producer | Full mixed-role implementation |
+| **Large Investment Bank** | Role-Aware Consumer | Role-Aware Producer | Enhanced mixed-role implementation |
+| **Regulatory Entity** | Role-Aware Consumer | Role-Aware Producer | Maximum validation both roles |
 
-#### **Strategy Configuration:**
+#### **Mixed-Role Strategy Configuration:**
 
 ```python
-# Client Strategy Selection Logic
-def determine_client_strategy(client_profile):
-    factors = {
-        'firm_size': client_profile.get('employee_count', 0),
-        'trading_volume': client_profile.get('daily_volume', 0),
-        'regulatory_tier': client_profile.get('regulatory_level', 'basic'),
-        'it_maturity': client_profile.get('it_sophistication', 'basic'),
-        'budget': client_profile.get('dq_budget', 'low')
-    }
+# Mixed-Role Strategy Selection Logic
+def determine_mixed_role_strategy(client_profile, data_flows):
+    strategies = {}
     
-    if factors['regulatory_tier'] == 'tier1_bank':
-        return 'role_aware_producer'
-    elif factors['firm_size'] > 1000 or factors['trading_volume'] > 1e9:
-        return 'role_aware_consumer'  
-    else:
-        return 'fallback'
+    for flow_name, flow_config in data_flows.items():
+        if flow_config['role'] == 'consumer':
+            # Consumer strategy - foundational focus
+            strategies[flow_name] = {
+                'strategy': 'role_aware_consumer',
+                'dimensions': ['completeness', 'conformity', 'timeliness', 'coverage'],
+                'subdimensions': 9,
+                'validation_depth': 'input_validation'
+            }
+        elif flow_config['role'] == 'producer':
+            # Producer strategy - full validation
+            strategies[flow_name] = {
+                'strategy': 'role_aware_producer', 
+                'dimensions': ['completeness', 'conformity', 'timeliness', 'coverage', 
+                              'accuracy', 'uniqueness', 'consistency'],
+                'subdimensions': 17,
+                'validation_depth': 'full_validation'
+            }
+    
+    return strategies
 ```
 
-### 2.3 Sub-Dimension Customization
+### 2.3 Sub-Dimension Customization by Data Flow
 
-**Client-Specific Sub-Dimension Selection:**
+**Role-Specific Sub-Dimension Selection:**
 
 ```yaml
-# Example: High-Frequency Trading Firm
-sub_dimension_overrides:
-  timeliness:
-    # Ultra-low latency requirements
-    freshness_threshold: "100ms"  # vs standard "1hour"
-    lag_detection: enabled
-    
-  accuracy:
-    # Price precision critical
-    precision_decimals: 6
-    value_accuracy: enabled
-    
-  uniqueness:
-    # Duplicate trade detection critical
-    duplicate_detection: enhanced
-    cross_system_uniqueness: enabled
-
-# Example: Asset Manager
-sub_dimension_overrides:
+# Consumer Data Flows - Foundational Sub-Dimensions
+consumer_subdimensions:
   completeness:
-    # Portfolio data completeness critical
-    field_population: strict
-    
+    - null_presence
+    - field_population
+  conformity:
+    - data_type
+    - format
+    - length
+    - range
+  timeliness:
+    - freshness
+  coverage:
+    - volume_profile
+    - coverage_baseline
+
+# Producer Data Flows - Full Sub-Dimensions  
+producer_subdimensions:
+  completeness:
+    - null_presence
+    - field_population
+  conformity:
+    - data_type
+    - format
+    - length
+    - range
+  timeliness:
+    - freshness
+    - lag_detection
+  coverage:
+    - volume_profile
+    - volume_reconciliation
+    - coverage_baseline
+  accuracy:
+    - precision
+    - value_accuracy
+    - referential_accuracy
+  uniqueness:
+    - duplicate_detection
+    - cross_system_uniqueness
   consistency:
-    # Cross-system portfolio reconciliation
-    cross_system_consistency: daily
+    - internal_consistency
+    - cross_system_consistency
 ```
 
 ## 🔧 Phase 3: Scoring Calibration
@@ -283,65 +364,98 @@ client_config:
 
 ## 🎯 Phase 5: Gap Analysis Output
 
-### 5.1 Current State Scoring
+### 5.1 Current State Scoring by Data Flow
 
 **Before DQSI Implementation:**
-```
-Current Data Quality Maturity:
-  Completeness: 60% (Basic null checking only)
-  Conformity: 40% (Limited format validation)  
-  Timeliness: 30% (No systematic monitoring)
-  Coverage: 20% (Manual volume tracking)
-  Accuracy: 10% (No golden source validation)
-  Uniqueness: 0% (No duplicate detection)
-  Consistency: 0% (No cross-system validation)
-  
-Overall DQ Maturity: 23% (CRITICAL - Immediate action required)
+```yaml
+# Consumer Data Flows
+market_data_consumer:
+  completeness: 70% (Basic feed monitoring)
+  conformity: 50% (Limited format validation)
+  timeliness: 60% (Feed latency monitoring)
+  coverage: 40% (Manual volume tracking)
+  consumer_maturity: 55% (DEVELOPING)
+
+trading_data_consumer:
+  completeness: 65% (ETL null checking)
+  conformity: 45% (Basic type validation)
+  timeliness: 30% (No systematic monitoring)
+  coverage: 35% (Manual tracking)
+  consumer_maturity: 44% (POOR)
+
+# Producer Data Flows  
+alert_data_producer:
+  completeness: 40% (Manual validation)
+  conformity: 30% (Basic format checks)
+  timeliness: 20% (No SLA monitoring)
+  coverage: 25% (No volume tracking)
+  accuracy: 15% (No golden source validation)
+  uniqueness: 10% (No duplicate detection)
+  consistency: 5% (Manual reconciliation)
+  producer_maturity: 21% (CRITICAL)
+
+case_data_producer:
+  completeness: 50% (Workflow validation)
+  conformity: 35% (Basic format checks)
+  timeliness: 25% (Manual tracking)
+  coverage: 30% (Excel tracking)
+  accuracy: 20% (Periodic validation)
+  uniqueness: 15% (Basic duplicate checking)
+  consistency: 10% (Manual reconciliation)
+  producer_maturity: 26% (CRITICAL)
 ```
 
-### 5.2 Target State Definition
+### 5.2 Target State Definition by Role
 
-**After DQSI Implementation:**
-```
-Target Data Quality Maturity:
-  Foundational Dimensions: 85%+
-    - Completeness: 90% (Automated null detection + business rules)
-    - Conformity: 85% (Format validation + reference tables)
-    - Timeliness: 80% (Real-time freshness monitoring)
-    - Coverage: 85% (Automated volume reconciliation)
-    
-  Enhanced Dimensions: 75%+
-    - Accuracy: 80% (Golden source validation)
-    - Uniqueness: 75% (Duplicate detection)
-    - Consistency: 70% (Cross-system validation)
-    
-Overall Target DQ Maturity: 82% (GOOD - Continuous improvement)
+**After Mixed-Role DQSI Implementation:**
+```yaml
+# Consumer Data Flows Target
+consumer_targets:
+  foundational_dimensions: 85%+
+    - completeness: 90% (Automated null detection)
+    - conformity: 85% (Format validation + reference tables)
+    - timeliness: 80% (Real-time freshness monitoring)
+    - coverage: 85% (Automated volume monitoring)
+  consumer_overall_target: 85% (GOOD)
+
+# Producer Data Flows Target
+producer_targets:
+  foundational_dimensions: 90%+
+    - completeness: 95% (Comprehensive validation)
+    - conformity: 90% (Full format + reference validation)
+    - timeliness: 85% (Real-time SLA monitoring)
+    - coverage: 90% (Full volume reconciliation)
+  enhanced_dimensions: 80%+
+    - accuracy: 85% (Golden source validation)
+    - uniqueness: 80% (Full duplicate detection)
+    - consistency: 75% (Cross-system validation)
+  producer_overall_target: 86% (GOOD)
 ```
 
-### 5.3 Implementation Roadmap
+### 5.3 Mixed-Role Implementation Roadmap
 
-**Priority 1 (Months 1-3): Foundational**
+**Priority 1 (Months 1-3): Consumer Data Flows**
 ```
-• Implement fallback strategy
-• Basic KDE scoring
+• Implement consumer strategy for market/trading data
+• Basic KDE scoring for input validation
 • Completeness and conformity validation
-• Alert integration
+• Feed monitoring and alerting
 ```
 
-**Priority 2 (Months 4-6): Enhanced**
+**Priority 2 (Months 4-6): Producer Data Flows Foundation**
 ```
-• Upgrade to role-aware strategy
-• Timeliness and coverage monitoring
-• Reference data integration
-• Case management integration
+• Implement producer strategy for alert/case data
+• Enhanced KDE scoring
+• Foundational dimensions (completeness, conformity, timeliness, coverage)
+• Basic alert/case quality monitoring
 ```
 
-**Priority 3 (Months 7-12): Advanced**
+**Priority 3 (Months 7-12): Producer Data Flows Enhanced**
 ```
+• Full 7-dimension validation for produced data
 • Accuracy validation against golden sources
 • Cross-system consistency checking
-• Advanced analytics and trending
-• Full regulatory compliance
+• Full regulatory compliance for outputs
 ```
 
 ## 🔍 Phase 6: Ongoing Calibration
@@ -376,13 +490,13 @@ Overall Target DQ Maturity: 82% (GOOD - Continuous improvement)
 
 ---
 
-## 🎯 Key Takeaways for Client Engagements
+## 🎯 Key Takeaways for Mixed-Role Client Engagements
 
-1. **Start with Discovery**: Understand current state before implementing
-2. **Customize Configuration**: One-size-fits-all doesn't work for DQ
-3. **Calibrate to Reality**: Use client's historical data to set realistic thresholds
-4. **Phased Implementation**: Begin with fallback, evolve to role-aware
-5. **Business Alignment**: Weight dimensions based on client's business priorities
-6. **Continuous Improvement**: DQ frameworks require ongoing tuning and optimization
+1. **Map Data Flows First**: Understand which data flows are consumed vs produced
+2. **Role-Specific Strategy**: Apply consumer strategy to inputs, producer strategy to outputs
+3. **Differential Validation**: Lighter validation for consumed data, full validation for produced data
+4. **Phased Implementation**: Start with consumer flows, then enhance producer flows
+5. **Business Impact Focus**: Producer data quality directly impacts client reputation and compliance
+6. **Continuous Calibration**: Different calibration approaches for consumer vs producer data
 
-This framework provides a structured approach to implement DQSI effectively at any client site while ensuring the scoring reflects their specific business context and data quality maturity level.
+This framework recognizes that modern financial institutions operate in **mixed-role environments** where they must validate consumed data differently than produced data, ensuring appropriate data quality standards for each role while optimizing resource allocation.
