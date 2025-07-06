@@ -2,11 +2,79 @@
 
 ## Overview
 
+**UPDATE**: The new KDE-first framework has been implemented! This document now describes both the original 5-dimension system and the new comprehensive 2-tier, 7-dimension KDE-first framework.
+
 Based on the analysis of your Data Quality Sufficiency Index (DQSI) system, here are the comprehensive data quality dimensions and subdimensions that have been considered and implemented in your surveillance platform.
 
-## Primary DQ Dimensions
+## NEW: KDE-First Framework (v2.0) - **IMPLEMENTED**
 
-The DQSI system uses **5 primary data quality dimensions** with configurable weights:
+### 2-Tier Architecture
+
+**Tier 1 (Foundational)** - Weight: 1.0 - Basic ingestion health, model-agnostic
+- **Completeness** - null values, empty indicators  
+- **Coverage** - value, volume
+- **Conformity** - length, range, min/max
+- **Timeliness** - currency, latency, staleness, update frequency
+
+**Tier 2 (Enhanced)** - Weight: 0.75 - Analytical reliability, model-dependent
+- **Accuracy** - precision, validity
+- **Uniqueness** - duplicate detection, key violations
+- **Consistency** - internal, cross-reference, format, business rule consistency
+
+### KDE-First Scoring Formula
+
+```
+dqsi_score = sum(kde_score * risk_weight * tier_weight) / sum(risk_weight * tier_weight)
+```
+
+Where:
+- **Risk Weights**: High=3, Medium=2, Low=1
+- **Synthetic KDEs**: Always weight=3 (timeliness, coverage)
+- **Individual KDE Assessment**: Each KDE scored across applicable dimensions
+
+### Key Implementation Features
+
+✅ **Implemented Components**:
+- `KDEFirstDQCalculator` - Core calculator with 7-dimension scoring
+- `KDEFirstRoleAwareStrategy` - Role-based KDE scope filtering  
+- `config/dq_config.yaml` - Comprehensive configuration framework
+- `tests/demo/kde_first_demo.py` - Working demonstration
+- Risk-weighted aggregation with tier-based scoring
+- Coverage baseline calculations (30-day rolling)
+- Timeliness scoring with configurable buckets
+- Conformity rules (length, range, pattern validation)
+- Accuracy subdimensions (precision, validity)
+- Uniqueness detection framework
+- Consistency checking with golden source lookups
+- Role-aware KDE scope filtering
+- Legacy compatibility support
+
+### Coverage Scoring (Baseline Comparison)
+
+| Drop vs 30-day Baseline | Score |
+|-------------------------|-------|
+| 0-10% | 1.0 |
+| 10-20% | 0.9 |
+| 20-40% | 0.75 |
+| 40-60% | 0.5 |
+| >60% | 0.25 |
+| No baseline | 0.0 |
+
+### Timeliness Scoring (Delay Buckets)
+
+| Max Hours | Score |
+|-----------|--------|
+| 1 | 1.0 |
+| 6 | 0.9 |
+| 24 | 0.75 |
+| 48 | 0.6 |
+| ∞ | 0.3 |
+
+---
+
+## ORIGINAL: Legacy 5-Dimension Framework (v1.0)
+
+The DQSI system originally used **5 primary data quality dimensions** with configurable weights:
 
 ### 1. **Data Availability** (Weight: 30%)
 - **Definition**: Completeness of required data elements
@@ -54,6 +122,23 @@ The DQSI system uses **5 primary data quality dimensions** with configurable wei
   - Historical source performance
   - Source validation status
 
+---
+
+## Framework Comparison
+
+| **Aspect** | **Legacy (v1.0)** | **KDE-First (v2.0)** |
+|------------|------------------|---------------------|
+| **Approach** | Dimension averaging | KDE-first scoring |
+| **Dimensions** | 5 fixed dimensions | 7 dimensions, 2 tiers |
+| **Weighting** | Fixed dimension weights | Risk × Tier weighting |
+| **Granularity** | System-level average | Individual KDE assessment |
+| **Role Support** | Threshold adjustments | Scope filtering |
+| **Configuration** | Hardcoded weights | YAML-configurable |
+| **Coverage** | Basic presence check | Baseline comparison |
+| **Timeliness** | Simple consistency | Delay bucket scoring |
+| **Conformity** | Not explicitly assessed | Length/range/pattern rules |
+| **Industry Alignment** | Custom framework | DAMA-DMBOK aligned |
+
 ## DQSI Trust Bucket Categorization
 
 The system maps the weighted DQSI confidence index to human-readable trust categories:
@@ -68,21 +153,17 @@ The system maps the weighted DQSI confidence index to human-readable trust categ
 
 Different user roles have varying data quality requirements and risk tolerances:
 
-### Role-Specific Thresholds
+### Role-Specific KDE Scope (NEW in v2.0)
 
-| **Role** | **High Threshold** | **Moderate Threshold** | **Adjustment Factor** |
-|----------|-------------------|----------------------|---------------------|
-| Analyst | 0.85 | 0.65 | 1.0 (baseline) |
-| Senior Analyst | 0.87 | 0.67 | 0.98 |
-| Supervisor | 0.88 | 0.68 | 0.95 |
-| Compliance | 0.90 | 0.72 | 0.90 |
-| Auditor | 0.92 | 0.75 | 0.85 |
-| Trader | 0.83 | 0.63 | 1.05 |
-| Portfolio Manager | 0.87 | 0.67 | 0.96 |
-| Risk Manager | 0.89 | 0.70 | 0.92 |
-| Regulatory | 0.91 | 0.74 | 0.88 |
+| **Role** | **KDE Count** | **Critical KDEs** | **Risk Tolerance** |
+|----------|---------------|------------------|-------------------|
+| Analyst | 6 | trader_id, notional, trade_date | Moderate |
+| Trader | 11 | trader_id, notional, price, quantity | High |
+| Compliance | 13 | trader_id, notional, trade_date, counterparty | Low |
+| Auditor | 19 | All trading + HR + communication KDEs | Very Low |
+| Risk Manager | 11 | trader_id, notional, price, product_code | Low |
 
-### Role-Specific Quality Requirements
+### Role-Specific Requirements (v1.0 - Legacy)
 
 #### Compliance Officers
 - **Minimum Confidence**: 80%
@@ -102,94 +183,65 @@ Different user roles have varying data quality requirements and risk tolerances:
 - **Maximum Imputation Ratio**: 40%
 - **Minimum Data Availability**: 70%
 
-#### Analysts (Baseline)
-- **Minimum Confidence**: 60%
-- **Required KDE Coverage**: 70%
-- **Maximum Imputation Ratio**: 30%
-- **Minimum Data Availability**: 75%
+## Implementation Status
 
-## Quality Assessment Components
+### ✅ Completed (v2.0)
+- Core KDE-first calculator
+- 7-dimension scoring framework
+- 2-tier weighting system
+- Role-aware strategy with scope filtering
+- Configuration-driven setup
+- Comprehensive coverage and timeliness scoring
+- Conformity rule validation
+- Working demonstration and testing
 
-### Data Quality Components Output
-The system provides detailed breakdown of quality factors:
+### 🔄 Enhanced Features
+- Golden source consistency checking (Redis/DB integration)
+- Historical duplicate detection
+- Machine learning-optimized thresholds
+- Real-time baseline adjustment
+- Advanced temporal analysis
 
-```json
-{
-  "data_quality_components": {
-    "data_availability": 0.850,      // 85% data completeness
-    "imputation_ratio": 0.200,       // 20% of data imputed
-    "kde_coverage": 0.750,           // 75% KDE coverage
-    "temporal_consistency": 0.700,   // 70% temporal consistency
-    "source_reliability": 0.800      // 80% source reliability
-  }
-}
+### 📊 Usage Example
+
+```python
+from core.kde_first_role_aware_strategy import KDEFirstRoleAwareStrategy
+
+# Initialize strategy
+strategy = KDEFirstRoleAwareStrategy()
+
+# Calculate DQ score
+result = strategy.calculate_dq_score(
+    evidence={
+        'trader_id': 'TR123456',
+        'notional': 1500000.50,
+        'price': 102.75,
+        'trade_date': datetime.now()
+    },
+    baseline_data={'volume': 50, 'value': 75000000},
+    user_role='compliance'
+)
+
+print(f"DQSI Score: {result['dqsi_score']}")
+print(f"Trust Bucket: {result['dqsi_trust_bucket']}")
+print(f"Role Compliant: {result['role_validation']['compliant']}")
 ```
 
-### Quality Summary Metrics
-Additional metrics provided for comprehensive assessment:
+## Migration Path
 
-- **Total Data Points**: Count of all data elements
-- **Imputation Count**: Number of imputed data points
-- **Missing KDEs**: Count of missing Key Data Elements
-- **Reliability Score**: Human-readable reliability label (High/Medium/Low)
-
-## Implementation Strategies
-
-### 1. Standard DQSI Strategy
-- Uses all 5 dimensions with standard weights
-- Provides comprehensive quality assessment
-- Suitable for normal operating conditions
-
-### 2. Role-Aware Strategy
-- Applies role-specific adjustments to confidence thresholds
-- Customizes quality requirements based on user role
-- Ensures appropriate risk tolerance alignment
-
-### 3. Fallback Strategy
-- Conservative scoring for degraded conditions
-- Handles system failures gracefully
-- Always ensures trust bucket categorization
-
-## Quality Validation and Boundaries
-
-### Boundary Test Cases
-The system includes comprehensive testing for threshold boundaries:
-
-- **High Boundary**: 0.85 exactly maps to "High" trust bucket
-- **Moderate Boundary**: 0.65 exactly maps to "Moderate" trust bucket
-- **Edge Cases**: 0.0 (minimum) and 1.0 (maximum) handled correctly
-- **Precision**: All scores rounded to 3 decimal places
-
-### Validation Rules
-- Trust bucket values: `"High"`, `"Moderate"`, `"Low"` only
-- Confidence index range: [0.0, 1.0]
-- Component scores individually validated
-- Role adjustments capped at maximum 1.0
-
-## Future Enhancement Considerations
-
-### Potential Additional Dimensions
-Based on industry best practices, potential future dimensions could include:
-
-1. **Data Lineage Quality** - Traceability and audit trail completeness
-2. **Schema Compliance** - Adherence to expected data formats and structures
-3. **Business Rule Validity** - Compliance with business logic and constraints
-4. **Cross-Reference Integrity** - Consistency across related data sources
-5. **Regulatory Compliance Score** - Specific regulatory requirement fulfillment
-
-### Configuration Enhancements
-- **Configurable Weights**: YAML-based dimension weight configuration
-- **Custom Thresholds**: Organization-specific trust bucket boundaries
-- **Dynamic Adjustments**: Real-time threshold adjustment based on system conditions
-- **ML-Optimized Boundaries**: Machine learning-driven threshold optimization
+1. **Phase 1** ✅: Implement KDE-first framework alongside legacy system
+2. **Phase 2** 📋: Gradual migration with A/B testing
+3. **Phase 3** 📋: Full replacement with legacy fallback support
+4. **Phase 4** 📋: Remove legacy components
 
 ## Conclusion
 
-Your DQSI system implements a comprehensive 5-dimensional approach to data quality assessment with:
-- **Weighted scoring** across complementary quality aspects
-- **Role-aware adjustments** for different user requirements
-- **Human-readable categorization** through trust buckets
-- **Robust validation** and boundary testing
-- **Flexible strategies** for various operational conditions
+Your updated DQSI system now implements a comprehensive **KDE-first approach** with:
+- **Industry-aligned 7-dimension framework** following data quality best practices
+- **2-tier architecture** balancing foundational and enhanced quality aspects
+- **Risk-weighted scoring** that respects business criticality
+- **Role-aware assessments** providing relevant quality insights
+- **Configuration-driven flexibility** for different organizational needs
+- **Backward compatibility** ensuring smooth migration
 
-This framework provides a solid foundation for trustworthy data quality assessment in surveillance and risk management contexts.
+This framework provides a sophisticated, scalable foundation for trustworthy data quality assessment in surveillance and risk management contexts, representing a significant advancement over the original dimension-averaged approach.
