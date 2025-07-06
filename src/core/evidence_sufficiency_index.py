@@ -94,9 +94,15 @@ class EvidenceSufficiencyIndex:
             # Get active clusters
             active_clusters = self._get_active_clusters(node_states)
             
+            # Calculate DQSI confidence index (using ESI score as confidence measure)
+            dqsi_confidence_index = esi_score
+            dqsi_trust_bucket = self._get_dqsi_trust_bucket(dqsi_confidence_index)
+            
             result = {
                 'evidence_sufficiency_index': round(esi_score, 3),
                 'esi_badge': esi_badge,
+                'dqsi_confidence_index': round(dqsi_confidence_index, 3),
+                'dqsi_trust_bucket': dqsi_trust_bucket,
                 'node_count': len([n for n in node_states.values() if n != 'Unknown']),
                 'mean_confidence': self._get_confidence_label(mean_confidence_score),
                 'fallback_ratio': round(fallback_ratio, 3),
@@ -220,6 +226,23 @@ class EvidenceSufficiencyIndex:
         else:
             return "Concentrated"
     
+    def _get_dqsi_trust_bucket(self, confidence_index: float) -> str:
+        """
+        Get DQSI trust bucket based on confidence index.
+        
+        Args:
+            confidence_index: Confidence index value (0.0 to 1.0)
+            
+        Returns:
+            Trust bucket label: "High", "Moderate", or "Low"
+        """
+        if confidence_index >= 0.85:
+            return "High"
+        elif confidence_index >= 0.65:
+            return "Moderate"
+        else:
+            return "Low"
+    
     def _get_active_clusters(self, node_states: Dict[str, str]) -> List[str]:
         """Get list of active clusters."""
         active_clusters = set()
@@ -238,6 +261,8 @@ class EvidenceSufficiencyIndex:
         return {
             'evidence_sufficiency_index': 0.0,
             'esi_badge': 'Sparse',
+            'dqsi_confidence_index': 0.0,
+            'dqsi_trust_bucket': 'Low',
             'node_count': 0,
             'mean_confidence': 'Low',
             'fallback_ratio': 1.0,
