@@ -1,0 +1,128 @@
+{
+  "file_path": "sample_trading_data.csv",
+  "assessment_timestamp": "2025-07-06T21:47:54.683732",
+  "record_count": 100,
+  "kde_scores": {
+    "trader_id": 0.942857142857143,
+    "trade_time": 0.8400000000000001,
+    "notional": 0.9333333333333332,
+    "quantity": 0.9333333333333332,
+    "price": 1.0,
+    "instrument": 0.9000000000000002,
+    "desk_id": 0.842857142857143
+  },
+  "kde_details": {
+    "trader_id": {
+      "total_records": 100,
+      "null_count": 4,
+      "null_rate": 0.04,
+      "unique_count": 96,
+      "validations": [
+        "null_presence",
+        "format"
+      ],
+      "format_violations": 1,
+      "final_score": 0.942857142857143,
+      "sub_scores": {
+        "null_presence": 0.9,
+        "format": 1.0
+      }
+    },
+    "trade_time": {
+      "total_records": 100,
+      "null_count": 5,
+      "null_rate": 0.05,
+      "unique_count": 44,
+      "validations": [
+        "null_presence",
+        "freshness"
+      ],
+      "final_score": 0.8400000000000001,
+      "sub_scores": {
+        "null_presence": 0.9,
+        "freshness": 0.6
+      }
+    },
+    "notional": {
+      "total_records": 100,
+      "null_count": 4,
+      "null_rate": 0.04,
+      "unique_count": 96,
+      "validations": [
+        "null_presence",
+        "range"
+      ],
+      "final_score": 0.9333333333333332,
+      "sub_scores": {
+        "null_presence": 0.9,
+        "range": 1.0
+      }
+    },
+    "quantity": {
+      "total_records": 100,
+      "null_count": 3,
+      "null_rate": 0.03,
+      "unique_count": 97,
+      "validations": [
+        "null_presence",
+        "range"
+      ],
+      "final_score": 0.9333333333333332,
+      "sub_scores": {
+        "null_presence": 0.9,
+        "range": 1.0
+      }
+    },
+    "price": {
+      "total_records": 100,
+      "null_count": 0,
+      "null_rate": 0.0,
+      "unique_count": 100,
+      "validations": [
+        "null_presence",
+        "range"
+      ],
+      "final_score": 1.0,
+      "sub_scores": {
+        "null_presence": 1.0,
+        "range": 1.0
+      }
+    },
+    "instrument": {
+      "total_records": 100,
+      "null_count": 2,
+      "null_rate": 0.02,
+      "unique_count": 16,
+      "validations": [
+        "null_presence",
+        "format"
+      ],
+      "format_violations": 11,
+      "final_score": 0.9000000000000002,
+      "sub_scores": {
+        "null_presence": 0.9,
+        "format": 0.9
+      }
+    },
+    "desk_id": {
+      "total_records": 100,
+      "null_count": 6,
+      "null_rate": 0.06,
+      "unique_count": 5,
+      "validations": [
+        "null_presence",
+        "format"
+      ],
+      "format_violations": 14,
+      "final_score": 0.842857142857143,
+      "sub_scores": {
+        "null_presence": 0.8,
+        "format": 0.9
+      }
+    }
+  },
+  "overall_dqsi_score": 0.9172063492063494,
+  "critical_kdes": [],
+  "poor_kdes": [],
+  "quality_status": "GOOD"
+}
