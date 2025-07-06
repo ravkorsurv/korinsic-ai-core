@@ -2,156 +2,189 @@
 
 ## 🎯 **What You Get**
 
-A **complete toolkit** for assessing client data quality maturity and implementing tailored DQSI solutions:
+A **complete toolkit** for assessing client data quality maturity and implementing tailored DQSI solutions with **mixed-role support**:
 
 ### **1. Assessment Framework** (`CLIENT_DQ_GAP_ASSESSMENT_FRAMEWORK.md`)
 - **6-phase structured approach** from discovery to ongoing calibration
-- **Current state assessment** with scoring criteria for all 7 dimensions
+- **Mixed-role data flow mapping** (consumer vs producer by data flow)
 - **Client profiling** based on size, volume, regulatory requirements
-- **Strategy selection logic** (fallback vs role-aware consumer vs producer)
+- **Role-specific strategy selection** per data flow
 
-### **2. Practical Assessment Tool** (`scripts/client_gap_assessment_tool.py`)
-- **Interactive gap assessment** with scoring algorithms
-- **Client-specific KDE mapping** based on business focus
-- **Automatic configuration generation** with calibrated thresholds
-- **Implementation roadmap** with timelines and deliverables
+### **2. Mixed-Role Assessment Tool** (`scripts/client_gap_assessment_tool.py`)
+- **Data flow-specific gap assessment** with role-based scoring
+- **Granular KDE mapping** by data flow and role
+- **Differential configuration generation** with flow-specific thresholds
+- **Phased implementation roadmap** prioritizing consumer then producer flows
 
 ---
 
-## 🔍 **Key Elements to Configure for Client Scoring**
+## 🔍 **Key Mixed-Role Configuration Elements**
 
-Based on the framework, here are the **critical elements** you need to customize:
+The framework recognizes that clients operate **different roles simultaneously**:
 
-### **A. Client Profile Assessment**
+### **A. Data Flow Role Mapping**
 ```yaml
-# Discovery Questions & Scoring
-firm_size: 2500 employees → Score: 1.0 (Large)
-trading_volume: $5B/day → Score: 1.0 (High)
-regulatory_tier: tier2_bank → Score: 0.7 (Moderate)
-it_maturity: medium → Score: 0.6 (Capable)
-budget: medium → Score: 0.6 (Adequate)
+# Example: Investment Bank Mixed-Role Architecture
+data_flows:
+  # CONSUMER FLOWS - Input validation focus
+  market_data_feed:
+    role: consumer
+    source: "Bloomberg/Reuters"
+    dimensions: [completeness, conformity, timeliness, coverage]
+    
+  trading_data_feed:
+    role: consumer
+    source: "OMS/Settlement"
+    dimensions: [completeness, conformity, timeliness, coverage]
+    
+  # PRODUCER FLOWS - Full validation required
+  surveillance_alerts:
+    role: producer
+    destination: "Case Management System"
+    dimensions: [completeness, conformity, timeliness, coverage, accuracy, uniqueness, consistency]
+    
+  compliance_cases:
+    role: producer
+    destination: "Regulatory Reporting"
+    dimensions: [completeness, conformity, timeliness, coverage, accuracy, uniqueness, consistency]
 ```
 
-### **B. Current State Capability Scoring**
+### **B. Role-Specific Strategy Assignment**
 ```yaml
-# 7 Dimensions - Current Capability Assessment
-completeness: 
-  level: etl_validation → Score: 0.60 (60%)
-  
-conformity:
-  level: basic_format → Score: 0.20 (20%)
-  
-timeliness:
-  level: manual_monitoring → Score: 0.20 (20%)
-  
-coverage:
-  level: spreadsheet_monitoring → Score: 0.30 (30%)
-  
-accuracy:
-  level: manual_reconciliation → Score: 0.20 (20%)
-  
-uniqueness:
-  level: basic_duplicate_check → Score: 0.30 (30%)
-  
-consistency:
-  level: none → Score: 0.00 (0%)
+# Flow-Specific Strategies
+flow_strategies:
+  # Consumer flows: Foundational dimensions (4 dimensions, 9 sub-dimensions)
+  market_data_feed:
+    strategy: role_aware_consumer
+    subdimensions: 9
+    validation_depth: input_validation
+    comparison_types: [None, Reference Table]
+    
+  # Producer flows: Full validation (7 dimensions, 17 sub-dimensions)
+  surveillance_alerts:
+    strategy: role_aware_producer
+    subdimensions: 17
+    validation_depth: full_validation
+    comparison_types: [None, Reference Table, Golden Source, Cross-System, Trend]
 ```
 
-### **C. Strategy Selection Logic**
-```python
-# Weighted scoring determines strategy
-factors = {
-    'size_score': 1.0,      # Large firm
-    'volume_score': 1.0,    # High volume
-    'regulatory_score': 0.7, # Tier 2 bank
-    'maturity_score': 0.6,  # Medium IT
-    'budget_score': 0.6     # Medium budget
-}
-
-# Weights: regulatory=30%, size=20%, volume=20%, maturity=20%, budget=10%
-weighted_score = 0.78 → Strategy: role_aware_producer
+### **C. Flow-Specific KDE Mappings**
+```yaml
+# Consumer KDEs - Input validation only
+trading_data_feed:
+  trader_id: {risk: high, weight: 3, validation: input_only}
+  trade_time: {risk: high, weight: 3, validation: input_only}
+  notional: {risk: high, weight: 3, validation: input_only}
+  
+# Producer KDEs - Full validation required
+surveillance_alerts:
+  alert_id: {risk: high, weight: 3, validation: full_validation}
+  alert_type: {risk: high, weight: 3, validation: full_validation}
+  confidence_score: {risk: high, weight: 3, validation: full_validation}
 ```
 
-### **D. Client-Specific KDE Mapping**
+### **D. Differential Thresholds**
 ```yaml
-# Business Focus Adjustments
-client_services → client_id: high risk (weight: 3)
-risk_management → notional: high risk (weight: 3)
-high_frequency → trade_time: ultra-high (weight: 4)
-
-# Regulatory Adjustments  
-tier1_bank → regulatory_flag: high risk (weight: 3)
-```
-
-### **E. Sub-Dimension Activation**
-```yaml
-# Strategy-Based Enablement
-fallback: 5 sub-dimensions (basic profiling)
-role_aware_consumer: 9 sub-dimensions (foundational focus)
-role_aware_producer: 17 sub-dimensions (full validation)
-```
-
-### **F. Calibrated Thresholds**
-```yaml
-# Historical Data-Based Calibration
-baseline_null_rate: 12% → acceptable: 9.6%, good: 6.0%
-baseline_delay: 45min → acceptable: 31.5min, good: 13.5min
-baseline_volume_variance: 25% → alert: 37.5%
-
-# Business-Specific Adjustments
-high_frequency → delay_threshold: 100ms
-tier1_bank → null_rate_threshold: 1%
+# Consumer flow thresholds - More lenient
+trading_data_feed:
+  acceptable_null_rate: 0.15
+  acceptable_delay_minutes: 30
+  format_error_threshold: 0.10
+  
+# Producer flow thresholds - Strict validation
+surveillance_alerts:
+  acceptable_null_rate: 0.05
+  acceptable_delay_minutes: 10
+  format_error_threshold: 0.02
+  accuracy_threshold: 0.98
+  uniqueness_threshold: 0.98
 ```
 
 ---
 
-## 📊 **Practical Implementation Example**
+## 📊 **Practical Mixed-Role Example**
 
 ### **Client: MidTier Investment Bank**
-- **Profile**: 2,500 employees, $5B/day volume, Tier 2 bank
-- **Current Maturity**: 26% (CRITICAL)
-- **Strategy**: Role-Aware Producer
-- **KDEs**: 9 mapped with business-specific risk weights
-- **Sub-Dimensions**: 17 enabled (all foundational + enhanced)
-- **Roadmap**: 3-phase, 12-month implementation
+- **Consumer Flows**: market_data_feed, trading_data_feed, reference_data_feed
+- **Producer Flows**: surveillance_alerts, compliance_cases
+- **Mixed Assessment Results**:
+  - Consumer Flow Average: 40% maturity (POOR)
+  - Producer Flow Average: 41% maturity (POOR)
+  - **Focus**: Balanced improvement across both roles
 
-### **Generated Configuration**
+### **Generated Mixed-Role Configuration**
 ```yaml
-strategy: role_aware_producer
-kde_mappings:
-  trader_id: {risk: high, weight: 3}
-  trade_time: {risk: high, weight: 3}
-  notional: {risk: medium, weight: 2}
+mixed_role_configuration: true
+
+# Consumer flows get foundational validation
+market_data_feed:
+  strategy: role_aware_consumer
+  dimensions: [completeness, conformity, timeliness, coverage]
+  kde_count: 9
+  validation_depth: input_validation
   
-enabled_subdimensions:
-  - null_presence, field_population    # Completeness
-  - data_type, length, format, range   # Conformity
-  - freshness, lag_detection           # Timeliness
-  - volume_reconciliation              # Coverage
-  - precision, value_accuracy          # Accuracy
-  - duplicate_detection                # Uniqueness
-  - cross_system_consistency           # Consistency
-  
-thresholds:
-  critical_null_rate: 0.05
-  acceptable_delay_minutes: 15
-  volume_drop_alert: 0.30
+# Producer flows get full validation
+surveillance_alerts:
+  strategy: role_aware_producer
+  dimensions: [completeness, conformity, timeliness, coverage, accuracy, uniqueness, consistency]
+  kde_count: 15
+  validation_depth: full_validation
+
+# Phase 1: Consumer flows (1-3 months)
+# Phase 2: Producer foundation (4-6 months)  
+# Phase 3: Producer enhanced (7-12 months)
+# Phase 4: Optimization (13-18 months)
 ```
 
 ---
 
-## 🛠️ **How to Use This Framework**
+## 🛠️ **Mixed-Role Implementation Approach**
 
-1. **Discovery Interview**: Use the assessment tool to gather client profile
-2. **Current State Assessment**: Score their existing DQ capabilities
-3. **Strategy Selection**: Auto-determine appropriate DQSI strategy
-4. **Configuration Generation**: Create customized DQSI config
-5. **Implementation**: Follow the generated roadmap
-6. **Ongoing Calibration**: Continuously tune based on client feedback
+### **Phase 1 (Months 1-3): Consumer Data Flows**
+```
+• Implement consumer strategy for input data flows
+• Basic KDE scoring for input validation
+• Completeness and conformity validation
+• Feed monitoring and alerting
+```
 
-### **Key Files to Use**:
-- `CLIENT_DQ_GAP_ASSESSMENT_FRAMEWORK.md` - Complete methodology
-- `scripts/client_gap_assessment_tool.py` - Assessment automation
-- Generated config files - Ready-to-deploy DQSI configurations
+### **Phase 2 (Months 4-6): Producer Data Flows Foundation**
+```
+• Implement producer strategy for output data flows
+• Enhanced KDE scoring
+• Foundational dimensions (4 dimensions)
+• Basic output quality monitoring
+```
 
-This framework transforms the theoretical DQSI system into a **practical, client-specific implementation** that delivers meaningful data quality scores aligned with their business reality and technical capabilities.
+### **Phase 3 (Months 7-12): Producer Data Flows Enhanced**
+```
+• Full 7-dimension validation for produced data
+• Accuracy validation against golden sources
+• Cross-system consistency checking
+• Full regulatory compliance for outputs
+```
+
+### **Phase 4 (Months 13-18): Optimization and Integration**
+```
+• Cross-flow consistency validation
+• Performance optimization
+• Advanced analytics and trending
+• Continuous improvement framework
+```
+
+---
+
+## 🎯 **Key Mixed-Role Benefits**
+
+1. **Realistic Implementation**: Recognizes that clients have different validation needs for different data flows
+2. **Resource Optimization**: Lighter validation for consumed data, full validation for produced data
+3. **Phased Approach**: Start with consumer flows (lower risk), then enhance producer flows (higher risk)
+4. **Business Impact Focus**: Producer data quality directly impacts client reputation and regulatory compliance
+5. **Cost-Effective**: Avoids over-engineering consumer flows while ensuring producer flows meet regulatory standards
+
+### **Key Files for Mixed-Role Implementation**:
+- `CLIENT_DQ_GAP_ASSESSMENT_FRAMEWORK.md` - Complete mixed-role methodology
+- `scripts/client_gap_assessment_tool.py` - Mixed-role assessment automation
+- Generated mixed-role config files - Ready-to-deploy flow-specific DQSI configurations
+
+This framework transforms the theoretical DQSI system into a **practical, flow-specific implementation** that recognizes the reality of mixed-role financial institutions where different data flows require different validation approaches based on their role as consumer or producer of data.

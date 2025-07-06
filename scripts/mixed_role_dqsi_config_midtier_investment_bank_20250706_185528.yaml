@@ -1,0 +1,438 @@
+assessment_results:
+  assessment_date: '2025-07-06T18:55:28.000988'
+  flow_scores:
+    compliance_cases:
+      dimension_scores:
+        accuracy: 0.4
+        completeness: 1.0
+        conformity: 1.0
+        consistency: 0.3
+        coverage: 0.3
+        timeliness: 0.4
+        uniqueness: 0.6
+      flow_maturity: 0.5714285714285714
+      maturity_level: DEVELOPING
+    market_data_feed:
+      dimension_scores:
+        completeness: 0.3
+        conformity: 0.4
+        coverage: 0.6
+        timeliness: 0.7
+      flow_maturity: 0.5
+      maturity_level: DEVELOPING
+    reference_data_feed:
+      dimension_scores:
+        completeness: 0.3
+        conformity: 0.7
+        coverage: 0.1
+        timeliness: 0.4
+      flow_maturity: 0.375
+      maturity_level: POOR
+    surveillance_alerts:
+      dimension_scores:
+        accuracy: 0.2
+        completeness: 0.8
+        conformity: 0.2
+        consistency: 0.0
+        coverage: 0.1
+        timeliness: 0.2
+        uniqueness: 0.3
+      flow_maturity: 0.2571428571428572
+      maturity_level: CRITICAL
+    trading_data_feed:
+      dimension_scores:
+        completeness: 0.6
+        conformity: 0.2
+        coverage: 0.3
+        timeliness: 0.2
+      flow_maturity: 0.325
+      maturity_level: POOR
+client_info:
+  daily_volume: 5000000000.0
+  employee_count: 2500
+  industry: investment_banking
+  name: MidTier Investment Bank
+  regulatory_tier: tier2_bank
+configuration_date: '2025-07-06T18:55:28.001031'
+data_flows:
+  compliance_cases:
+    criticality: high
+    current_capability: basic
+    frequency: daily
+    role: producer
+    source_destination: Regulatory Reporting
+    type: case_data
+    volume: low
+  market_data_feed:
+    criticality: high
+    current_capability: basic
+    frequency: realtime
+    role: consumer
+    source_destination: Bloomberg/Reuters
+    type: market_data
+    volume: high
+  reference_data_feed:
+    criticality: medium
+    current_capability: basic
+    frequency: daily
+    role: consumer
+    source_destination: Vendor feeds
+    type: reference_data
+    volume: medium
+  surveillance_alerts:
+    criticality: high
+    current_capability: basic
+    frequency: realtime
+    role: producer
+    source_destination: Case Management System
+    type: alert_data
+    volume: medium
+  trading_data_feed:
+    criticality: high
+    current_capability: basic
+    frequency: realtime
+    role: consumer
+    source_destination: OMS/Settlement
+    type: trading_data
+    volume: high
+flow_strategies:
+  compliance_cases:
+    comparison_types:
+    - None
+    - Reference Table
+    - Golden Source
+    - Cross-System
+    - Trend
+    dimensions:
+    - completeness
+    - conformity
+    - timeliness
+    - coverage
+    - accuracy
+    - uniqueness
+    - consistency
+    enhanced_validation: true
+    kde_count: 15
+    strategy: role_aware_producer
+    subdimensions:
+    - null_presence
+    - field_population
+    - data_type
+    - length
+    - format
+    - range
+    - freshness
+    - lag_detection
+    - volume_reconciliation
+    - coverage_baseline
+    - precision
+    - value_accuracy
+    - referential_accuracy
+    - duplicate_detection
+    - cross_system_uniqueness
+    - internal_consistency
+    - cross_system_consistency
+    validation_depth: full_validation
+  market_data_feed:
+    comparison_types:
+    - None
+    - Reference Table
+    dimensions:
+    - completeness
+    - conformity
+    - timeliness
+    - coverage
+    enhanced_validation: true
+    kde_count: 9
+    strategy: role_aware_consumer
+    subdimensions:
+    - null_presence
+    - field_population
+    - data_type
+    - length
+    - format
+    - range
+    - freshness
+    - volume_profile
+    - coverage_baseline
+    validation_depth: input_validation
+  reference_data_feed:
+    comparison_types:
+    - None
+    - Reference Table
+    dimensions:
+    - completeness
+    - conformity
+    - timeliness
+    - coverage
+    kde_count: 6
+    strategy: role_aware_consumer
+    subdimensions:
+    - null_presence
+    - field_population
+    - data_type
+    - length
+    - format
+    - range
+    - freshness
+    - volume_profile
+    - coverage_baseline
+    validation_depth: input_validation
+  surveillance_alerts:
+    comparison_types:
+    - None
+    - Reference Table
+    - Golden Source
+    - Cross-System
+    - Trend
+    dimensions:
+    - completeness
+    - conformity
+    - timeliness
+    - coverage
+    - accuracy
+    - uniqueness
+    - consistency
+    enhanced_validation: true
+    kde_count: 15
+    strategy: role_aware_producer
+    subdimensions:
+    - null_presence
+    - field_population
+    - data_type
+    - length
+    - format
+    - range
+    - freshness
+    - lag_detection
+    - volume_reconciliation
+    - coverage_baseline
+    - precision
+    - value_accuracy
+    - referential_accuracy
+    - duplicate_detection
+    - cross_system_uniqueness
+    - internal_consistency
+    - cross_system_consistency
+    validation_depth: full_validation
+  trading_data_feed:
+    comparison_types:
+    - None
+    - Reference Table
+    dimensions:
+    - completeness
+    - conformity
+    - timeliness
+    - coverage
+    enhanced_validation: true
+    kde_count: 9
+    strategy: role_aware_consumer
+    subdimensions:
+    - null_presence
+    - field_population
+    - data_type
+    - length
+    - format
+    - range
+    - freshness
+    - volume_profile
+    - coverage_baseline
+    validation_depth: input_validation
+flow_thresholds:
+  compliance_cases:
+    acceptable_delay_minutes: 10
+    acceptable_null_rate: 0.05
+    accuracy_threshold: 0.95
+    consistency_threshold: 0.9
+    critical_delay_minutes: 30
+    critical_null_rate: 0.1
+    format_error_threshold: 0.02
+    uniqueness_threshold: 0.98
+    volume_drop_alert: 0.2
+  market_data_feed:
+    acceptable_delay_minutes: 5
+    acceptable_null_rate: 0.15
+    critical_delay_minutes: 15
+    critical_null_rate: 0.25
+    format_error_threshold: 0.1
+    volume_drop_alert: 0.4
+  reference_data_feed:
+    acceptable_delay_minutes: 30
+    acceptable_null_rate: 0.15
+    critical_delay_minutes: 120
+    critical_null_rate: 0.25
+    format_error_threshold: 0.1
+    volume_drop_alert: 0.4
+  surveillance_alerts:
+    acceptable_delay_minutes: 10
+    acceptable_null_rate: 0.05
+    accuracy_threshold: 0.98
+    consistency_threshold: 0.9
+    critical_delay_minutes: 30
+    critical_null_rate: 0.01
+    format_error_threshold: 0.02
+    uniqueness_threshold: 0.98
+    volume_drop_alert: 0.2
+  trading_data_feed:
+    acceptable_delay_minutes: 30
+    acceptable_null_rate: 0.15
+    critical_delay_minutes: 120
+    critical_null_rate: 0.25
+    format_error_threshold: 0.1
+    volume_drop_alert: 0.4
+implementation_roadmap:
+  Phase 1:
+    deliverables:
+    - 'Implement consumer strategy for: market_data_feed, trading_data_feed, reference_data_feed'
+    - Basic KDE scoring for input validation
+    - Completeness and conformity validation
+    - Feed monitoring and alerting
+    focus: Consumer Data Flows
+    timeline: 1-3 months
+  Phase 2:
+    deliverables:
+    - 'Implement producer strategy for: surveillance_alerts, compliance_cases'
+    - Enhanced KDE scoring
+    - Foundational dimensions (completeness, conformity, timeliness, coverage)
+    - Basic output quality monitoring
+    focus: Producer Data Flows Foundation
+    timeline: 4-6 months
+  Phase 3:
+    deliverables:
+    - Full 7-dimension validation for produced data
+    - Accuracy validation against golden sources
+    - Cross-system consistency checking
+    - Full regulatory compliance for outputs
+    focus: Producer Data Flows Enhanced
+    timeline: 7-12 months
+  Phase 4:
+    deliverables:
+    - Cross-flow consistency validation
+    - Performance optimization
+    - Advanced analytics and trending
+    - Continuous improvement framework
+    focus: Optimization and Integration
+    timeline: 13-18 months
+kde_mappings:
+  compliance_cases:
+    assigned_analyst:
+      risk: medium
+      validation: full_validation
+      weight: 2
+    case_id:
+      risk: high
+      validation: full_validation
+      weight: 3
+    case_priority:
+      risk: medium
+      validation: full_validation
+      weight: 2
+    case_status:
+      risk: high
+      validation: full_validation
+      weight: 3
+    evidence_score:
+      risk: high
+      validation: full_validation
+      weight: 3
+    related_alerts:
+      risk: medium
+      validation: full_validation
+      weight: 2
+    resolution_date:
+      risk: low
+      validation: full_validation
+      weight: 1
+  market_data_feed:
+    exchange:
+      risk: low
+      validation: input_only
+      weight: 1
+    price:
+      risk: high
+      validation: input_only
+      weight: 3
+    symbol:
+      risk: medium
+      validation: input_only
+      weight: 2
+    timestamp:
+      risk: high
+      validation: input_only
+      weight: 3
+    volume:
+      risk: medium
+      validation: input_only
+      weight: 2
+  reference_data_feed:
+    currency:
+      risk: medium
+      validation: input_only
+      weight: 2
+    isin:
+      risk: high
+      validation: input_only
+      weight: 3
+    sector:
+      risk: low
+      validation: input_only
+      weight: 1
+    symbol:
+      risk: high
+      validation: input_only
+      weight: 3
+  surveillance_alerts:
+    alert_id:
+      risk: high
+      validation: full_validation
+      weight: 3
+    alert_timestamp:
+      risk: high
+      validation: full_validation
+      weight: 3
+    alert_type:
+      risk: high
+      validation: full_validation
+      weight: 3
+    confidence_score:
+      risk: high
+      validation: full_validation
+      weight: 3
+    risk_score:
+      risk: medium
+      validation: full_validation
+      weight: 2
+    trade_ids:
+      risk: medium
+      validation: full_validation
+      weight: 2
+    trader_id:
+      risk: high
+      validation: full_validation
+      weight: 3
+  trading_data_feed:
+    instrument:
+      risk: low
+      validation: input_only
+      weight: 1
+    notional:
+      risk: high
+      validation: input_only
+      weight: 3
+    price:
+      risk: medium
+      validation: input_only
+      weight: 2
+    quantity:
+      risk: medium
+      validation: input_only
+      weight: 2
+    trade_time:
+      risk: high
+      validation: input_only
+      weight: 3
+    trader_id:
+      risk: high
+      validation: input_only
+      weight: 3
+mixed_role_configuration: true
