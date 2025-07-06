@@ -25,26 +25,91 @@ IF any Critical_KDE_Score < 0.5 THEN DQSI_Score = MIN(DQSI_Score, 0.75)
 
 ---
 
-## 🔢 **2. Individual KDE Score Calculation**
+## 🔢 **2. Seven-Dimensional DQSI Framework**
 
-### **Step 1: Sub-Dimension Scoring**
-Each KDE is assessed across multiple sub-dimensions:
-
+### **Dimensional Structure:**
 ```
-KDE_Score = Σ(SubDimension_Score × SubDimension_Weight) / Σ(SubDimension_Weight)
+FOUNDATIONAL TIER (4 dimensions):
+├── Completeness (5 sub-dimensions)
+├── Conformity (4 sub-dimensions)
+├── Timeliness (3 sub-dimensions)
+└── Coverage (2 sub-dimensions)
+
+ENHANCED TIER (3 dimensions):
+├── Accuracy (2 sub-dimensions)
+├── Uniqueness (1 sub-dimension)
+└── Consistency (1 sub-dimension)
+
+TOTAL: 7 dimensions, 17 sub-dimensions
 ```
 
-### **Sub-Dimension Weights:**
-- **Null Presence**: 30% (most critical)
-- **Format Validation**: 25%
-- **Range Validation**: 20%
-- **Freshness/Timeliness**: 15%
-- **Uniqueness**: 10%
+### **Step 1: Sub-Dimension Assessment**
+Each KDE is assessed across applicable sub-dimensions based on strategy:
 
-### **Step 2: Sub-Dimension Scoring Logic**
-
-#### **Null Presence Score:**
+#### **Completeness Dimension (5 sub-dimensions):**
 ```
+1. presence_check: null_rate scoring
+2. mandatory_field_check: required field validation
+3. conditional_completeness: business rule completeness
+4. record_completeness: complete record validation
+5. temporal_completeness: time-series completeness
+```
+
+#### **Conformity Dimension (4 sub-dimensions):**
+```
+1. format_check: regex pattern validation
+2. length_check: field length validation
+3. type_check: data type validation
+4. range_check: numeric/date range validation
+```
+
+#### **Timeliness Dimension (3 sub-dimensions):**
+```
+1. freshness_check: data recency validation
+2. currency_check: up-to-date validation
+3. temporal_consistency: time sequence validation
+```
+
+#### **Coverage Dimension (2 sub-dimensions):**
+```
+1. volume_check: expected volume validation
+2. scope_check: coverage completeness validation
+```
+
+#### **Accuracy Dimension (2 sub-dimensions):**
+```
+1. precision_check: decimal precision validation
+2. accuracy_check: golden source comparison
+```
+
+#### **Uniqueness Dimension (1 sub-dimension):**
+```
+1. duplicate_check: uniqueness validation
+```
+
+#### **Consistency Dimension (1 sub-dimension):**
+```
+1. consistency_check: cross-field consistency validation
+```
+
+### **Step 2: KDE Scoring Process**
+
+#### **Individual KDE Score Calculation:**
+```
+For each KDE:
+1. Identify applicable sub-dimensions based on strategy
+2. Score each applicable sub-dimension (0.0 to 1.0)
+3. Calculate dimension scores
+4. Weight by tier importance
+5. Apply risk weighting
+```
+
+#### **Sub-Dimension Scoring Examples:**
+
+**Presence Check (Completeness):**
+```
+null_rate = null_records / total_records
+
 Score = CASE
     WHEN null_rate = 0.00 THEN 1.0
     WHEN null_rate ≤ 0.02 THEN 0.95
@@ -56,9 +121,9 @@ Score = CASE
 END
 ```
 
-#### **Format Validation Score:**
+**Format Check (Conformity):**
 ```
-valid_rate = valid_records / total_non_null_records
+valid_rate = valid_format_records / total_non_null_records
 
 Score = CASE
     WHEN valid_rate ≥ 0.98 THEN 1.0
@@ -71,21 +136,7 @@ Score = CASE
 END
 ```
 
-#### **Range Validation Score:**
-```
-in_range_rate = records_in_valid_range / total_numeric_records
-
-Score = CASE
-    WHEN in_range_rate ≥ 0.98 THEN 1.0
-    WHEN in_range_rate ≥ 0.95 THEN 0.9
-    WHEN in_range_rate ≥ 0.85 THEN 0.8
-    WHEN in_range_rate ≥ 0.75 THEN 0.7
-    WHEN in_range_rate ≥ 0.60 THEN 0.5
-    ELSE 0.3
-END
-```
-
-#### **Freshness Score (for timestamps):**
+**Freshness Check (Timeliness):**
 ```
 Age Category Scoring:
 - Age ≤ 1 hour: 1.0
@@ -96,6 +147,44 @@ Age Category Scoring:
 - Age > 30 days: 0.1
 
 freshness_score = Σ(record_age_score) / total_records
+```
+
+**Volume Check (Coverage):**
+```
+expected_volume = historical_average_volume
+actual_volume = current_record_count
+volume_ratio = actual_volume / expected_volume
+
+Score = CASE
+    WHEN volume_ratio ≥ 0.95 AND volume_ratio ≤ 1.05 THEN 1.0
+    WHEN volume_ratio ≥ 0.90 AND volume_ratio ≤ 1.10 THEN 0.9
+    WHEN volume_ratio ≥ 0.80 AND volume_ratio ≤ 1.20 THEN 0.8
+    WHEN volume_ratio ≥ 0.70 AND volume_ratio ≤ 1.30 THEN 0.6
+    ELSE 0.3
+END
+```
+
+### **Step 3: Synthetic KDE Integration**
+
+#### **Synthetic Timeliness KDE:**
+```
+Synthetic_Timeliness_Score = Σ(timestamp_freshness_scores) / total_timestamp_fields
+
+Applied to: All data flows with timestamp fields
+Risk Weight: High (3)
+Tier Weight: Foundational (1.0)
+```
+
+#### **Synthetic Coverage KDE:**
+```
+Synthetic_Coverage_Score = (volume_score + scope_score) / 2
+
+volume_score = current_volume / expected_volume (capped at 1.0)
+scope_score = covered_entities / total_expected_entities
+
+Applied to: All data flows
+Risk Weight: High (3)
+Tier Weight: Foundational (1.0)
 ```
 
 ---
@@ -109,70 +198,196 @@ freshness_score = Σ(record_age_score) / total_records
 - **Expected Format**: `^[A-Z]{3}[0-9]{4}$`
 - **Risk Level**: High (Weight = 3)
 - **Tier**: Foundational (Weight = 1.0)
+- **Strategy**: Role-Aware Producer (all 7 dimensions active)
 
 ### **Step-by-Step Calculation:**
 
-#### **Step 1: Sub-Dimension Scores**
+#### **Step 1: Dimensional Assessment**
 ```
-Null Presence Score:
-null_rate = 200/10,000 = 0.02 = 2%
-Since null_rate ≤ 0.02, Score = 0.95
+COMPLETENESS DIMENSION:
+├── presence_check: null_rate = 2% → Score = 0.95
+├── mandatory_field_check: required field → Score = 1.0
+├── conditional_completeness: N/A (no business rules)
+├── record_completeness: N/A (single field)
+└── temporal_completeness: N/A (not time-series)
+Completeness Score = (0.95 + 1.0) / 2 = 0.975
 
-Format Validation Score:
-valid_rate = 9,700/9,800 = 0.99 = 99%
-Since valid_rate ≥ 0.98, Score = 1.0
+CONFORMITY DIMENSION:
+├── format_check: 99% valid → Score = 1.0
+├── length_check: all 7 chars → Score = 1.0  
+├── type_check: all strings → Score = 1.0
+└── range_check: N/A (string field)
+Conformity Score = (1.0 + 1.0 + 1.0) / 3 = 1.0
 
-Range Validation: N/A (string field)
-Freshness: N/A (not timestamp)
-Uniqueness: N/A (not required to be unique)
+TIMELINESS DIMENSION:
+├── freshness_check: N/A (not timestamp)
+├── currency_check: N/A (not timestamp)
+└── temporal_consistency: N/A (not timestamp)
+Timeliness Score = N/A (not applicable)
+
+COVERAGE DIMENSION:
+├── volume_check: N/A (field-level KDE)
+└── scope_check: N/A (field-level KDE)
+Coverage Score = N/A (not applicable)
+
+ACCURACY DIMENSION:
+├── precision_check: N/A (string field)
+└── accuracy_check: N/A (no golden source)
+Accuracy Score = N/A (not applicable)
+
+UNIQUENESS DIMENSION:
+├── duplicate_check: N/A (not required unique)
+Uniqueness Score = N/A (not applicable)
+
+CONSISTENCY DIMENSION:
+├── consistency_check: N/A (single field)
+Consistency Score = N/A (not applicable)
 ```
 
-#### **Step 2: Weighted KDE Score**
+#### **Step 2: KDE Score Aggregation**
 ```
-KDE_Score = (0.95 × 0.30) + (1.0 × 0.25) + (0 × 0.20) + (0 × 0.15) + (0 × 0.10)
-          = 0.285 + 0.25 + 0 + 0 + 0
-          = 0.535
+Applied Dimensions: Completeness, Conformity
+Tier Weights: Both Foundational (1.0)
 
-Normalized for applied weights:
-KDE_Score = 0.535 / (0.30 + 0.25) = 0.535 / 0.55 = 0.973
+KDE_Score = (Completeness_Score × 1.0) + (Conformity_Score × 1.0) / 2
+          = (0.975 × 1.0) + (1.0 × 1.0) / 2
+          = 1.975 / 2
+          = 0.988
 ```
 
 #### **Step 3: Risk-Weighted Contribution**
 ```
 Contribution = KDE_Score × Risk_Weight × Tier_Weight
-             = 0.973 × 3 × 1.0
-             = 2.919
+             = 0.988 × 3 × 1.0
+             = 2.964
+```
+
+### **Synthetic KDE Examples:**
+
+#### **Synthetic Timeliness KDE:**
+```
+Data Flow: trading_data_feed
+Timestamp Fields: [trade_time, settlement_time, booking_time]
+
+trade_time freshness: 0.85 (avg 2 hours old)
+settlement_time freshness: 0.60 (avg 1 day old)  
+booking_time freshness: 0.90 (avg 1 hour old)
+
+Synthetic_Timeliness_Score = (0.85 + 0.60 + 0.90) / 3 = 0.783
+
+Risk Weight: High (3)
+Tier Weight: Foundational (1.0)
+Contribution: 0.783 × 3 × 1.0 = 2.349
+```
+
+#### **Synthetic Coverage KDE:**
+```
+Data Flow: trading_data_feed
+Expected Volume: 50,000 records/day
+Actual Volume: 48,500 records/day
+Volume Ratio: 48,500/50,000 = 0.97
+
+Expected Scope: 15 trading desks
+Actual Scope: 14 trading desks  
+Scope Ratio: 14/15 = 0.93
+
+volume_score = 0.97 → Score = 1.0 (within 95-105% range)
+scope_score = 0.93 → Score = 0.9 (within 90-110% range)
+
+Synthetic_Coverage_Score = (1.0 + 0.9) / 2 = 0.95
+
+Risk Weight: High (3)  
+Tier Weight: Foundational (1.0)
+Contribution: 0.95 × 3 × 1.0 = 2.85
 ```
 
 ---
 
 ## 🎯 **4. Complete DQSI Example**
 
-### **Sample Portfolio Assessment:**
-| KDE | Score | Risk | Tier | Weight | Contribution |
-|-----|-------|------|------|--------|-------------|
-| trader_id | 0.973 | High (3) | Found (1.0) | 3.0 | 2.919 |
-| trade_time | 0.840 | High (3) | Found (1.0) | 3.0 | 2.520 |
-| notional | 0.933 | High (3) | Found (1.0) | 3.0 | 2.799 |
-| quantity | 0.887 | Med (2) | Found (1.0) | 2.0 | 1.774 |
-| accuracy_score | 0.650 | High (3) | Enh (0.75) | 2.25 | 1.463 |
-| consistency_score | 0.720 | Med (2) | Enh (0.75) | 1.5 | 1.080 |
+### **Sample Data Flow Assessment: trading_data_feed**
+
+#### **Regular KDEs:**
+| KDE | Dimensions Applied | Score | Risk | Tier | Weight | Contribution |
+|-----|-------------------|-------|------|------|--------|-------------|
+| trader_id | Completeness, Conformity | 0.988 | High (3) | Found (1.0) | 3.0 | 2.964 |
+| trade_time | Completeness, Conformity, Timeliness | 0.840 | High (3) | Found (1.0) | 3.0 | 2.520 |
+| notional | Completeness, Conformity, Accuracy | 0.933 | High (3) | Found (1.0) | 3.0 | 2.799 |
+| quantity | Completeness, Conformity | 0.887 | Med (2) | Found (1.0) | 2.0 | 1.774 |
+| price | Completeness, Conformity, Accuracy | 0.725 | Med (2) | Found (1.0) | 2.0 | 1.450 |
+| instrument | Completeness, Conformity, Uniqueness | 0.680 | Low (1) | Found (1.0) | 1.0 | 0.680 |
+
+#### **Synthetic KDEs:**
+| KDE | Dimensions Applied | Score | Risk | Tier | Weight | Contribution |
+|-----|-------------------|-------|------|------|--------|-------------|
+| synthetic_timeliness | Timeliness (all timestamp fields) | 0.783 | High (3) | Found (1.0) | 3.0 | 2.349 |
+| synthetic_coverage | Coverage (volume + scope) | 0.950 | High (3) | Found (1.0) | 3.0 | 2.850 |
+
+#### **Enhanced Tier KDEs (Role-Aware Producer only):**
+| KDE | Dimensions Applied | Score | Risk | Tier | Weight | Contribution |
+|-----|-------------------|-------|------|------|--------|-------------|
+| cross_system_accuracy | Accuracy (golden source) | 0.650 | High (3) | Enh (0.75) | 2.25 | 1.463 |
+| consistency_validation | Consistency (cross-field) | 0.720 | Med (2) | Enh (0.75) | 1.5 | 1.080 |
+
+### **Dimensional Breakdown:**
+```
+FOUNDATIONAL TIER (Applied to all strategies):
+├── Completeness: 6 KDEs assessed
+├── Conformity: 6 KDEs assessed  
+├── Timeliness: 1 synthetic KDE + 1 timestamp KDE
+└── Coverage: 1 synthetic KDE
+
+ENHANCED TIER (Role-Aware Producer only):
+├── Accuracy: 2 KDEs assessed + 1 synthetic
+├── Uniqueness: 1 KDE assessed
+└── Consistency: 1 KDE assessed
+```
 
 ### **Final DQSI Calculation:**
 ```
-Total_Contribution = 2.919 + 2.520 + 2.799 + 1.774 + 1.463 + 1.080 = 12.555
-Total_Weight = 3.0 + 3.0 + 3.0 + 2.0 + 2.25 + 1.5 = 14.75
+Regular KDEs Contribution = 2.964 + 2.520 + 2.799 + 1.774 + 1.450 + 0.680 = 12.187
+Synthetic KDEs Contribution = 2.349 + 2.850 = 5.199
+Enhanced KDEs Contribution = 1.463 + 1.080 = 2.543
 
-DQSI_Score = 12.555 / 14.75 = 0.851
+Total_Contribution = 12.187 + 5.199 + 2.543 = 19.929
+
+Regular KDEs Weight = 3.0 + 3.0 + 3.0 + 2.0 + 2.0 + 1.0 = 14.0
+Synthetic KDEs Weight = 3.0 + 3.0 = 6.0
+Enhanced KDEs Weight = 2.25 + 1.5 = 3.75
+
+Total_Weight = 14.0 + 6.0 + 3.75 = 23.75
+
+DQSI_Score = 19.929 / 23.75 = 0.839
 ```
 
 ### **Critical KDE Check:**
 ```
-Critical KDEs: trader_id, trade_time, notional
-Minimum Critical Score: MIN(0.973, 0.840, 0.933) = 0.840
+Critical KDEs: trader_id, trade_time, notional, synthetic_timeliness, synthetic_coverage
+Minimum Critical Score: MIN(0.988, 0.840, 0.933, 0.783, 0.950) = 0.783
 
-Since 0.840 ≥ 0.5, no cap applied
-Final DQSI Score: 0.851
+Since 0.783 ≥ 0.5, no cap applied
+Final DQSI Score: 0.839
+```
+
+### **Strategy Comparison:**
+```
+FALLBACK STRATEGY (4 dimensions, 5 sub-dimensions):
+├── Uses only: Completeness, Conformity, Timeliness, Coverage
+├── No Enhanced tier KDEs
+├── Simplified validation rules
+└── Estimated Score: ~0.65
+
+ROLE-AWARE CONSUMER (4 dimensions, 9 sub-dimensions):
+├── Uses: Completeness, Conformity, Timeliness, Coverage
+├── Enhanced validation rules
+├── Includes synthetic KDEs
+└── Estimated Score: ~0.75
+
+ROLE-AWARE PRODUCER (7 dimensions, 17 sub-dimensions):
+├── Uses: All 7 dimensions
+├── Full validation framework
+├── Includes synthetic + enhanced KDEs
+└── Calculated Score: 0.839
 ```
 
 ---
