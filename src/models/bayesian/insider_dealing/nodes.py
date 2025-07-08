@@ -65,6 +65,24 @@ class InsiderDealingNodes:
                 'description': 'Communications metadata evidence',
                 'fallback_prior': [0.92, 0.06, 0.02]
             },
+            'news_timing': {
+                'type': 'news_timing',
+                'states': ['normal_timing', 'suspicious_timing', 'highly_suspicious_timing'],
+                'description': 'News-trade timing analysis',
+                'fallback_prior': [0.85, 0.12, 0.03]
+            },
+            'state_information_access': {
+                'type': 'state_information',
+                'states': ['no_access', 'potential_access', 'clear_access'],
+                'description': 'State-level information access',
+                'fallback_prior': [0.88, 0.10, 0.02]
+            },
+            'announcement_correlation': {
+                'type': 'announcement_correlation',
+                'states': ['no_correlation', 'weak_correlation', 'strong_correlation'],
+                'description': 'Trading correlation with announcements',
+                'fallback_prior': [0.80, 0.15, 0.05]
+            },
             'latent_intent': {
                 'type': 'latent_intent',
                 'states': ['no_intent', 'potential_intent', 'clear_intent'],
@@ -136,7 +154,8 @@ class InsiderDealingNodes:
         for node_name, node_def in self.node_definitions.items():
             if node_def['type'] in ['evidence', 'comms_intent', 'variance_tuned', 
                                    'profit_motivation', 'access_pattern', 
-                                   'order_behavior', 'comms_metadata']:
+                                   'order_behavior', 'comms_metadata', 'news_timing',
+                                   'state_information', 'announcement_correlation']:
                 evidence_nodes[node_name] = self.get_node(node_name)
         
         return evidence_nodes
@@ -164,6 +183,7 @@ class InsiderDealingNodes:
         return [
             'trade_pattern', 'comms_intent', 'pnl_drift',
             'profit_motivation', 'access_pattern', 'order_behavior', 'comms_metadata',
+            'news_timing', 'state_information_access', 'announcement_correlation',
             'latent_intent', 'risk_factor', 'insider_dealing'
         ]
     

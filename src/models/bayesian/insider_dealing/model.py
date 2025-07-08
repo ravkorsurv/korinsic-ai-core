@@ -7,7 +7,7 @@ the Bayesian network for detecting insider dealing activities.
 
 from typing import Dict, Any, Optional, List
 import logging
-from pgmpy.models import BayesianNetwork
+from pgmpy.models import DiscreteBayesianNetwork
 from pgmpy.inference import VariableElimination
 
 from ..shared.model_builder import ModelBuilder, build_insider_dealing_bn, build_insider_dealing_bn_with_latent_intent
@@ -47,7 +47,7 @@ class InsiderDealingModel:
         
         logger.info(f"Insider dealing model initialized (latent_intent={use_latent_intent})")
     
-    def _build_model(self) -> BayesianNetwork:
+    def _build_model(self) -> DiscreteBayesianNetwork:
         """
         Build the Bayesian network model.
         
@@ -274,10 +274,14 @@ class InsiderDealingModel:
         if self.use_latent_intent:
             return [
                 'trade_pattern', 'comms_intent', 'pnl_drift',
-                'profit_motivation', 'access_pattern', 'order_behavior', 'comms_metadata'
+                'profit_motivation', 'access_pattern', 'order_behavior', 'comms_metadata',
+                'news_timing', 'state_information_access', 'announcement_correlation'
             ]
         else:
-            return ['trade_pattern', 'comms_intent', 'pnl_drift']
+            return [
+                'trade_pattern', 'comms_intent', 'pnl_drift',
+                'news_timing', 'state_information_access'
+            ]
     
     def get_model_info(self) -> Dict[str, Any]:
         """
