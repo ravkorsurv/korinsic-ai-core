@@ -116,6 +116,34 @@ class CommsMetadataNode(EvidenceNode):
         states = ["normal_comms", "unusual_comms", "suspicious_comms"]
         super().__init__(name, states, description=description, fallback_prior=fallback_prior)
 
+# NEW: Enhanced nodes for insider dealing model
+class NewsTimingNode(EvidenceNode):
+    """
+    Node representing news-trade timing analysis evidence.
+    Detects suspicious timing patterns between trades and market-moving announcements.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["normal_timing", "suspicious_timing", "highly_suspicious_timing"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class StateInformationNode(EvidenceNode):
+    """
+    Node representing state-level information access evidence.
+    Detects access to material non-public information from government or state sources.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["no_access", "potential_access", "clear_access"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class AnnouncementCorrelationNode(EvidenceNode):
+    """
+    Node representing trading correlation with government/regulatory announcements.
+    Analyzes statistical correlation between trading patterns and public announcements.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["no_correlation", "weak_correlation", "strong_correlation"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
 # Utility for CPT normalization
 
 def normalize_cpt(cpt: Dict[str, List[float]]) -> Dict[str, List[float]]:
@@ -146,7 +174,10 @@ class BayesianNodeLibrary:
             'profit_motivation': ProfitMotivationNode,
             'access_pattern': AccessPatternNode,
             'order_behavior': OrderBehaviorNode,
-            'comms_metadata': CommsMetadataNode
+            'comms_metadata': CommsMetadataNode,
+            'news_timing': NewsTimingNode,
+            'state_information': StateInformationNode,
+            'announcement_correlation': AnnouncementCorrelationNode
         }
         
         self.node_templates = {
@@ -222,7 +253,22 @@ class BayesianNodeLibrary:
             raise ValueError(f"Unknown node type: {node_type}")
         
         node_class = self.node_classes[node_type]
-        return node_class(name, **kwargs)
+        
+        # Filter out parameters that specialized nodes don't accept
+        # Specialized nodes have predefined states, so they don't accept 'states' parameter
+        specialized_nodes = {
+            'comms_intent', 'variance_tuned', 'latent_intent', 'profit_motivation',
+            'access_pattern', 'order_behavior', 'comms_metadata', 'news_timing',
+            'state_information', 'announcement_correlation'
+        }
+        
+        if node_type in specialized_nodes:
+            # Remove 'states' from kwargs for specialized nodes
+            filtered_kwargs = {k: v for k, v in kwargs.items() if k != 'states'}
+            return node_class(name, **filtered_kwargs)
+        else:
+            # For basic nodes (evidence, risk_factor, outcome), pass all kwargs
+            return node_class(name, **kwargs)
     
     def create_from_template(self, model_type: str, node_name: str) -> BayesianNode:
         """
