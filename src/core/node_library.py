@@ -116,7 +116,7 @@ class CommsMetadataNode(EvidenceNode):
         states = ["normal_comms", "unusual_comms", "suspicious_comms"]
         super().__init__(name, states, description=description, fallback_prior=fallback_prior)
 
-# NEW: Qatar-specific nodes for enhanced insider dealing model
+# NEW: Enhanced nodes for insider dealing model
 class NewsTimingNode(EvidenceNode):
     """
     Node representing news-trade timing analysis evidence.
