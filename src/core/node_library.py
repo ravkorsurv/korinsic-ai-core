@@ -116,6 +116,34 @@ class CommsMetadataNode(EvidenceNode):
         states = ["normal_comms", "unusual_comms", "suspicious_comms"]
         super().__init__(name, states, description=description, fallback_prior=fallback_prior)
 
+# NEW: Enhanced nodes for insider dealing model
+class NewsTimingNode(EvidenceNode):
+    """
+    Node representing news-trade timing analysis evidence.
+    Detects suspicious timing patterns between trades and market-moving announcements.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["normal_timing", "suspicious_timing", "highly_suspicious_timing"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class StateInformationNode(EvidenceNode):
+    """
+    Node representing state-level information access evidence.
+    Detects access to material non-public information from government or state sources.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["no_access", "potential_access", "clear_access"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class AnnouncementCorrelationNode(EvidenceNode):
+    """
+    Node representing trading correlation with government/regulatory announcements.
+    Analyzes statistical correlation between trading patterns and public announcements.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["no_correlation", "weak_correlation", "strong_correlation"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
 # Utility for CPT normalization
 
 def normalize_cpt(cpt: Dict[str, List[float]]) -> Dict[str, List[float]]:
