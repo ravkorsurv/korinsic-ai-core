@@ -231,7 +231,6 @@ class ManipulationLatentIntentNode(LatentIntentNode):
                     strength += weight * evidence_value
         
         return min(strength, 1.0)
-
 # Utility for CPT normalization
 
 def normalize_cpt(cpt: Dict[str, List[float]]) -> Dict[str, List[float]]:

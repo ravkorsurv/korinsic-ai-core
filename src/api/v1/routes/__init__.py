@@ -8,6 +8,7 @@ This package contains all API route handlers organized by functional area:
 - simulation: Scenario simulation endpoints
 - exports: Data export endpoints
 - health: Health check endpoints
+- dqsi: Data Quality Sufficiency Index endpoints
 """
 
 # Import all route modules
@@ -17,6 +18,7 @@ from . import models
 from . import simulation
 from . import exports
 from . import health
+from . import dqsi
 
 __all__ = [
     'analysis',
@@ -24,5 +26,6 @@ __all__ = [
     'models',
     'simulation',
     'exports',
-    'health'
+    'health',
+    'dqsi'
 ]

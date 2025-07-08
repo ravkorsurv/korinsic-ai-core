@@ -1,0 +1,98 @@
+assessment_results:
+  assessment_date: '2025-07-06T18:38:37.532014'
+  dimension_scores:
+    accuracy: 0.2
+    completeness: 0.6
+    conformity: 0.2
+    consistency: 0.0
+    coverage: 0.3
+    timeliness: 0.2
+    uniqueness: 0.3
+  maturity_level: CRITICAL
+  overall_maturity: 0.2571428571428572
+client_info:
+  daily_volume: 5000000000.0
+  employee_count: 2500
+  industry: investment_banking
+  name: MidTier Investment Bank
+  regulatory_tier: tier2_bank
+configuration_date: '2025-07-06T18:38:37.532048'
+enabled_subdimensions:
+- null_presence
+- field_population
+- data_type
+- length
+- format
+- range
+- freshness
+- lag_detection
+- volume_reconciliation
+- coverage_baseline
+- precision
+- value_accuracy
+- referential_accuracy
+- duplicate_detection
+- cross_system_uniqueness
+- internal_consistency
+- cross_system_consistency
+implementation_roadmap:
+  Phase 1:
+    deliverables:
+    - Role-aware strategy (producer mode)
+    - All 7 dimensions implementation
+    - Golden source integration
+    - Cross-system validation
+    focus: Foundational + Enhanced
+    timeline: 3-4 months
+  Phase 2:
+    deliverables:
+    - Accuracy validation
+    - Uniqueness checking
+    - Consistency validation
+    - Full regulatory compliance
+    focus: Advanced capabilities
+    timeline: 5-8 months
+  Phase 3:
+    deliverables:
+    - Performance optimization
+    - Advanced analytics
+    - Governance framework
+    - Continuous improvement
+    focus: Optimization and governance
+    timeline: 9-12 months
+kde_mappings:
+  client_id:
+    risk: low
+    weight: 1
+  desk_id:
+    risk: low
+    weight: 1
+  instrument:
+    risk: low
+    weight: 1
+  notional:
+    risk: medium
+    weight: 2
+  order_timestamp:
+    risk: high
+    weight: 3
+  price:
+    risk: medium
+    weight: 2
+  quantity:
+    risk: medium
+    weight: 2
+  trade_time:
+    risk: high
+    weight: 3
+  trader_id:
+    risk: high
+    weight: 3
+strategy: role_aware_producer
+thresholds:
+  acceptable_delay_minutes: 15
+  acceptable_null_rate: 0.1
+  critical_delay_minutes: 60
+  critical_null_rate: 0.05
+  format_error_threshold: 0.05
+  volume_drop_alert: 0.3
