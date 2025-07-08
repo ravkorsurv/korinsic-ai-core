@@ -144,6 +144,93 @@ class AnnouncementCorrelationNode(EvidenceNode):
         states = ["no_correlation", "weak_correlation", "strong_correlation"]
         super().__init__(name, states, description=description, fallback_prior=fallback_prior)
 
+# NEW: Commodity Manipulation Model nodes
+class LiquidityContextNode(EvidenceNode):
+    """
+    Node representing market liquidity conditions evidence.
+    Analyzes market depth, spread, and trading activity to assess liquidity.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["liquid", "moderate", "illiquid"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class BenchmarkTimingNode(EvidenceNode):
+    """
+    Node representing benchmark window timing evidence.
+    Detects suspicious trading activity around benchmark fixing windows.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["outside_window", "near_window", "during_window"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class OrderClusteringNode(EvidenceNode):
+    """
+    Node representing order clustering analysis evidence.
+    Detects unusual concentration of orders in time or price.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["normal_distribution", "moderate_clustering", "high_clustering"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class PriceImpactRatioNode(EvidenceNode):
+    """
+    Node representing price impact ratio evidence.
+    Analyzes the relationship between order size and price movement.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["normal_impact", "elevated_impact", "excessive_impact"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class VolumeParticipationNode(EvidenceNode):
+    """
+    Node representing volume participation evidence.
+    Analyzes the proportion of trading volume during specific periods.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["normal_participation", "high_participation", "dominant_participation"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class CrossVenueCoordinationNode(EvidenceNode):
+    """
+    Node representing cross-venue coordination evidence.
+    Detects coordinated trading patterns across multiple venues.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["no_coordination", "weak_coordination", "strong_coordination"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class ManipulationLatentIntentNode(LatentIntentNode):
+    """
+    Node representing latent manipulation intent for commodity markets.
+    Infers hidden intent to manipulate commodity prices from converging evidence.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        super().__init__(name, description=description, fallback_prior=fallback_prior)
+    
+    def get_intent_strength(self, evidence_values: Dict[str, Any]) -> float:
+        """
+        Calculate manipulation intent strength based on commodity-specific evidence.
+        """
+        # Commodity-specific logic for intent inference
+        strength = 0.0
+        
+        # Weight evidence from different sources
+        weights = {
+            'liquidity_context': 0.15,
+            'benchmark_timing': 0.25,
+            'order_clustering': 0.20,
+            'price_impact_ratio': 0.20,
+            'volume_participation': 0.15,
+            'cross_venue_coordination': 0.05
+        }
+        
+        for evidence_name, weight in weights.items():
+            if evidence_name in evidence_values:
+                evidence_value = evidence_values[evidence_name]
+                if isinstance(evidence_value, (int, float)):
+                    strength += weight * evidence_value
+        
+        return min(strength, 1.0)
 # Utility for CPT normalization
 
 def normalize_cpt(cpt: Dict[str, List[float]]) -> Dict[str, List[float]]:
@@ -177,7 +264,14 @@ class BayesianNodeLibrary:
             'comms_metadata': CommsMetadataNode,
             'news_timing': NewsTimingNode,
             'state_information': StateInformationNode,
-            'announcement_correlation': AnnouncementCorrelationNode
+            'announcement_correlation': AnnouncementCorrelationNode,
+            'liquidity_context': LiquidityContextNode,
+            'benchmark_timing': BenchmarkTimingNode,
+            'order_clustering': OrderClusteringNode,
+            'price_impact_ratio': PriceImpactRatioNode,
+            'volume_participation': VolumeParticipationNode,
+            'cross_venue_coordination': CrossVenueCoordinationNode,
+            'manipulation_latent_intent': ManipulationLatentIntentNode
         }
         
         self.node_templates = {
@@ -259,7 +353,9 @@ class BayesianNodeLibrary:
         specialized_nodes = {
             'comms_intent', 'variance_tuned', 'latent_intent', 'profit_motivation',
             'access_pattern', 'order_behavior', 'comms_metadata', 'news_timing',
-            'state_information', 'announcement_correlation'
+            'state_information', 'announcement_correlation', 'liquidity_context',
+            'benchmark_timing', 'order_clustering', 'price_impact_ratio',
+            'volume_participation', 'cross_venue_coordination', 'manipulation_latent_intent'
         }
         
         if node_type in specialized_nodes:
