@@ -1,7 +1,7 @@
 """
-Test suite for Phase 1 Qatar enhancements to insider dealing model.
+Test suite for Phase 1 enhancements to insider dealing model.
 
-This module tests the new Qatar-specific evidence nodes and their integration
+This module tests the new enhanced evidence nodes and their integration
 with the existing insider dealing model.
 """
 
@@ -27,8 +27,8 @@ from models.bayesian.insider_dealing.model import InsiderDealingModel
 from core.model_construction import build_insider_dealing_bn, build_insider_dealing_bn_with_latent_intent
 
 
-class TestQatarSpecificNodes:
-    """Test the new Qatar-specific evidence nodes."""
+class TestEnhancedNodes:
+    """Test the new enhanced evidence nodes."""
     
     def test_news_timing_node_creation(self):
         """Test NewsTimingNode creation and properties."""
@@ -70,10 +70,10 @@ class TestQatarSpecificNodes:
 
 
 class TestBayesianNodeLibrary:
-    """Test the integration of Qatar-specific nodes into the node library."""
+    """Test the integration of enhanced nodes into the node library."""
     
-    def test_node_library_includes_qatar_nodes(self):
-        """Test that the node library includes Qatar-specific node classes."""
+    def test_node_library_includes_enhanced_nodes(self):
+        """Test that the node library includes enhanced node classes."""
         library = BayesianNodeLibrary()
         
         assert 'news_timing' in library.node_classes
@@ -84,8 +84,8 @@ class TestBayesianNodeLibrary:
         assert library.node_classes['state_information'] == SharedStateInformationNode
         assert library.node_classes['announcement_correlation'] == SharedAnnouncementCorrelationNode
     
-    def test_create_qatar_nodes_via_library(self):
-        """Test creating Qatar-specific nodes via the library."""
+    def test_create_enhanced_nodes_via_library(self):
+        """Test creating enhanced nodes via the library."""
         library = BayesianNodeLibrary()
         
         # Test creating news timing node
@@ -117,13 +117,13 @@ class TestBayesianNodeLibrary:
 
 
 class TestInsiderDealingNodesEnhancement:
-    """Test the enhanced insider dealing nodes with Qatar-specific additions."""
+    """Test the enhanced insider dealing nodes with enhanced additions."""
     
-    def test_insider_dealing_nodes_include_qatar_nodes(self):
-        """Test that InsiderDealingNodes includes Qatar-specific nodes."""
+    def test_insider_dealing_nodes_include_enhanced_nodes(self):
+        """Test that InsiderDealingNodes includes enhanced nodes."""
         nodes = InsiderDealingNodes()
         
-        # Check that Qatar-specific nodes are in the definitions
+        # Check that enhanced nodes are in the definitions
         assert 'news_timing' in nodes.node_definitions
         assert 'state_information_access' in nodes.node_definitions
         assert 'announcement_correlation' in nodes.node_definitions
@@ -141,11 +141,11 @@ class TestInsiderDealingNodesEnhancement:
         assert announcement_def['type'] == 'announcement_correlation'
         assert announcement_def['states'] == ['no_correlation', 'weak_correlation', 'strong_correlation']
     
-    def test_get_node_creates_qatar_nodes(self):
-        """Test that get_node creates Qatar-specific nodes correctly."""
+    def test_get_node_creates_enhanced_nodes(self):
+        """Test that get_node creates enhanced nodes correctly."""
         nodes = InsiderDealingNodes()
         
-        # Test getting Qatar-specific nodes
+        # Test getting enhanced nodes
         news_node = nodes.get_node('news_timing')
         assert news_node is not None
         assert news_node.name == 'news_timing'
@@ -161,8 +161,8 @@ class TestInsiderDealingNodesEnhancement:
         assert announcement_node.name == 'announcement_correlation'
         assert announcement_node.states == ['no_correlation', 'weak_correlation', 'strong_correlation']
     
-    def test_get_evidence_nodes_includes_qatar_nodes(self):
-        """Test that get_evidence_nodes includes Qatar-specific nodes."""
+    def test_get_evidence_nodes_includes_enhanced_nodes(self):
+        """Test that get_evidence_nodes includes enhanced nodes."""
         nodes = InsiderDealingNodes()
         evidence_nodes = nodes.get_evidence_nodes()
         
@@ -175,8 +175,8 @@ class TestInsiderDealingNodesEnhancement:
         assert evidence_nodes['state_information_access'] is not None
         assert evidence_nodes['announcement_correlation'] is not None
     
-    def test_get_latent_intent_nodes_includes_qatar_nodes(self):
-        """Test that get_latent_intent_nodes includes Qatar-specific nodes."""
+    def test_get_latent_intent_nodes_includes_enhanced_nodes(self):
+        """Test that get_latent_intent_nodes includes enhanced nodes."""
         nodes = InsiderDealingNodes()
         latent_intent_nodes = nodes.get_latent_intent_nodes()
         
@@ -195,8 +195,8 @@ class TestInsiderDealingNodesEnhancement:
         for node_name in expected_nodes:
             assert node_name in latent_intent_nodes
     
-    def test_validate_node_value_for_qatar_nodes(self):
-        """Test node value validation for Qatar-specific nodes."""
+    def test_validate_node_value_for_enhanced_nodes(self):
+        """Test node value validation for enhanced nodes."""
         nodes = InsiderDealingNodes()
         
         # Test news timing node validation
@@ -217,14 +217,14 @@ class TestInsiderDealingNodesEnhancement:
 
 
 class TestInsiderDealingModelEnhancement:
-    """Test the enhanced insider dealing model with Qatar-specific nodes."""
+    """Test the enhanced insider dealing model with enhanced nodes."""
     
     def test_required_nodes_without_latent_intent(self):
-        """Test required nodes for basic insider dealing model includes Qatar nodes."""
+        """Test required nodes for basic insider dealing model includes enhanced nodes."""
         model = InsiderDealingModel(use_latent_intent=False)
         required_nodes = model.get_required_nodes()
         
-        # Check that Qatar-specific nodes are included
+        # Check that enhanced nodes are included
         assert 'news_timing' in required_nodes
         assert 'state_information_access' in required_nodes
         
@@ -238,11 +238,11 @@ class TestInsiderDealingModelEnhancement:
             assert node_name in required_nodes
     
     def test_required_nodes_with_latent_intent(self):
-        """Test required nodes for latent intent model includes Qatar nodes."""
+        """Test required nodes for latent intent model includes enhanced nodes."""
         model = InsiderDealingModel(use_latent_intent=True)
         required_nodes = model.get_required_nodes()
         
-        # Check that Qatar-specific nodes are included
+        # Check that enhanced nodes are included
         assert 'news_timing' in required_nodes
         assert 'state_information_access' in required_nodes
         assert 'announcement_correlation' in required_nodes
@@ -257,8 +257,8 @@ class TestInsiderDealingModelEnhancement:
         for node_name in expected_nodes:
             assert node_name in required_nodes
     
-    def test_model_info_includes_qatar_nodes(self):
-        """Test that model info includes Qatar-specific nodes."""
+    def test_model_info_includes_enhanced_nodes(self):
+        """Test that model info includes enhanced nodes."""
         model = InsiderDealingModel(use_latent_intent=True)
         model_info = model.get_model_info()
         
@@ -269,8 +269,8 @@ class TestInsiderDealingModelEnhancement:
     
     @pytest.mark.skip(reason="Complex network mocking - functionality tested in integration tests")
     @patch('models.bayesian.insider_dealing.model.build_insider_dealing_bn_with_latent_intent')
-    def test_calculate_risk_with_qatar_evidence(self, mock_build_model):
-        """Test risk calculation with Qatar-specific evidence."""
+    def test_calculate_risk_with_enhanced_evidence(self, mock_build_model):
+        """Test risk calculation with enhanced evidence."""
         # Mock the Bayesian network
         mock_network = MagicMock()
         mock_network.nodes.return_value = [
@@ -288,14 +288,14 @@ class TestInsiderDealingModelEnhancement:
         with patch('pgmpy.inference.VariableElimination', return_value=mock_inference):
             model = InsiderDealingModel(use_latent_intent=True)
             
-            # Test with Qatar-specific evidence
+            # Test with enhanced evidence
             evidence = {
                 'trade_pattern': 1,
                 'comms_intent': 1,
                 'pnl_drift': 1,
-                'news_timing': 2,  # Qatar-specific
-                'state_information_access': 1,  # Qatar-specific
-                'announcement_correlation': 1  # Qatar-specific
+                'news_timing': 2,  # enhanced
+                'state_information_access': 1,  # enhanced
+                'announcement_correlation': 1  # enhanced
             }
             
             result = model.calculate_risk(evidence)
@@ -306,44 +306,44 @@ class TestInsiderDealingModelEnhancement:
             assert 'risk_assessment' in result
             assert 'model_metadata' in result
             
-            # Verify Qatar-specific evidence is processed
+            # Verify enhanced evidence is processed
             assert result['model_metadata']['use_latent_intent'] == True
 
 
 class TestBayesianNetworkConstruction:
-    """Test the Bayesian network construction with Qatar-specific nodes."""
+    """Test the Bayesian network construction with enhanced nodes."""
     
-    def test_build_basic_insider_dealing_bn_includes_qatar_nodes(self):
-        """Test that the basic Bayesian network includes Qatar-specific nodes."""
+    def test_build_basic_insider_dealing_bn_includes_enhanced_nodes(self):
+        """Test that the basic Bayesian network includes enhanced nodes."""
         network = build_insider_dealing_bn()
         
-        # Check that Qatar-specific nodes are in the network
+        # Check that enhanced nodes are in the network
         assert 'news_timing' in network.nodes()
         assert 'state_information_access' in network.nodes()
         
-        # Check that edges exist for Qatar-specific nodes
+        # Check that edges exist for enhanced nodes
         assert ('news_timing', 'risk_factor') in network.edges()
         assert ('state_information_access', 'risk_factor') in network.edges()
         
         # Verify network structure
         assert network.check_model() == True
         
-        # Check CPDs exist for Qatar-specific nodes
+        # Check CPDs exist for enhanced nodes
         cpds = network.get_cpds()
         cpd_names = [cpd.variable for cpd in cpds]
         assert 'news_timing' in cpd_names
         assert 'state_information_access' in cpd_names
     
-    def test_build_latent_intent_bn_includes_qatar_nodes(self):
-        """Test that the latent intent Bayesian network includes Qatar-specific nodes."""
+    def test_build_latent_intent_bn_includes_enhanced_nodes(self):
+        """Test that the latent intent Bayesian network includes enhanced nodes."""
         network = build_insider_dealing_bn_with_latent_intent()
         
-        # Check that Qatar-specific nodes are in the network
+        # Check that enhanced nodes are in the network
         assert 'news_timing' in network.nodes()
         assert 'state_information_access' in network.nodes()
         assert 'announcement_correlation' in network.nodes()
         
-        # Check that edges exist for Qatar-specific nodes to latent intent
+        # Check that edges exist for enhanced nodes to latent intent
         assert ('news_timing', 'latent_intent') in network.edges()
         assert ('state_information_access', 'latent_intent') in network.edges()
         assert ('announcement_correlation', 'latent_intent') in network.edges()
@@ -351,15 +351,15 @@ class TestBayesianNetworkConstruction:
         # Verify network structure
         assert network.check_model() == True
         
-        # Check CPDs exist for Qatar-specific nodes
+        # Check CPDs exist for enhanced nodes
         cpds = network.get_cpds()
         cpd_names = [cpd.variable for cpd in cpds]
         assert 'news_timing' in cpd_names
         assert 'state_information_access' in cpd_names
         assert 'announcement_correlation' in cpd_names
     
-    def test_latent_intent_cpd_updated_for_qatar_nodes(self):
-        """Test that latent intent CPD is updated to include Qatar-specific nodes."""
+    def test_latent_intent_cpd_updated_for_enhanced_nodes(self):
+        """Test that latent intent CPD is updated to include enhanced nodes."""
         network = build_insider_dealing_bn_with_latent_intent()
         
         # Find the latent intent CPD
@@ -371,7 +371,7 @@ class TestBayesianNetworkConstruction:
         
         assert latent_intent_cpd is not None
         
-        # Check that Qatar-specific nodes are in the evidence
+        # Check that enhanced nodes are in the evidence
         expected_evidence = [
             "profit_motivation", "access_pattern", "order_behavior", "comms_metadata",
             "news_timing", "state_information_access", "announcement_correlation"
@@ -390,15 +390,15 @@ class TestIntegrationWithExistingSystem:
     """Test integration with existing system components."""
     
     def test_fallback_logic_compatibility(self):
-        """Test that fallback logic works with Qatar-specific nodes."""
+        """Test that fallback logic works with enhanced nodes."""
         model = InsiderDealingModel(use_latent_intent=True)
         
-        # Test with partial evidence (missing Qatar-specific nodes)
+        # Test with partial evidence (missing enhanced nodes)
         evidence = {
             'trade_pattern': 1,
             'comms_intent': 1,
             'pnl_drift': 1
-            # Missing Qatar-specific nodes
+            # Missing enhanced nodes
         }
         
         # This should not raise an error due to fallback logic
@@ -406,11 +406,11 @@ class TestIntegrationWithExistingSystem:
         assert result is not None
         assert 'risk_scores' in result
     
-    def test_evidence_sufficiency_with_qatar_nodes(self):
-        """Test evidence sufficiency calculation with Qatar-specific nodes."""
+    def test_evidence_sufficiency_with_enhanced_nodes(self):
+        """Test evidence sufficiency calculation with enhanced nodes."""
         model = InsiderDealingModel(use_latent_intent=True)
         
-        # Test with complete Qatar-specific evidence
+        # Test with complete enhanced evidence
         evidence = {
             'trade_pattern': 1,
             'comms_intent': 1,
@@ -426,7 +426,7 @@ class TestIntegrationWithExistingSystem:
         assert 'evidence_sufficiency' in result
         assert 'evidence_sufficiency_index' in result['evidence_sufficiency']
         
-        # Qatar-specific evidence should improve sufficiency
+        # enhanced evidence should improve sufficiency
         assert result['evidence_sufficiency']['evidence_sufficiency_index'] > 0
 
 

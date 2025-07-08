@@ -211,7 +211,7 @@ def build_insider_dealing_bn_with_latent_intent():
     order_behavior = OrderBehaviorNode("order_behavior", description="Order behavior evidence")
     comms_metadata = CommsMetadataNode("comms_metadata", description="Communications metadata")
     
-    # NEW: Qatar-specific evidence nodes
+    # NEW: Enhanced evidence nodes
     news_timing = NewsTimingNode("news_timing", description="News-trade timing analysis")
     state_information_access = StateInformationNode("state_information_access", description="State-level information access")
     announcement_correlation = AnnouncementCorrelationNode("announcement_correlation", description="Trading correlation with announcements")
@@ -225,7 +225,7 @@ def build_insider_dealing_bn_with_latent_intent():
     # Outcome node
     insider_dealing = OutcomeNode("insider_dealing", ["no", "yes"], description="Insider dealing outcome")
 
-    # Define network structure with latent intent including Qatar-specific nodes
+    # Define network structure with latent intent including enhanced nodes
     edges = [
         # Evidence paths converging on latent intent
         ("profit_motivation", "latent_intent"),
@@ -261,7 +261,7 @@ def build_insider_dealing_bn_with_latent_intent():
     cpd_order_behavior = TabularCPD(variable="order_behavior", variable_card=3, values=[[0.88], [0.1], [0.02]])
     cpd_comms_metadata = TabularCPD(variable="comms_metadata", variable_card=3, values=[[0.92], [0.06], [0.02]])
     
-    # NEW: Qatar-specific CPTs
+    # NEW: Enhanced CPTs
     cpd_news_timing = TabularCPD(variable="news_timing", variable_card=3, values=[[0.85], [0.12], [0.03]])
     cpd_state_information_access = TabularCPD(variable="state_information_access", variable_card=3, values=[[0.88], [0.10], [0.02]])
     cpd_announcement_correlation = TabularCPD(variable="announcement_correlation", variable_card=3, values=[[0.80], [0.15], [0.05]])
@@ -343,14 +343,14 @@ def build_insider_dealing_bn():
     comms_intent = CommsIntentNode("comms_intent", description="Comms intent evidence")
     pnl_drift = VarianceTunedIndicatorNode("pnl_drift", description="PnL drift indicator")
     
-    # NEW: Qatar-specific evidence nodes for basic model
+    # NEW: Enhanced evidence nodes for basic model
     news_timing = NewsTimingNode("news_timing", description="News-trade timing analysis")
     state_information_access = StateInformationNode("state_information_access", description="State-level information access")
     
     risk_factor = RiskFactorNode("risk_factor", ["low", "medium", "high"], description="Latent risk factor")
     insider_dealing = OutcomeNode("insider_dealing", ["no", "yes"], description="Insider dealing outcome")
 
-    # Define network structure (edges) including Qatar-specific nodes
+    # Define network structure (edges) including enhanced nodes
     edges = [
         ("trade_pattern", "risk_factor"),
         ("comms_intent", "risk_factor"),
@@ -367,7 +367,7 @@ def build_insider_dealing_bn():
     cpd_comms_intent = TabularCPD(variable="comms_intent", variable_card=3, values=[[0.8], [0.15], [0.05]])
     cpd_pnl_drift = TabularCPD(variable="pnl_drift", variable_card=2, values=[[0.9], [0.1]])
     
-    # NEW: Qatar-specific CPTs
+    # NEW: Enhanced CPTs
     cpd_news_timing = TabularCPD(variable="news_timing", variable_card=3, values=[[0.85], [0.12], [0.03]])
     cpd_state_information_access = TabularCPD(variable="state_information_access", variable_card=3, values=[[0.88], [0.10], [0.02]])
 
