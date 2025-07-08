@@ -14,10 +14,22 @@ Structure:
 from .bayesian import BayesianModelRegistry
 from .services import ModelService
 from .shared import BaseModel, ModelMetadata
+from .trading_data import (
+    RawTradeData,
+    RawOrderData,
+    TradingDataSummary,
+    TradeDirection,
+    OrderStatus
+)
 
 __all__ = [
     'BayesianModelRegistry',
     'ModelService', 
     'BaseModel',
-    'ModelMetadata'
+    'ModelMetadata',
+    'RawTradeData',
+    'RawOrderData',
+    'TradingDataSummary',
+    'TradeDirection',
+    'OrderStatus'
 ]
