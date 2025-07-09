@@ -14,6 +14,7 @@ from .latent_intent import LatentIntentModel
 from .commodity_manipulation import CommodityManipulationModel
 from .circular_trading import CircularTradingModel
 from .market_cornering import MarketCorneringModel
+from .cross_desk_collusion import CrossDeskCollusionModel
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +35,8 @@ class BayesianModelRegistry:
             'latent_intent': LatentIntentModel,
             'commodity_manipulation': CommodityManipulationModel,
             'circular_trading': CircularTradingModel,
-            'market_cornering': MarketCorneringModel
+            'market_cornering': MarketCorneringModel,
+            'cross_desk_collusion': CrossDeskCollusionModel
         }
         
         self.model_instances = {}
@@ -70,7 +72,7 @@ class BayesianModelRegistry:
         model_class = self.registered_models[model_type]
         
         # Create instance based on model type
-        if model_type in ['insider_dealing', 'commodity_manipulation', 'circular_trading', 'market_cornering']:
+        if model_type in ['insider_dealing', 'commodity_manipulation', 'circular_trading', 'market_cornering', 'cross_desk_collusion']:
             use_latent_intent = config.get('use_latent_intent', True) if config else True
             model_instance = model_class(use_latent_intent=use_latent_intent, config=config)
         else:
