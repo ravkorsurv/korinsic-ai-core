@@ -408,6 +408,103 @@ class CorneringLatentIntentNode(LatentIntentNode):
         
         return min(strength, 1.0)
 
+# NEW: Qatar Energy & Commodity Market Abuse Detection Nodes
+
+class MarketSegmentationNode(EvidenceNode):
+    """
+    Node representing market division patterns between trading desks.
+    Detects coordinated market segmentation that may indicate collusive behavior.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["competitive", "segmented", "coordinated_division"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class CollusionLatentIntentNode(LatentIntentNode):
+    """
+    Node representing latent collusion intent across trading desks.
+    Infers hidden intent to engage in collusive behavior from converging evidence.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["independent_trading", "coordinated_trading", "collusive_trading"]
+        super().__init__(name, description=description, fallback_prior=fallback_prior)
+    
+    def get_intent_strength(self, evidence_values: Dict[str, Any]) -> float:
+        """
+        Calculate collusion intent strength based on cross-desk evidence.
+        """
+        # Cross-desk collusion specific logic for intent inference
+        strength = 0.0
+        
+        # Weight evidence from different sources
+        weights = {
+            'comms_metadata': 0.20,           # Communication patterns
+            'profit_motivation': 0.18,        # Unusual profit sharing
+            'order_behavior': 0.18,           # Order synchronization
+            'cross_venue_coordination': 0.15, # Trading correlation
+            'access_pattern': 0.15,           # Information sharing
+            'market_segmentation': 0.14       # Market division
+        }
+        
+        for evidence_name, weight in weights.items():
+            if evidence_name in evidence_values:
+                evidence_value = evidence_values[evidence_name]
+                if isinstance(evidence_value, (int, float)):
+                    strength += weight * evidence_value
+        
+        return min(strength, 1.0)
+
+class IntentToExecuteNode(EvidenceNode):
+    """
+    Node representing analysis of genuine intent to execute orders.
+    Detects whether orders are placed with genuine intent to execute or to manipulate.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["genuine_intent", "uncertain_intent", "no_intent"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class OrderCancellationNode(EvidenceNode):
+    """
+    Node representing order cancellation pattern analysis.
+    Detects suspicious order cancellation patterns that may indicate spoofing.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["normal_cancellation", "suspicious_cancellation", "manipulative_cancellation"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class SpoofingLatentIntentNode(LatentIntentNode):
+    """
+    Node representing latent spoofing intent.
+    Infers hidden intent to engage in spoofing behavior from converging evidence.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["legitimate_trading", "potential_spoofing", "clear_spoofing"]
+        super().__init__(name, description=description, fallback_prior=fallback_prior)
+    
+    def get_intent_strength(self, evidence_values: Dict[str, Any]) -> float:
+        """
+        Calculate spoofing intent strength based on order behavior evidence.
+        """
+        # Spoofing specific logic for intent inference
+        strength = 0.0
+        
+        # Weight evidence from different sources
+        weights = {
+            'order_clustering': 0.22,         # Layering patterns
+            'price_impact_ratio': 0.20,       # Market impact
+            'volume_participation': 0.18,     # Volume effects
+            'order_behavior': 0.18,           # Order behavior
+            'intent_to_execute': 0.12,        # Execution intent
+            'order_cancellation': 0.10        # Cancellation patterns
+        }
+        
+        for evidence_name, weight in weights.items():
+            if evidence_name in evidence_values:
+                evidence_value = evidence_values[evidence_name]
+                if isinstance(evidence_value, (int, float)):
+                    strength += weight * evidence_value
+        
+        return min(strength, 1.0)
+
 # Utility for CPT normalization
 
 def normalize_cpt(cpt: Dict[str, List[float]]) -> Dict[str, List[float]]:
@@ -462,7 +559,12 @@ class BayesianNodeLibrary:
             'liquidity_manipulation': LiquidityManipulationNode,
             'price_distortion': PriceDistortionNode,
             'delivery_constraint': DeliveryConstraintNode,
-            'cornering_latent_intent': CorneringLatentIntentNode
+            'cornering_latent_intent': CorneringLatentIntentNode,
+            'market_segmentation': MarketSegmentationNode,
+            'collusion_latent_intent': CollusionLatentIntentNode,
+            'intent_to_execute': IntentToExecuteNode,
+            'order_cancellation': OrderCancellationNode,
+            'spoofing_latent_intent': SpoofingLatentIntentNode
         }
         
         self.node_templates = {
@@ -551,7 +653,9 @@ class BayesianNodeLibrary:
             'settlement_coordination', 'beneficial_ownership', 'trade_sequence_analysis',
             'coordination_latent_intent', 'market_concentration', 'position_accumulation',
             'supply_control', 'liquidity_manipulation', 'price_distortion',
-            'delivery_constraint', 'cornering_latent_intent'
+            'delivery_constraint', 'cornering_latent_intent', 'market_segmentation',
+            'collusion_latent_intent', 'intent_to_execute', 'order_cancellation',
+            'spoofing_latent_intent'
         }
         
         if node_type in specialized_nodes:
