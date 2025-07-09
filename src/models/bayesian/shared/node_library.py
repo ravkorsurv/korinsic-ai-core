@@ -320,6 +320,94 @@ class CoordinationLatentIntentNode(LatentIntentNode):
         
         return min(strength, 1.0)
 
+# NEW: Phase 4 Market Cornering Detection Model nodes
+class MarketConcentrationNode(EvidenceNode):
+    """
+    Node representing market concentration evidence.
+    Analyzes the concentration of market share to detect potential cornering activities.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["dispersed", "concentrated", "highly_concentrated"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class PositionAccumulationNode(EvidenceNode):
+    """
+    Node representing position accumulation pattern evidence.
+    Detects systematic accumulation of positions that may indicate cornering strategies.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["normal_accumulation", "systematic_accumulation", "aggressive_accumulation"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class SupplyControlNode(EvidenceNode):
+    """
+    Node representing supply control evidence.
+    Analyzes the degree of control over available supply which is key to market cornering.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["limited_control", "significant_control", "dominant_control"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class LiquidityManipulationNode(EvidenceNode):
+    """
+    Node representing liquidity manipulation evidence.
+    Detects manipulation of market liquidity as part of cornering strategies.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["normal_liquidity", "constrained_liquidity", "manipulated_liquidity"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class PriceDistortionNode(EvidenceNode):
+    """
+    Node representing price distortion evidence.
+    Measures the extent of price distortion from fair value indicating market cornering.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["fair_pricing", "moderate_distortion", "extreme_distortion"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class DeliveryConstraintNode(EvidenceNode):
+    """
+    Node representing delivery constraint evidence.
+    Analyzes delivery and settlement constraints that may be exploited in cornering.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["normal_delivery", "constrained_delivery", "blocked_delivery"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class CorneringLatentIntentNode(LatentIntentNode):
+    """
+    Node representing latent cornering intent.
+    Infers hidden intent to corner a market from converging evidence patterns.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        super().__init__(name, description=description, fallback_prior=fallback_prior)
+    
+    def get_intent_strength(self, evidence_values: Dict[str, Any]) -> float:
+        """
+        Calculate cornering intent strength based on market cornering evidence.
+        """
+        # Market cornering specific logic for intent inference
+        strength = 0.0
+        
+        # Weight evidence from different sources
+        weights = {
+            'market_concentration': 0.18,
+            'position_accumulation': 0.18,
+            'supply_control': 0.25,  # Highest weight - key to cornering
+            'liquidity_manipulation': 0.16,
+            'price_distortion': 0.16,
+            'delivery_constraint': 0.07
+        }
+        
+        for evidence_name, weight in weights.items():
+            if evidence_name in evidence_values:
+                evidence_value = evidence_values[evidence_name]
+                if isinstance(evidence_value, (int, float)):
+                    strength += weight * evidence_value
+        
+        return min(strength, 1.0)
+
 # Utility for CPT normalization
 
 def normalize_cpt(cpt: Dict[str, List[float]]) -> Dict[str, List[float]]:
@@ -367,7 +455,14 @@ class BayesianNodeLibrary:
             'settlement_coordination': SettlementCoordinationNode,
             'beneficial_ownership': BeneficialOwnershipNode,
             'trade_sequence_analysis': TradeSequenceAnalysisNode,
-            'coordination_latent_intent': CoordinationLatentIntentNode
+            'coordination_latent_intent': CoordinationLatentIntentNode,
+            'market_concentration': MarketConcentrationNode,
+            'position_accumulation': PositionAccumulationNode,
+            'supply_control': SupplyControlNode,
+            'liquidity_manipulation': LiquidityManipulationNode,
+            'price_distortion': PriceDistortionNode,
+            'delivery_constraint': DeliveryConstraintNode,
+            'cornering_latent_intent': CorneringLatentIntentNode
         }
         
         self.node_templates = {
@@ -454,7 +549,9 @@ class BayesianNodeLibrary:
             'volume_participation', 'cross_venue_coordination', 'manipulation_latent_intent',
             'counterparty_relationship', 'risk_transfer_analysis', 'price_negotiation_pattern',
             'settlement_coordination', 'beneficial_ownership', 'trade_sequence_analysis',
-            'coordination_latent_intent'
+            'coordination_latent_intent', 'market_concentration', 'position_accumulation',
+            'supply_control', 'liquidity_manipulation', 'price_distortion',
+            'delivery_constraint', 'cornering_latent_intent'
         }
         
         if node_type in specialized_nodes:
