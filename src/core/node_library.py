@@ -240,3 +240,91 @@ class ManipulationLatentIntentNode(LatentIntentNode):
                     strength += weight * evidence_value
         
         return min(strength, 1.0) 
+
+# NEW: Circular Trading Detection Model nodes
+class CounterpartyRelationshipNode(EvidenceNode):
+    """
+    Node representing counterparty relationship evidence.
+    Analyzes relationships between trading counterparties to detect coordinated activities.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["unrelated", "connected", "closely_related"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class RiskTransferAnalysisNode(EvidenceNode):
+    """
+    Node representing risk transfer analysis evidence.
+    Detects whether trades actually transfer economic risk between counterparties.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["genuine_transfer", "limited_transfer", "no_transfer"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class PriceNegotiationPatternNode(EvidenceNode):
+    """
+    Node representing price negotiation pattern evidence.
+    Analyzes pricing patterns to detect artificial or coordinated pricing.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["market_driven", "coordinated", "artificial"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class SettlementCoordinationNode(EvidenceNode):
+    """
+    Node representing settlement coordination evidence.
+    Detects coordination in settlement timing and methods between counterparties.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["independent", "synchronized", "coordinated"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class BeneficialOwnershipNode(EvidenceNode):
+    """
+    Node representing beneficial ownership evidence.
+    Analyzes ultimate beneficial ownership to detect hidden relationships.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["separate_ownership", "shared_interests", "common_ownership"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class TradeSequenceAnalysisNode(EvidenceNode):
+    """
+    Node representing trade sequence analysis evidence.
+    Detects patterns in trade sequences that indicate circular or wash trading.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["random_sequence", "structured_sequence", "circular_sequence"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class CoordinationLatentIntentNode(LatentIntentNode):
+    """
+    Node representing latent coordination intent for circular trading.
+    Infers hidden intent to engage in circular or wash trading from converging evidence.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        super().__init__(name, description=description, fallback_prior=fallback_prior)
+    
+    def get_intent_strength(self, evidence_values: Dict[str, Any]) -> float:
+        """
+        Calculate coordination intent strength based on circular trading evidence.
+        """
+        # Circular trading specific logic for intent inference
+        strength = 0.0
+        
+        # Weight evidence from different sources
+        weights = {
+            'counterparty_relationship': 0.20,
+            'risk_transfer_analysis': 0.25,
+            'price_negotiation_pattern': 0.15,
+            'settlement_coordination': 0.15,
+            'beneficial_ownership': 0.15,
+            'trade_sequence_analysis': 0.10
+        }
+        
+        for evidence_name, weight in weights.items():
+            if evidence_name in evidence_values:
+                evidence_value = evidence_values[evidence_name]
+                if isinstance(evidence_value, (int, float)):
+                    strength += weight * evidence_value
+        
+        return min(strength, 1.0) 
