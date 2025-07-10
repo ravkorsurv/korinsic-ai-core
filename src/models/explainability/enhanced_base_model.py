@@ -11,6 +11,7 @@ from datetime import datetime
 import logging
 
 from ..shared import BaseModel, ModelMetadata
+from .evidence_sufficiency_index import EvidenceSufficiencyIndex, ESIResult
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,11 @@ class EnhancedBaseModel(BaseModel):
         self.explainability_enabled = config.get('explainability_enabled', True)
         self.audit_enabled = config.get('audit_enabled', True)
         self.governance_enabled = config.get('governance_enabled', True)
+        
+        # Initialize ESI calculator
+        self.esi_calculator = EvidenceSufficiencyIndex(
+            weights=config.get('esi_weights')
+        )
         
         # Enhanced metadata
         self.metadata = EnhancedModelMetadata()
@@ -75,6 +81,18 @@ class EnhancedBaseModel(BaseModel):
             else:
                 result = self._calculate_basic_risk(evidence)
             
+            # Calculate Evidence Sufficiency Index
+            esi_result = self.calculate_evidence_sufficiency_index(evidence, result)
+            result['evidence_sufficiency_index'] = esi_result
+            
+            # Calculate adjusted risk score using ESI
+            if 'risk_scores' in result and 'overall_score' in result['risk_scores']:
+                original_score = result['risk_scores']['overall_score']
+                adjusted_score = self.esi_calculator.calculate_adjusted_risk_score(
+                    original_score, esi_result
+                )
+                result['risk_scores']['esi_adjusted_score'] = adjusted_score
+            
             # Add metadata
             result['decision_metadata'] = {
                 'decision_id': decision_id,
@@ -82,7 +100,8 @@ class EnhancedBaseModel(BaseModel):
                 'processing_time': (datetime.utcnow() - start_time).total_seconds(),
                 'explainability_enabled': self.explainability_enabled,
                 'audit_enabled': self.audit_enabled,
-                'model_version': self.metadata.version
+                'model_version': self.metadata.version,
+                'esi_enabled': True
             }
             
             # Store decision
@@ -167,6 +186,32 @@ class EnhancedBaseModel(BaseModel):
             logger.error(f"Error calculating feature importance: {str(e)}")
             return {}
     
+    def calculate_evidence_sufficiency_index(self, evidence: Dict[str, Any], result: Dict[str, Any]) -> ESIResult:
+        """
+        Calculate Evidence Sufficiency Index for the given evidence and result.
+        
+        Args:
+            evidence: Input evidence dictionary
+            result: Model inference result
+            
+        Returns:
+            ESI calculation result matching wiki specification
+        """
+        try:
+            return self.esi_calculator.calculate_esi(evidence, result)
+        except Exception as e:
+            logger.error(f"ESI calculation failed: {e}")
+            # Return conservative ESI on failure
+            return ESIResult(
+                evidence_sufficiency_index=0.5,
+                node_count=len(result.get('active_nodes', [])),
+                mean_confidence="Medium",
+                fallback_ratio=1.0,
+                contribution_spread="Unknown",
+                clusters=["System"],
+                calculation_details={'error': 'ESI calculation failed', 'fallback_applied': True}
+            )
+    
     def validate_evidence_enhanced(self, evidence: Dict[str, Any]) -> Dict[str, Any]:
         """
         Enhanced evidence validation with detailed reporting.
@@ -205,7 +250,8 @@ class EnhancedBaseModel(BaseModel):
                 'feature_attribution': True,
                 'counterfactual_generation': True,
                 'decision_path_explanation': True,
-                'uncertainty_quantification': True
+                'uncertainty_quantification': True,
+                'evidence_sufficiency_index': True
             },
             'audit_capabilities': {
                 'decision_logging': self.audit_enabled,
