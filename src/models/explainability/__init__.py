@@ -11,6 +11,7 @@ from .feature_attribution import FeatureAttributor
 from .counterfactual_generator import CounterfactualGenerator
 from .decision_path_visualizer import DecisionPathVisualizer
 from .uncertainty_quantifier import UncertaintyQuantifier
+from .evidence_sufficiency_index import EvidenceSufficiencyIndex, ESIResult
 from .audit_logger import ModelAuditLogger
 from .governance_tracker import ModelGovernanceTracker
 from .enhanced_base_model import EnhancedBaseModel
@@ -21,6 +22,8 @@ __all__ = [
     'CounterfactualGenerator',
     'DecisionPathVisualizer',
     'UncertaintyQuantifier',
+    'EvidenceSufficiencyIndex',
+    'ESIResult',
     'ModelAuditLogger',
     'ModelGovernanceTracker',
     'EnhancedBaseModel'
