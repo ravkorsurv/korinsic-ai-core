@@ -1,482 +1,418 @@
 """
-Tests for Wash Trade Detection Model.
-
-This module provides comprehensive tests for the wash trade detection model
-including unit tests, integration tests, and scenario testing.
+Tests for wash trade detection system
 """
 
-import unittest
-from datetime import datetime
-from typing import Dict, Any
+import pytest
+import numpy as np
+from unittest.mock import Mock, patch
+from datetime import datetime, timedelta
 
-from src.models.bayesian.wash_trade_detection import (
-    WashTradeDetectionModel,
-    WashTradeDetectionNodes,
-    WashTradeDetectionConfig
-)
+from src.models.bayesian.wash_trade_detection.model import WashTradeDetectionModel
+from src.models.bayesian.wash_trade_detection.config import WashTradeDetectionConfig
+from src.models.bayesian.wash_trade_detection.nodes import *
+from src.models.bayesian.registry import ModelRegistry
+from src.models.bayesian.shared.node_library import NodeLibrary
+from src.core.evidence_mapper import EvidenceMapper
+from src.core.regulatory_explainability import RegulatoryExplainability
 
-
-class TestWashTradeDetectionModel(unittest.TestCase):
-    """Test cases for WashTradeDetectionModel."""
+class TestWashTradeDetectionModel:
+    """Test cases for wash trade detection model"""
     
-    def setUp(self):
-        """Set up test fixtures."""
-        self.config = {
-            'wash_trade_probability_threshold': 0.7,
-            'signal_distortion_threshold': 0.6,
-            'algo_reaction_threshold': 0.65,
-            'use_latent_intent': True
-        }
-        self.model = WashTradeDetectionModel(use_latent_intent=True, config=self.config)
-    
-    def test_model_initialization(self):
-        """Test model initialization."""
-        self.assertIsNotNone(self.model)
-        self.assertEqual(self.model.model_version, '1.0.0')
-        self.assertTrue(self.model.use_latent_intent)
-        self.assertFalse(self.model.is_trained)
-    
-    def test_get_model_info(self):
-        """Test model information retrieval."""
-        info = self.model.get_model_info()
-        
-        self.assertEqual(info['model_name'], 'wash_trade_detection')
-        self.assertEqual(info['model_version'], '1.0.0')
-        self.assertTrue(info['use_latent_intent'])
-        self.assertIn('core_nodes', info)
-        self.assertIn('supporting_nodes', info)
-    
-    def test_validate_evidence_valid(self):
-        """Test evidence validation with valid data."""
-        evidence = {
-            'trade_id': 'TEST_001',
-            'timestamp': '2025-01-01T10:00:00Z',
-            'counterparty_entity_match': 0.8,
-            'signal_distortion_index': 0.6
-        }
-        
-        self.assertTrue(self.model._validate_evidence(evidence))
-    
-    def test_validate_evidence_invalid(self):
-        """Test evidence validation with invalid data."""
-        evidence = {
-            'counterparty_entity_match': 0.8,
-            'signal_distortion_index': 0.6
-        }
-        
-        self.assertFalse(self.model._validate_evidence(evidence))
-    
-    def test_wash_trade_likelihood_prediction_high(self):
-        """Test wash trade likelihood prediction with high probability indicators."""
-        evidence = {
-            'lei_exact_match': True,
-            'counterparty_entity_match': 0.9,
-            'algo_framework_match': 0.8,
-            'trade_time_delta': 0.5,
-            'implied_strategy_execution': 0.7
-        }
-        
-        result = self.model._predict_wash_trade_likelihood(evidence)
-        
-        self.assertEqual(result['state'], 'high_probability')
-        self.assertGreater(result['probability'], 0.7)
-        self.assertGreater(result['likelihood_score'], 0.7)
-    
-    def test_wash_trade_likelihood_prediction_low(self):
-        """Test wash trade likelihood prediction with low probability indicators."""
-        evidence = {
-            'lei_exact_match': False,
-            'counterparty_entity_match': 0.1,
-            'algo_framework_match': 0.1,
-            'trade_time_delta': 5000,
-            'implied_strategy_execution': 0.1
-        }
-        
-        result = self.model._predict_wash_trade_likelihood(evidence)
-        
-        self.assertEqual(result['state'], 'low_probability')
-        self.assertLess(result['probability'], 0.4)
-        self.assertLess(result['likelihood_score'], 0.4)
-    
-    def test_signal_distortion_prediction_high(self):
-        """Test signal distortion prediction with high distortion indicators."""
-        evidence = {
-            'order_book_impact': 0.8,
-            'quote_frequency_distortion': 0.9,
-            'spread_manipulation': 0.7,
-            'volume_at_best_change': 0.8,
-            'order_book_imbalance_change': 0.6,
-            'quote_frequency_ratio': 3.0
-        }
-        
-        result = self.model._predict_signal_distortion_index(evidence)
-        
-        self.assertEqual(result['state'], 'high_distortion')
-        self.assertGreater(result['probability'], 0.7)
-        self.assertGreater(result['distortion_score'], 0.6)
-    
-    def test_algo_reaction_sensitivity_prediction(self):
-        """Test algorithmic reaction sensitivity prediction."""
-        evidence = {
-            'order_flow_clustering': 0.8,
-            'reaction_time_delta': 0.9,
-            'passive_aggressive_ratio': 0.7,
-            'algo_reaction_time_ms': 30,
-            'order_clustering_ratio': 0.8,
-            'passive_aggressive_change': 0.5
-        }
-        
-        result = self.model._predict_algo_reaction_sensitivity(evidence)
-        
-        self.assertEqual(result['state'], 'high_sensitivity')
-        self.assertGreater(result['probability'], 0.6)
-        self.assertGreater(result['sensitivity_score'], 0.6)
-    
-    def test_strategy_leg_overlap_prediction(self):
-        """Test strategy leg overlap prediction."""
-        evidence = {
-            'commodity_leg_matching': 0.8,
-            'third_party_risk_validation': 0.7,
-            'time_spread_detected': True,
-            'cross_contract_matching': 0.6,
-            'same_entity_legs': 0.9
-        }
-        
-        result = self.model._predict_strategy_leg_overlap(evidence)
-        
-        self.assertEqual(result['state'], 'full_overlap')
-        self.assertGreater(result['probability'], 0.7)
-        self.assertGreater(result['overlap_score'], 0.7)
-    
-    def test_price_impact_anomaly_prediction(self):
-        """Test price impact anomaly prediction."""
-        evidence = {
-            'mean_reversion_pattern': 0.8,
-            'price_spike_fade': 0.7,
-            'volatility_baseline_deviation': 0.6,
-            'immediate_reversion': 5,
-            'price_spike_magnitude': 0.03,
-            'volatility_z_score': 4.0
-        }
-        
-        result = self.model._predict_price_impact_anomaly(evidence)
-        
-        self.assertEqual(result['state'], 'anomalous_impact')
-        self.assertGreater(result['probability'], 0.6)
-        self.assertGreater(result['anomaly_score'], 0.6)
-    
-    def test_implied_liquidity_conflict_prediction(self):
-        """Test implied liquidity conflict prediction."""
-        evidence = {
-            'venue_implied_matching': 0.8,
-            'leg_execution_source': 0.7,
-            'implied_matching_detected': True,
-            'internal_execution_ratio': 0.8,
-            'strategy_order_matching': 0.6
-        }
-        
-        result = self.model._predict_implied_liquidity_conflict(evidence)
-        
-        self.assertEqual(result['state'], 'clear_conflict')
-        self.assertGreater(result['probability'], 0.7)
-        self.assertGreater(result['conflict_score'], 0.7)
-    
-    def test_full_prediction_wash_trade_detected(self):
-        """Test full prediction with wash trade detection scenario."""
-        evidence = {
-            'trade_id': 'TEST_WASH_001',
-            'timestamp': '2025-01-01T10:00:00Z',
-            'lei_exact_match': True,
-            'counterparty_entity_match': 0.9,
-            'algo_framework_match': 0.8,
-            'order_book_impact': 0.7,
-            'quote_frequency_distortion': 0.8,
-            'algo_reaction_time_ms': 25,
-            'commodity_leg_matching': 0.8,
-            'mean_reversion_pattern': 0.7,
-            'venue_implied_matching': 0.7
-        }
-        
-        result = self.model.predict(evidence)
-        
-        self.assertTrue(result['wash_trade_detected'])
-        self.assertGreater(result['confidence_score'], 0.6)
-        self.assertGreater(result['risk_score'], 0.6)
-        self.assertIn('explanation', result)
-        self.assertIn('core_requirements', result)
-    
-    def test_full_prediction_no_wash_trade(self):
-        """Test full prediction with no wash trade detection scenario."""
-        evidence = {
-            'trade_id': 'TEST_NORMAL_001',
-            'timestamp': '2025-01-01T10:00:00Z',
-            'lei_exact_match': False,
-            'counterparty_entity_match': 0.1,
-            'algo_framework_match': 0.1,
-            'order_book_impact': 0.2,
-            'quote_frequency_distortion': 0.1,
-            'algo_reaction_time_ms': 500,
-            'commodity_leg_matching': 0.1,
-            'mean_reversion_pattern': 0.2,
-            'venue_implied_matching': 0.1
-        }
-        
-        result = self.model.predict(evidence)
-        
-        self.assertFalse(result['wash_trade_detected'])
-        self.assertLess(result['confidence_score'], 0.7)
-        self.assertLess(result['risk_score'], 0.7)
-        self.assertIn('explanation', result)
-
-
-class TestWashTradeDetectionNodes(unittest.TestCase):
-    """Test cases for WashTradeDetectionNodes."""
-    
-    def setUp(self):
-        """Set up test fixtures."""
-        self.nodes = WashTradeDetectionNodes()
-    
-    def test_nodes_initialization(self):
-        """Test nodes initialization."""
-        self.assertIsNotNone(self.nodes)
-        self.assertIsNotNone(self.nodes.node_definitions)
-        self.assertGreater(len(self.nodes.node_definitions), 0)
-    
-    def test_get_core_requirement_nodes(self):
-        """Test getting core requirement nodes."""
-        core_nodes = self.nodes.get_core_requirement_nodes()
-        
-        expected_core_nodes = [
-            'wash_trade_likelihood',
-            'signal_distortion_index',
-            'algo_reaction_sensitivity',
-            'strategy_leg_overlap',
-            'price_impact_anomaly',
-            'implied_liquidity_conflict'
-        ]
-        
-        self.assertEqual(len(core_nodes), 6)
-        for node in expected_core_nodes:
-            self.assertIn(node, core_nodes)
-    
-    def test_create_node(self):
-        """Test node creation."""
-        node = self.nodes.create_node('wash_trade_likelihood')
-        
-        self.assertIsNotNone(node)
-        self.assertEqual(node.name, 'wash_trade_likelihood')
-    
-    def test_get_node_statistics(self):
-        """Test node statistics."""
-        stats = self.nodes.get_node_statistics()
-        
-        self.assertIn('total_nodes', stats)
-        self.assertIn('core_requirement_nodes', stats)
-        self.assertIn('supporting_evidence_nodes', stats)
-        self.assertEqual(stats['core_requirement_nodes'], 6)
-        self.assertGreater(stats['total_nodes'], 20)
-    
-    def test_validate_node_compatibility(self):
-        """Test node compatibility validation."""
-        # Test valid node
-        self.assertTrue(self.nodes.validate_node_compatibility('wash_trade_likelihood'))
-        
-        # Test invalid node
-        self.assertFalse(self.nodes.validate_node_compatibility('nonexistent_node'))
-
-
-class TestWashTradeDetectionConfig(unittest.TestCase):
-    """Test cases for WashTradeDetectionConfig."""
-    
-    def setUp(self):
-        """Set up test fixtures."""
+    def setup_method(self):
+        """Setup test fixtures"""
         self.config = WashTradeDetectionConfig()
-    
-    def test_config_initialization(self):
-        """Test configuration initialization."""
-        self.assertIsNotNone(self.config)
-        self.assertEqual(self.config.get('model_name'), 'wash_trade_detection')
-        self.assertEqual(self.config.get('model_version'), '1.0.0')
-    
-    def test_get_detection_thresholds(self):
-        """Test getting detection thresholds."""
-        thresholds = self.config.get_detection_thresholds()
+        self.model = WashTradeDetectionModel(self.config)
+        self.evidence_mapper = EvidenceMapper()
+        self.reg_explainability = RegulatoryExplainability()
         
-        self.assertIn('wash_trade_probability_threshold', thresholds)
-        self.assertIn('signal_distortion_threshold', thresholds)
-        self.assertIn('algo_reaction_threshold', thresholds)
+    def test_model_initialization(self):
+        """Test model initialization"""
+        assert self.model.config == self.config
+        assert self.model.network is not None
+        assert len(self.model.network.nodes) > 0
         
-        # Validate threshold ranges
-        for threshold_name, threshold_value in thresholds.items():
-            self.assertGreaterEqual(threshold_value, 0.0)
-            self.assertLessEqual(threshold_value, 1.0)
-    
-    def test_get_time_parameters(self):
-        """Test getting time parameters."""
-        time_params = self.config.get_time_parameters()
+    def test_registry_integration(self):
+        """Test model registry integration"""
+        registry = ModelRegistry()
+        assert 'wash_trade_detection' in registry.models
+        assert callable(registry.models['wash_trade_detection'])
         
-        self.assertIn('algo_reaction_window_ms', time_params)
-        self.assertIn('price_impact_window_seconds', time_params)
-        self.assertIn('mean_reversion_window_seconds', time_params)
+    def test_node_library_integration(self):
+        """Test node library integration"""
+        library = NodeLibrary()
         
-        # Validate time parameters are positive
-        for param_name, param_value in time_params.items():
-            self.assertGreater(param_value, 0)
-    
-    def test_get_risk_factor_weights(self):
-        """Test getting risk factor weights."""
-        weights = self.config.get_risk_factor_weights()
-        
-        expected_weights = [
-            'wash_trade_likelihood',
-            'signal_distortion_index',
-            'algo_reaction_sensitivity',
-            'strategy_leg_overlap',
-            'price_impact_anomaly',
-            'implied_liquidity_conflict'
+        # Test wash trade specific nodes
+        wash_trade_nodes = [
+            'WashTradeLikelihood',
+            'SignalDistortionIndex',
+            'AlgoReactionSensitivity',
+            'StrategyLegOverlap',
+            'PriceImpactAnomaly',
+            'ImpliedLiquidityConflict'
         ]
         
-        for weight_name in expected_weights:
-            self.assertIn(weight_name, weights)
-            self.assertGreater(weights[weight_name], 0.0)
+        for node_name in wash_trade_nodes:
+            assert node_name in library.nodes
+            assert callable(library.nodes[node_name])
+            
+    def test_high_risk_wash_trade_prediction(self):
+        """Test high risk wash trade prediction"""
         
-        # Weights should sum to approximately 1.0
-        total_weight = sum(weights.values())
-        self.assertAlmostEqual(total_weight, 1.0, places=1)
-    
-    def test_validate_configuration(self):
-        """Test configuration validation."""
-        self.assertTrue(self.config.validate_configuration())
-    
-    def test_custom_configuration(self):
-        """Test custom configuration override."""
-        custom_config = {
-            'wash_trade_probability_threshold': 0.8,
-            'model_version': '1.1.0'
+        # Mock high risk wash trade data
+        market_data = {
+            'entity_a_lei': 'LEI123456789',
+            'entity_b_lei': 'LEI123456789',  # Same LEI
+            'entity_relationship': 'same_entity',
+            'algo_framework_match': True,
+            'timing_correlation': 0.95,
+            'volume_imbalance': 0.8,
+            'quote_flicker_frequency': 50,
+            'order_book_depth_distortion': 0.7,
+            'algo_reaction_time': 0.05,  # 50ms
+            'post_trade_reaction_count': 15,
+            'commodity_venue_overlap': 0.9,
+            'strategy_leg_correlation': 0.85,
+            'price_impact_magnitude': 0.6,
+            'mean_reversion_speed': 0.8,
+            'venue_liquidity_conflict': 0.7,
+            'implied_matching_rate': 0.75
         }
         
-        config = WashTradeDetectionConfig(custom_config)
+        result = self.model.predict(market_data)
         
-        self.assertEqual(config.get('wash_trade_probability_threshold'), 0.8)
-        self.assertEqual(config.get('model_version'), '1.1.0')
-        self.assertEqual(config.get('model_name'), 'wash_trade_detection')  # Default value
-    
-    def test_is_feature_enabled(self):
-        """Test feature enablement checking."""
-        self.assertTrue(self.config.is_feature_enabled('use_latent_intent'))
-        self.assertTrue(self.config.is_feature_enabled('enable_signal_distortion'))
-        self.assertFalse(self.config.is_feature_enabled('nonexistent_feature'))
-
-
-class TestWashTradeDetectionScenarios(unittest.TestCase):
-    """Test cases for specific wash trade detection scenarios."""
-    
-    def setUp(self):
-        """Set up test fixtures."""
-        self.model = WashTradeDetectionModel(use_latent_intent=True)
-    
-    def test_lei_exact_match_scenario(self):
-        """Test scenario with exact LEI match (high wash trade probability)."""
-        evidence = {
-            'trade_id': 'LEI_EXACT_001',
-            'timestamp': '2025-01-01T10:00:00Z',
-            'lei_exact_match': True,
-            'trade_time_delta': 0,
-            'counterparty_entity_match': 1.0,
-            'algo_framework_match': 0.9
+        assert result['risk_level'] == 'high'
+        assert result['overall_score'] > 0.7
+        assert 'WashTradeLikelihood' in result['node_states']
+        assert 'SignalDistortionIndex' in result['node_states']
+        
+    def test_medium_risk_wash_trade_prediction(self):
+        """Test medium risk wash trade prediction"""
+        
+        market_data = {
+            'entity_a_lei': 'LEI123456789',
+            'entity_b_lei': 'LEI987654321',  # Different LEI
+            'entity_relationship': 'affiliate',
+            'algo_framework_match': True,
+            'timing_correlation': 0.7,
+            'volume_imbalance': 0.5,
+            'quote_flicker_frequency': 20,
+            'order_book_depth_distortion': 0.4,
+            'algo_reaction_time': 0.08,  # 80ms
+            'post_trade_reaction_count': 8,
+            'commodity_venue_overlap': 0.6,
+            'strategy_leg_correlation': 0.6,
+            'price_impact_magnitude': 0.4,
+            'mean_reversion_speed': 0.6,
+            'venue_liquidity_conflict': 0.4,
+            'implied_matching_rate': 0.45
         }
         
-        result = self.model.predict(evidence)
+        result = self.model.predict(market_data)
         
-        self.assertTrue(result['wash_trade_detected'])
-        self.assertGreater(result['confidence_score'], 0.7)
-    
-    def test_commodity_time_spread_scenario(self):
-        """Test scenario with commodity derivatives time spreads."""
-        evidence = {
-            'trade_id': 'COMMODITY_SPREAD_001',
-            'timestamp': '2025-01-01T10:00:00Z',
-            'time_spread_detected': True,
-            'commodity_leg_matching': 0.9,
-            'same_entity_legs': 0.8,
-            'third_party_risk_validation': 0.1,  # No real risk transfer
-            'cross_contract_matching': 0.7
+        assert result['risk_level'] == 'medium'
+        assert 0.4 < result['overall_score'] < 0.8
+        
+    def test_low_risk_wash_trade_prediction(self):
+        """Test low risk wash trade prediction"""
+        
+        market_data = {
+            'entity_a_lei': 'LEI123456789',
+            'entity_b_lei': 'LEI987654321',  # Different LEI
+            'entity_relationship': 'unrelated',
+            'algo_framework_match': False,
+            'timing_correlation': 0.3,
+            'volume_imbalance': 0.2,
+            'quote_flicker_frequency': 5,
+            'order_book_depth_distortion': 0.1,
+            'algo_reaction_time': 0.2,  # 200ms
+            'post_trade_reaction_count': 2,
+            'commodity_venue_overlap': 0.2,
+            'strategy_leg_correlation': 0.3,
+            'price_impact_magnitude': 0.1,
+            'mean_reversion_speed': 0.3,
+            'venue_liquidity_conflict': 0.1,
+            'implied_matching_rate': 0.2
         }
         
-        result = self.model.predict(evidence)
+        result = self.model.predict(market_data)
         
-        # Should detect strategy leg overlap
-        strategy_overlap = result['core_requirements']['strategy_leg_overlap']
-        self.assertEqual(strategy_overlap['state'], 'full_overlap')
-    
-    def test_algo_reaction_fast_response_scenario(self):
-        """Test scenario with fast algorithmic reaction (<100ms)."""
-        evidence = {
-            'trade_id': 'ALGO_REACTION_001',
-            'timestamp': '2025-01-01T10:00:00Z',
-            'algo_reaction_time_ms': 25,
-            'order_clustering_ratio': 0.8,
-            'passive_aggressive_change': 0.6,
-            'order_flow_clustering': 0.9
+        assert result['risk_level'] == 'low'
+        assert result['overall_score'] < 0.4
+        
+    def test_evidence_mapping_integration(self):
+        """Test evidence mapping integration"""
+        
+        # Test wash trade likelihood evidence mapping
+        evidence = self.evidence_mapper.map_wash_trade_likelihood({
+            'entity_a_lei': 'LEI123456789',
+            'entity_b_lei': 'LEI123456789',
+            'entity_relationship': 'same_entity',
+            'algo_framework_match': True,
+            'timing_correlation': 0.9
+        })
+        
+        assert evidence['wash_trade_likelihood'] > 0.7
+        assert evidence['entity_match_score'] > 0.8
+        
+        # Test signal distortion evidence mapping
+        evidence = self.evidence_mapper.map_signal_distortion_index({
+            'volume_imbalance': 0.8,
+            'quote_flicker_frequency': 50,
+            'order_book_depth_distortion': 0.7
+        })
+        
+        assert evidence['signal_distortion_index'] > 0.6
+        assert evidence['order_book_impact'] > 0.7
+        
+    def test_regulatory_explainability_integration(self):
+        """Test regulatory explainability integration"""
+        
+        # Mock high risk result
+        risk_result = {
+            'overall_score': 0.85,
+            'risk_level': 'high',
+            'confidence': 0.92
         }
         
-        result = self.model.predict(evidence)
-        
-        # Should detect high algo reaction sensitivity
-        algo_reaction = result['core_requirements']['algo_reaction_sensitivity']
-        self.assertEqual(algo_reaction['state'], 'high_sensitivity')
-    
-    def test_signal_distortion_orderbook_scenario(self):
-        """Test scenario with order book signal distortion."""
-        evidence = {
-            'trade_id': 'SIGNAL_DISTORTION_001',
-            'timestamp': '2025-01-01T10:00:00Z',
-            'volume_at_best_change': 0.8,
-            'order_book_imbalance_change': 0.7,
-            'quote_frequency_ratio': 4.0,
-            'spread_manipulation': 0.6
+        evidence_factors = {
+            'WashTradeLikelihood': 2,
+            'SignalDistortionIndex': 2,
+            'AlgoReactionSensitivity': 1,
+            'StrategyLegOverlap': 2,
+            'PriceImpactAnomaly': 1,
+            'ImpliedLiquidityConflict': 1
         }
         
-        result = self.model.predict(evidence)
+        rationale = self.reg_explainability.generate_regulatory_rationale(
+            alert_id='WASH_TRADE_001',
+            risk_result=risk_result,
+            evidence_factors=evidence_factors,
+            model_type='wash_trade_detection'
+        )
         
-        # Should detect high signal distortion
-        signal_distortion = result['core_requirements']['signal_distortion_index']
-        self.assertEqual(signal_distortion['state'], 'high_distortion')
-    
-    def test_price_impact_anomaly_scenario(self):
-        """Test scenario with price impact anomalies."""
-        evidence = {
-            'trade_id': 'PRICE_ANOMALY_001',
-            'timestamp': '2025-01-01T10:00:00Z',
-            'immediate_reversion': 3,  # 3 seconds for reversion
-            'price_spike_magnitude': 0.04,  # 4% spike
-            'volatility_z_score': 5.0,  # Extreme deviation
-            'mean_reversion_pattern': 0.9
+        assert rationale.alert_id == 'WASH_TRADE_001'
+        assert rationale.risk_level == 'high'
+        assert rationale.overall_score == 0.85
+        assert 'wash trade activity' in rationale.deterministic_narrative.lower()
+        assert rationale.regulatory_basis == 'MiFID II Article 48 - Wash trades and matched orders'
+        assert len(rationale.inference_paths) > 0
+        assert len(rationale.key_evidence) > 0
+        
+    def test_wash_trade_narrative_generation(self):
+        """Test wash trade specific narrative generation"""
+        
+        evidence_factors = {
+            'WashTradeLikelihood': 2,
+            'SignalDistortionIndex': 2,
+            'AlgoReactionSensitivity': 2,
+            'StrategyLegOverlap': 1,
+            'PriceImpactAnomaly': 2,
+            'ImpliedLiquidityConflict': 1
         }
         
-        result = self.model.predict(evidence)
+        narrative = self.reg_explainability._generate_wash_trade_narrative(
+            {'overall_score': 0.85, 'risk_level': 'high'},
+            evidence_factors
+        )
         
-        # Should detect anomalous price impact
-        price_impact = result['core_requirements']['price_impact_anomaly']
-        self.assertEqual(price_impact['state'], 'anomalous_impact')
-    
-    def test_implied_liquidity_venue_scenario(self):
-        """Test scenario with venue-level implied liquidity conflicts."""
-        evidence = {
-            'trade_id': 'IMPLIED_LIQUIDITY_001',
-            'timestamp': '2025-01-01T10:00:00Z',
-            'implied_matching_detected': True,
-            'internal_execution_ratio': 0.9,
-            'strategy_order_matching': 0.8,
-            'venue_implied_matching': 0.8
+        # Check that narrative includes all key indicators
+        assert 'wash trade' in narrative.lower()
+        assert 'related entities' in narrative.lower()
+        assert 'signal distortion' in narrative.lower()
+        assert 'algorithmic systems' in narrative.lower()
+        assert 'price impact' in narrative.lower()
+        
+    def test_stor_export_format(self):
+        """Test STOR export format"""
+        
+        # Create test rationale
+        risk_result = {
+            'overall_score': 0.8,
+            'risk_level': 'high'
         }
         
-        result = self.model.predict(evidence)
+        evidence_factors = {
+            'WashTradeLikelihood': 2,
+            'SignalDistortionIndex': 1
+        }
         
-        # Should detect clear liquidity conflict
-        liquidity_conflict = result['core_requirements']['implied_liquidity_conflict']
-        self.assertEqual(liquidity_conflict['state'], 'clear_conflict')
-
+        rationale = self.reg_explainability.generate_regulatory_rationale(
+            alert_id='WASH_TRADE_STOR_001',
+            risk_result=risk_result,
+            evidence_factors=evidence_factors,
+            model_type='wash_trade_detection'
+        )
+        
+        stor_record = self.reg_explainability.export_stor_format(rationale)
+        
+        assert stor_record.record_id == 'WASH_TRADE_STOR_001'
+        assert stor_record.risk_score == 0.8
+        assert stor_record.risk_level == 'high'
+        assert stor_record.transaction_type == 'SUSPICIOUS_ACTIVITY'
+        assert stor_record.regulatory_basis == 'MiFID II Article 48 - Wash trades and matched orders'
+        
+    def test_full_pipeline_integration(self):
+        """Test full pipeline integration from prediction to regulatory output"""
+        
+        # High risk wash trade scenario
+        market_data = {
+            'entity_a_lei': 'LEI123456789',
+            'entity_b_lei': 'LEI123456789',
+            'entity_relationship': 'same_entity',
+            'algo_framework_match': True,
+            'timing_correlation': 0.95,
+            'volume_imbalance': 0.8,
+            'quote_flicker_frequency': 50,
+            'order_book_depth_distortion': 0.7,
+            'algo_reaction_time': 0.05,
+            'post_trade_reaction_count': 15,
+            'commodity_venue_overlap': 0.9,
+            'strategy_leg_correlation': 0.85,
+            'price_impact_magnitude': 0.6,
+            'mean_reversion_speed': 0.8,
+            'venue_liquidity_conflict': 0.7,
+            'implied_matching_rate': 0.75
+        }
+        
+        # Step 1: Model prediction
+        prediction_result = self.model.predict(market_data)
+        assert prediction_result['risk_level'] == 'high'
+        
+        # Step 2: Evidence mapping
+        evidence_factors = {}
+        for node_name, state in prediction_result['node_states'].items():
+            if node_name in ['WashTradeLikelihood', 'SignalDistortionIndex', 
+                           'AlgoReactionSensitivity', 'StrategyLegOverlap',
+                           'PriceImpactAnomaly', 'ImpliedLiquidityConflict']:
+                evidence_factors[node_name] = state
+        
+        # Step 3: Regulatory explainability
+        rationale = self.reg_explainability.generate_regulatory_rationale(
+            alert_id='WASH_TRADE_FULL_001',
+            risk_result=prediction_result,
+            evidence_factors=evidence_factors,
+            model_type='wash_trade_detection'
+        )
+        
+        # Step 4: STOR export
+        stor_record = self.reg_explainability.export_stor_format(rationale)
+        
+        # Verify full pipeline
+        assert stor_record.risk_level == 'high'
+        assert 'wash trade' in stor_record.narrative.lower()
+        assert stor_record.regulatory_basis == 'MiFID II Article 48 - Wash trades and matched orders'
+        assert len(rationale.inference_paths) > 0
+        assert len(rationale.audit_trail) > 0
+        
+    def test_node_state_transitions(self):
+        """Test node state transitions for wash trade detection"""
+        
+        # Test WashTradeLikelihood node
+        wash_node = WashTradeLikelihood()
+        
+        # High risk scenario
+        high_risk_evidence = {
+            'entity_a_lei': 'LEI123456789',
+            'entity_b_lei': 'LEI123456789',
+            'entity_relationship': 'same_entity',
+            'algo_framework_match': True,
+            'timing_correlation': 0.95
+        }
+        
+        high_risk_state = wash_node.calculate_state(high_risk_evidence)
+        assert high_risk_state == 2  # High state
+        
+        # Low risk scenario
+        low_risk_evidence = {
+            'entity_a_lei': 'LEI123456789',
+            'entity_b_lei': 'LEI987654321',
+            'entity_relationship': 'unrelated',
+            'algo_framework_match': False,
+            'timing_correlation': 0.2
+        }
+        
+        low_risk_state = wash_node.calculate_state(low_risk_evidence)
+        assert low_risk_state == 0  # Low state
+        
+    def test_error_handling(self):
+        """Test error handling in wash trade detection"""
+        
+        # Test with missing data
+        incomplete_data = {
+            'entity_a_lei': 'LEI123456789'
+            # Missing most required fields
+        }
+        
+        result = self.model.predict(incomplete_data)
+        assert result is not None
+        assert 'overall_score' in result
+        assert result['overall_score'] >= 0.0
+        
+        # Test regulatory explainability error handling
+        invalid_evidence = {'invalid_node': 'invalid_value'}
+        
+        rationale = self.reg_explainability.generate_regulatory_rationale(
+            alert_id='ERROR_TEST',
+            risk_result={'overall_score': 0.5, 'risk_level': 'medium'},
+            evidence_factors=invalid_evidence,
+            model_type='wash_trade_detection'
+        )
+        
+        assert rationale is not None
+        assert rationale.alert_id == 'ERROR_TEST'
+        
+    def test_performance_benchmarks(self):
+        """Test performance benchmarks for wash trade detection"""
+        
+        import time
+        
+        # Create large dataset
+        test_data = []
+        for i in range(100):
+            test_data.append({
+                'entity_a_lei': f'LEI{i:09d}',
+                'entity_b_lei': f'LEI{(i+1):09d}',
+                'entity_relationship': 'unrelated',
+                'algo_framework_match': i % 2 == 0,
+                'timing_correlation': np.random.uniform(0.1, 0.9),
+                'volume_imbalance': np.random.uniform(0.1, 0.8),
+                'quote_flicker_frequency': np.random.randint(1, 100),
+                'order_book_depth_distortion': np.random.uniform(0.1, 0.8),
+                'algo_reaction_time': np.random.uniform(0.05, 0.5),
+                'post_trade_reaction_count': np.random.randint(1, 20),
+                'commodity_venue_overlap': np.random.uniform(0.1, 0.9),
+                'strategy_leg_correlation': np.random.uniform(0.1, 0.9),
+                'price_impact_magnitude': np.random.uniform(0.1, 0.8),
+                'mean_reversion_speed': np.random.uniform(0.1, 0.9),
+                'venue_liquidity_conflict': np.random.uniform(0.1, 0.8),
+                'implied_matching_rate': np.random.uniform(0.1, 0.8)
+            })
+        
+        # Time the predictions
+        start_time = time.time()
+        results = []
+        
+        for data in test_data:
+            result = self.model.predict(data)
+            results.append(result)
+        
+        end_time = time.time()
+        total_time = end_time - start_time
+        
+        # Performance assertions
+        assert len(results) == 100
+        assert total_time < 10.0  # Should complete in under 10 seconds
+        assert all('overall_score' in result for result in results)
+        
+        # Check distribution of results
+        high_risk_count = sum(1 for r in results if r['risk_level'] == 'high')
+        medium_risk_count = sum(1 for r in results if r['risk_level'] == 'medium')
+        low_risk_count = sum(1 for r in results if r['risk_level'] == 'low')
+        
+        assert high_risk_count + medium_risk_count + low_risk_count == 100
+        
+        print(f"Performance test completed in {total_time:.2f} seconds")
+        print(f"Risk distribution: High={high_risk_count}, Medium={medium_risk_count}, Low={low_risk_count}")
 
 if __name__ == '__main__':
-    unittest.main()
+    pytest.main([__file__, '-v'])
