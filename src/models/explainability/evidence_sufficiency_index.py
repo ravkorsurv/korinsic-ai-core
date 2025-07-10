@@ -6,7 +6,7 @@ ESI complements the Bayesian risk score by measuring evidence quality, diversity
 """
 
 from dataclasses import dataclass
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Union
 import math
 from datetime import datetime
 import logging
@@ -198,7 +198,7 @@ class EvidenceSufficiencyIndex:
         total_clusters = len(self.node_clusters)
         return len(active_clusters) / total_clusters if total_clusters > 0 else 0.0
     
-    def _confidence_to_numeric(self, confidence: str) -> float:
+    def _confidence_to_numeric(self, confidence: Any) -> float:
         """Convert confidence labels to numeric values"""
         confidence_map = {
             'High': 1.0,
