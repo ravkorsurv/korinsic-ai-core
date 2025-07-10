@@ -4,7 +4,6 @@ Reusable node classes, templates, and CPT logic for Bayesian Network constructio
 """
 
 from typing import List, Dict, Any, Optional
-import numpy as np
 
 class BayesianNode:
     """
@@ -505,6 +504,124 @@ class SpoofingLatentIntentNode(LatentIntentNode):
         
         return min(strength, 1.0)
 
+# NEW: Wash Trade Detection Model nodes
+class WashTradeLikelihoodNode(EvidenceNode):
+    """
+    Node representing wash trade likelihood evidence.
+    Detects probability that a transaction is a wash trade with no economic interest change.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["low_probability", "medium_probability", "high_probability"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class SignalDistortionIndexNode(EvidenceNode):
+    """
+    Node representing signal distortion index evidence.
+    Measures distortion introduced into order book signals by trades.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["minimal_distortion", "moderate_distortion", "high_distortion"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class AlgoReactionSensitivityNode(EvidenceNode):
+    """
+    Node representing algorithmic reaction sensitivity evidence.
+    Models likelihood that trading algorithms respond to false signals from wash trades.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["low_sensitivity", "medium_sensitivity", "high_sensitivity"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class StrategyLegOverlapNode(EvidenceNode):
+    """
+    Node representing strategy leg overlap evidence.
+    Detects whether same-entity orders in a strategy matched against each other.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["no_overlap", "partial_overlap", "full_overlap"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class PriceImpactAnomalyNode(EvidenceNode):
+    """
+    Node representing price impact anomaly evidence.
+    Quantifies short-term abnormal price behavior after trade occurs.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["normal_impact", "unusual_impact", "anomalous_impact"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class ImpliedLiquidityConflictNode(EvidenceNode):
+    """
+    Node representing implied liquidity conflict evidence.
+    Detects cases where venue-level implied matching creates artificial interactions.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["no_conflict", "potential_conflict", "clear_conflict"]
+        super().__init__(name, states, description=description, fallback_prior=fallback_prior)
+
+class WashTradeLatentIntentNode(LatentIntentNode):
+    """
+    Node representing latent wash trade intent.
+    Infers hidden intent to engage in wash trading from converging evidence.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["legitimate_trading", "potential_wash_trade", "clear_wash_trade"]
+        super().__init__(name, description=description, fallback_prior=fallback_prior)
+    
+    def get_intent_strength(self, evidence_values: Dict[str, Any]) -> float:
+        """
+        Calculate wash trade intent strength based on evidence.
+        """
+        strength = 0.0
+        
+        # Weight evidence from different sources
+        weights = {
+            'wash_trade_likelihood': 0.35,
+            'signal_distortion_index': 0.25,
+            'algo_reaction_sensitivity': 0.20,
+            'strategy_leg_overlap': 0.15,
+            'price_impact_anomaly': 0.05
+        }
+        
+        for evidence_name, weight in weights.items():
+            if evidence_name in evidence_values:
+                evidence_value = evidence_values[evidence_name]
+                if isinstance(evidence_value, (int, float)):
+                    strength += weight * evidence_value
+        
+        return min(strength, 1.0)
+
+class SignalDistortionLatentIntentNode(LatentIntentNode):
+    """
+    Node representing latent signal distortion intent.
+    Infers hidden intent to distort market signals from converging evidence.
+    """
+    def __init__(self, name: str, description: str = "", fallback_prior: Optional[List[float]] = None):
+        states = ["normal_signaling", "potential_distortion", "clear_distortion"]
+        super().__init__(name, description=description, fallback_prior=fallback_prior)
+    
+    def get_intent_strength(self, evidence_values: Dict[str, Any]) -> float:
+        """
+        Calculate signal distortion intent strength based on evidence.
+        """
+        strength = 0.0
+        
+        # Weight evidence from different sources
+        weights = {
+            'signal_distortion_index': 0.40,
+            'algo_reaction_sensitivity': 0.35,
+            'order_book_impact': 0.15,
+            'quote_frequency_distortion': 0.10
+        }
+        
+        for evidence_name, weight in weights.items():
+            if evidence_name in evidence_values:
+                evidence_value = evidence_values[evidence_name]
+                if isinstance(evidence_value, (int, float)):
+                    strength += weight * evidence_value
+        
+        return min(strength, 1.0)
+
 # Utility for CPT normalization
 
 def normalize_cpt(cpt: Dict[str, List[float]]) -> Dict[str, List[float]]:
@@ -564,7 +681,15 @@ class BayesianNodeLibrary:
             'collusion_latent_intent': CollusionLatentIntentNode,
             'intent_to_execute': IntentToExecuteNode,
             'order_cancellation': OrderCancellationNode,
-            'spoofing_latent_intent': SpoofingLatentIntentNode
+            'spoofing_latent_intent': SpoofingLatentIntentNode,
+            'wash_trade_likelihood': WashTradeLikelihoodNode,
+            'signal_distortion_index': SignalDistortionIndexNode,
+            'algo_reaction_sensitivity': AlgoReactionSensitivityNode,
+            'strategy_leg_overlap': StrategyLegOverlapNode,
+            'price_impact_anomaly': PriceImpactAnomalyNode,
+            'implied_liquidity_conflict': ImpliedLiquidityConflictNode,
+            'wash_trade_latent_intent': WashTradeLatentIntentNode,
+            'signal_distortion_latent_intent': SignalDistortionLatentIntentNode
         }
         
         self.node_templates = {
@@ -655,7 +780,9 @@ class BayesianNodeLibrary:
             'supply_control', 'liquidity_manipulation', 'price_distortion',
             'delivery_constraint', 'cornering_latent_intent', 'market_segmentation',
             'collusion_latent_intent', 'intent_to_execute', 'order_cancellation',
-            'spoofing_latent_intent'
+            'spoofing_latent_intent', 'wash_trade_likelihood', 'signal_distortion_index',
+            'algo_reaction_sensitivity', 'strategy_leg_overlap', 'price_impact_anomaly',
+            'implied_liquidity_conflict', 'wash_trade_latent_intent', 'signal_distortion_latent_intent'
         }
         
         if node_type in specialized_nodes:
