@@ -1,246 +1,431 @@
 #!/usr/bin/env python3
 """
-Comprehensive test runner for Kor.ai Surveillance Platform.
+Comprehensive test runner for Kor.ai surveillance platform.
+Executes all test types: unit, integration, e2e, performance, and security.
 """
 
-import sys
 import os
+import sys
 import subprocess
 import argparse
+import json
 from pathlib import Path
-from typing import List, Optional
+from datetime import datetime
+import logging
 
-# Add src to path
-project_root = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(project_root / "src"))
+# Add src to path for imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
-def run_command(command: List[str], cwd: Optional[Path] = None) -> int:
-    """Run a command and return the exit code."""
-    try:
-        print(f"🔧 Running: {' '.join(command)}")
-        result = subprocess.run(command, cwd=cwd or project_root, check=False)
-        return result.returncode
-    except Exception as e:
-        print(f"❌ Error running command: {e}")
-        return 1
-
-def run_unit_tests(verbose: bool = False) -> int:
-    """Run unit tests."""
-    print("\n🧪 Running Unit Tests")
-    print("=" * 50)
-    
-    command = ["python3", "-m", "pytest", "tests/unit/", "-v" if verbose else "-q"]
-    command.extend(["-m", "unit", "--tb=short"])
-    
-    return run_command(command)
-
-def run_integration_tests(verbose: bool = False) -> int:
-    """Run integration tests."""
-    print("\n🔗 Running Integration Tests")
-    print("=" * 50)
-    
-    command = ["python3", "-m", "pytest", "tests/integration/", "-v" if verbose else "-q"]
-    command.extend(["-m", "integration", "--tb=short"])
-    
-    return run_command(command)
-
-def run_e2e_tests(verbose: bool = False) -> int:
-    """Run end-to-end tests."""
-    print("\n🌍 Running End-to-End Tests")
-    print("=" * 50)
-    
-    command = ["python3", "-m", "pytest", "tests/e2e/", "-v" if verbose else "-q"]
-    command.extend(["-m", "e2e", "--tb=short", "--disable-warnings"])
-    
-    return run_command(command)
-
-def run_performance_tests(verbose: bool = False) -> int:
-    """Run performance tests."""
-    print("\n⚡ Running Performance Tests")
-    print("=" * 50)
-    
-    command = ["python3", "-m", "pytest", "tests/performance/", "-v" if verbose else "-q"]
-    command.extend(["-m", "performance", "--tb=short"])
-    
-    return run_command(command)
-
-def run_coverage_tests() -> int:
-    """Run tests with coverage."""
-    print("\n📊 Running Tests with Coverage")
-    print("=" * 50)
-    
-    command = [
-        "python3", "-m", "pytest", 
-        "--cov=src", 
-        "--cov-report=html", 
-        "--cov-report=term-missing",
-        "tests/"
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler('test_results.log')
     ]
-    
-    return run_command(command)
+)
 
-def run_lint_checks() -> int:
-    """Run linting checks."""
-    print("\n🔍 Running Lint Checks")
-    print("=" * 50)
-    
-    # Run flake8 if available
-    flake8_result = run_command(["python3", "-m", "flake8", "src/", "tests/"])
-    
-    # Run black check if available
-    black_result = run_command(["python3", "-m", "black", "--check", "src/", "tests/"])
-    
-    return max(flake8_result, black_result)
+logger = logging.getLogger(__name__)
 
-def check_dependencies() -> bool:
-    """Check if required dependencies are available."""
-    print("\n📦 Checking Dependencies")
-    print("=" * 50)
-    
-    required_packages = ["pytest", "pytest-cov"]
-    optional_packages = ["black", "flake8"]
-    
-    missing_required = []
-    missing_optional = []
-    
-    for package in required_packages:
+class TestRunner:
+    def __init__(self):
+        self.project_root = Path(__file__).parent.parent.parent
+        self.test_results = {
+            'timestamp': datetime.now().isoformat(),
+            'results': {},
+            'summary': {
+                'total_tests': 0,
+                'passed_tests': 0,
+                'failed_tests': 0,
+                'coverage': 0.0,
+                'duration': 0.0
+            }
+        }
+        
+    def run_command(self, cmd, cwd=None):
+        """Run a shell command and return the result."""
         try:
-            subprocess.run([sys.executable, "-m", package, "--version"], 
-                         capture_output=True, check=True)
-            print(f"✅ {package}: Available")
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            missing_required.append(package)
-            print(f"❌ {package}: Missing (required)")
-    
-    for package in optional_packages:
+            result = subprocess.run(
+                cmd,
+                shell=True,
+                capture_output=True,
+                text=True,
+                cwd=cwd or self.project_root
+            )
+            return result.returncode == 0, result.stdout, result.stderr
+        except Exception as e:
+            logger.error(f"Command failed: {cmd}. Error: {e}")
+            return False, "", str(e)
+
+    def run_unit_tests(self):
+        """Run unit tests with coverage."""
+        logger.info("Running unit tests...")
+        
+        cmd = (
+            "python -m pytest tests/unit/ "
+            "--cov=src "
+            "--cov-report=html:htmlcov "
+            "--cov-report=json:coverage.json "
+            "--cov-report=term "
+            "--cov-fail-under=80 "
+            "--junitxml=test_results_unit.xml "
+            "--tb=short "
+            "-v"
+        )
+        
+        success, stdout, stderr = self.run_command(cmd)
+        
+        # Parse coverage from JSON report
+        coverage = 0.0
         try:
-            subprocess.run([sys.executable, "-m", package, "--version"], 
-                         capture_output=True, check=True)
-            print(f"✅ {package}: Available")
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            missing_optional.append(package)
-            print(f"⚠️  {package}: Missing (optional)")
-    
-    if missing_required:
-        print(f"\n❌ Missing required packages: {', '.join(missing_required)}")
-        print("Install with: pip install " + " ".join(missing_required))
-        return False
-    
-    if missing_optional:
-        print(f"\n⚠️  Missing optional packages: {', '.join(missing_optional)}")
-        print("Install with: pip install " + " ".join(missing_optional))
-    
-    return True
+            with open(self.project_root / 'coverage.json', 'r') as f:
+                coverage_data = json.load(f)
+                coverage = coverage_data.get('totals', {}).get('percent_covered', 0.0)
+        except FileNotFoundError:
+            logger.warning("Coverage report not found")
+        
+        self.test_results['results']['unit_tests'] = {
+            'success': success,
+            'coverage': coverage,
+            'stdout': stdout,
+            'stderr': stderr
+        }
+        
+        return success
 
-def run_config_tests() -> int:
-    """Run configuration system tests."""
-    print("\n⚙️ Running Configuration Tests")
-    print("=" * 50)
-    
-    config_test_script = project_root / "scripts" / "development" / "test_config_simple.py"
-    
-    if config_test_script.exists():
-        return run_command(["python3", str(config_test_script)])
-    else:
-        print("❌ Configuration test script not found")
-        return 1
+    def run_integration_tests(self):
+        """Run integration tests."""
+        logger.info("Running integration tests...")
+        
+        cmd = (
+            "python -m pytest tests/integration/ "
+            "--junitxml=test_results_integration.xml "
+            "--tb=short "
+            "-v"
+        )
+        
+        success, stdout, stderr = self.run_command(cmd)
+        
+        self.test_results['results']['integration_tests'] = {
+            'success': success,
+            'stdout': stdout,
+            'stderr': stderr
+        }
+        
+        return success
 
-def run_quick_tests() -> int:
-    """Run a quick subset of tests for fast feedback."""
-    print("\n⚡ Running Quick Test Suite")
-    print("=" * 50)
-    
-    # Run only fast unit tests
-    command = [
-        "python3", "-m", "pytest", 
-        "tests/unit/", 
-        "-x",  # Stop on first failure
-        "--tb=short",
-        "-q"
-    ]
-    
-    return run_command(command)
+    def run_e2e_tests(self):
+        """Run end-to-end tests."""
+        logger.info("Running end-to-end tests...")
+        
+        cmd = (
+            "python -m pytest tests/e2e/ "
+            "--junitxml=test_results_e2e.xml "
+            "--tb=short "
+            "-v"
+        )
+        
+        success, stdout, stderr = self.run_command(cmd)
+        
+        self.test_results['results']['e2e_tests'] = {
+            'success': success,
+            'stdout': stdout,
+            'stderr': stderr
+        }
+        
+        return success
+
+    def run_performance_tests(self):
+        """Run performance tests."""
+        logger.info("Running performance tests...")
+        
+        cmd = (
+            "python -m pytest tests/performance/ "
+            "--junitxml=test_results_performance.xml "
+            "--tb=short "
+            "-v"
+        )
+        
+        success, stdout, stderr = self.run_command(cmd)
+        
+        self.test_results['results']['performance_tests'] = {
+            'success': success,
+            'stdout': stdout,
+            'stderr': stderr
+        }
+        
+        return success
+
+    def run_security_tests(self):
+        """Run security tests using bandit."""
+        logger.info("Running security tests...")
+        
+        # Run bandit security scanner
+        cmd = "bandit -r src/ -f json -o security_report.json"
+        success, stdout, stderr = self.run_command(cmd)
+        
+        # Parse security report
+        security_issues = []
+        try:
+            with open(self.project_root / 'security_report.json', 'r') as f:
+                security_data = json.load(f)
+                security_issues = security_data.get('results', [])
+        except FileNotFoundError:
+            logger.warning("Security report not found")
+        
+        # Consider success if no high or medium severity issues
+        high_issues = [i for i in security_issues if i.get('issue_severity') in ['HIGH', 'MEDIUM']]
+        security_success = len(high_issues) == 0
+        
+        self.test_results['results']['security_tests'] = {
+            'success': security_success,
+            'issues_found': len(security_issues),
+            'high_severity_issues': len(high_issues),
+            'stdout': stdout,
+            'stderr': stderr
+        }
+        
+        return security_success
+
+    def run_dependency_check(self):
+        """Check for vulnerable dependencies."""
+        logger.info("Checking dependencies for vulnerabilities...")
+        
+        cmd = "safety check --json"
+        success, stdout, stderr = self.run_command(cmd)
+        
+        # Parse safety report
+        vulnerabilities = []
+        try:
+            if stdout:
+                safety_data = json.loads(stdout)
+                vulnerabilities = safety_data if isinstance(safety_data, list) else []
+        except json.JSONDecodeError:
+            logger.warning("Could not parse safety report")
+        
+        dependency_success = len(vulnerabilities) == 0
+        
+        self.test_results['results']['dependency_check'] = {
+            'success': dependency_success,
+            'vulnerabilities_found': len(vulnerabilities),
+            'stdout': stdout,
+            'stderr': stderr
+        }
+        
+        return dependency_success
+
+    def run_code_quality_checks(self):
+        """Run code quality checks."""
+        logger.info("Running code quality checks...")
+        
+        # Run black formatter check
+        black_success, black_stdout, black_stderr = self.run_command("black --check src/")
+        
+        # Run flake8 linter
+        flake8_success, flake8_stdout, flake8_stderr = self.run_command("flake8 src/")
+        
+        # Run mypy type checker
+        mypy_success, mypy_stdout, mypy_stderr = self.run_command("mypy src/")
+        
+        quality_success = black_success and flake8_success and mypy_success
+        
+        self.test_results['results']['code_quality'] = {
+            'success': quality_success,
+            'black': {'success': black_success, 'stdout': black_stdout, 'stderr': black_stderr},
+            'flake8': {'success': flake8_success, 'stdout': flake8_stdout, 'stderr': flake8_stderr},
+            'mypy': {'success': mypy_success, 'stdout': mypy_stdout, 'stderr': mypy_stderr}
+        }
+        
+        return quality_success
+
+    def generate_report(self):
+        """Generate comprehensive test report."""
+        logger.info("Generating test report...")
+        
+        # Calculate summary statistics
+        results = self.test_results['results']
+        
+        # Count total success/failure
+        all_results = [
+            results.get('unit_tests', {}).get('success', False),
+            results.get('integration_tests', {}).get('success', False),
+            results.get('e2e_tests', {}).get('success', False),
+            results.get('performance_tests', {}).get('success', False),
+            results.get('security_tests', {}).get('success', False),
+            results.get('dependency_check', {}).get('success', False),
+            results.get('code_quality', {}).get('success', False)
+        ]
+        
+        passed = sum(all_results)
+        total = len(all_results)
+        
+        self.test_results['summary'].update({
+            'total_tests': total,
+            'passed_tests': passed,
+            'failed_tests': total - passed,
+            'coverage': results.get('unit_tests', {}).get('coverage', 0.0),
+            'success_rate': (passed / total * 100) if total > 0 else 0
+        })
+        
+        # Save JSON report
+        with open(self.project_root / 'test_report.json', 'w') as f:
+            json.dump(self.test_results, f, indent=2)
+        
+        # Generate HTML report
+        self.generate_html_report()
+        
+        return passed == total
+
+    def generate_html_report(self):
+        """Generate HTML test report."""
+        html_template = """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Test Results Report</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; margin: 20px; }}
+                .header {{ background-color: #f0f0f0; padding: 20px; }}
+                .success {{ color: green; }}
+                .failure {{ color: red; }}
+                .warning {{ color: orange; }}
+                .section {{ margin: 20px 0; padding: 15px; border: 1px solid #ddd; }}
+                .summary {{ background-color: #f9f9f9; }}
+                pre {{ background-color: #f5f5f5; padding: 10px; overflow-x: auto; }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Test Results Report</h1>
+                <p>Generated: {timestamp}</p>
+                <p>Success Rate: {success_rate:.1f}%</p>
+            </div>
+            
+            <div class="section summary">
+                <h2>Summary</h2>
+                <ul>
+                    <li>Total Tests: {total_tests}</li>
+                    <li>Passed: {passed_tests}</li>
+                    <li>Failed: {failed_tests}</li>
+                    <li>Coverage: {coverage:.1f}%</li>
+                </ul>
+            </div>
+            
+            {sections}
+        </body>
+        </html>
+        """
+        
+        sections = []
+        for test_type, result in self.test_results['results'].items():
+            status_class = "success" if result.get('success', False) else "failure"
+            section_html = f"""
+            <div class="section">
+                <h3 class="{status_class}">{test_type.replace('_', ' ').title()}</h3>
+                <p>Status: <span class="{status_class}">{'PASSED' if result.get('success', False) else 'FAILED'}</span></p>
+                {f"<p>Coverage: {result.get('coverage', 0):.1f}%</p>" if 'coverage' in result else ""}
+                {f"<p>Issues Found: {result.get('issues_found', 0)}</p>" if 'issues_found' in result else ""}
+            </div>
+            """
+            sections.append(section_html)
+        
+        html_content = html_template.format(
+            timestamp=self.test_results['timestamp'],
+            success_rate=self.test_results['summary']['success_rate'],
+            total_tests=self.test_results['summary']['total_tests'],
+            passed_tests=self.test_results['summary']['passed_tests'],
+            failed_tests=self.test_results['summary']['failed_tests'],
+            coverage=self.test_results['summary']['coverage'],
+            sections='\n'.join(sections)
+        )
+        
+        with open(self.project_root / 'test_report.html', 'w') as f:
+            f.write(html_content)
+
+    def run_all_tests(self, test_types=None):
+        """Run all specified test types."""
+        start_time = datetime.now()
+        
+        if test_types is None:
+            test_types = ['unit', 'integration', 'e2e', 'performance', 'security', 'dependencies', 'quality']
+        
+        logger.info(f"Starting test execution: {', '.join(test_types)}")
+        
+        success = True
+        
+        if 'unit' in test_types:
+            success &= self.run_unit_tests()
+        
+        if 'integration' in test_types:
+            success &= self.run_integration_tests()
+        
+        if 'e2e' in test_types:
+            success &= self.run_e2e_tests()
+        
+        if 'performance' in test_types:
+            success &= self.run_performance_tests()
+        
+        if 'security' in test_types:
+            success &= self.run_security_tests()
+        
+        if 'dependencies' in test_types:
+            success &= self.run_dependency_check()
+        
+        if 'quality' in test_types:
+            success &= self.run_code_quality_checks()
+        
+        # Calculate duration
+        duration = (datetime.now() - start_time).total_seconds()
+        self.test_results['summary']['duration'] = duration
+        
+        # Generate report
+        self.generate_report()
+        
+        logger.info(f"Test execution completed in {duration:.2f} seconds")
+        logger.info(f"Overall success: {success}")
+        
+        return success
 
 def main():
-    """Main test runner function."""
-    parser = argparse.ArgumentParser(description="Kor.ai Test Runner")
-    parser.add_argument("--unit", action="store_true", help="Run unit tests only")
-    parser.add_argument("--integration", action="store_true", help="Run integration tests only")
-    parser.add_argument("--e2e", action="store_true", help="Run e2e tests only")
-    parser.add_argument("--performance", action="store_true", help="Run performance tests only")
-    parser.add_argument("--coverage", action="store_true", help="Run tests with coverage")
-    parser.add_argument("--lint", action="store_true", help="Run lint checks only")
-    parser.add_argument("--config", action="store_true", help="Run configuration tests only")
-    parser.add_argument("--quick", action="store_true", help="Run quick test suite")
-    parser.add_argument("--all", action="store_true", help="Run all test suites")
-    parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
-    parser.add_argument("--check-deps", action="store_true", help="Check dependencies only")
+    parser = argparse.ArgumentParser(description='Run comprehensive tests for Kor.ai platform')
+    parser.add_argument(
+        '--types',
+        nargs='*',
+        choices=['unit', 'integration', 'e2e', 'performance', 'security', 'dependencies', 'quality'],
+        default=None,
+        help='Test types to run (default: all)'
+    )
+    parser.add_argument(
+        '--fast',
+        action='store_true',
+        help='Run only fast tests (unit + integration + quality)'
+    )
+    parser.add_argument(
+        '--ci',
+        action='store_true',
+        help='Run in CI mode (all tests, strict failure on any issue)'
+    )
     
     args = parser.parse_args()
     
-    print("🧪 Kor.ai Surveillance Platform - Test Runner")
-    print("=" * 60)
+    runner = TestRunner()
     
-    # Check dependencies first
-    if args.check_deps:
-        success = check_dependencies()
-        return 0 if success else 1
-    
-    if not check_dependencies():
-        print("\n❌ Dependency check failed. Please install missing packages.")
-        return 1
-    
-    # Determine which tests to run
-    test_results = []
-    
-    if args.quick:
-        test_results.append(run_quick_tests())
-    elif args.unit:
-        test_results.append(run_unit_tests(args.verbose))
-    elif args.integration:
-        test_results.append(run_integration_tests(args.verbose))
-    elif args.e2e:
-        test_results.append(run_e2e_tests(args.verbose))
-    elif args.performance:
-        test_results.append(run_performance_tests(args.verbose))
-    elif args.coverage:
-        test_results.append(run_coverage_tests())
-    elif args.lint:
-        test_results.append(run_lint_checks())
-    elif args.config:
-        test_results.append(run_config_tests())
-    elif args.all:
-        # Run all test suites
-        test_results.append(run_config_tests())
-        test_results.append(run_unit_tests(args.verbose))
-        test_results.append(run_integration_tests(args.verbose))
-        test_results.append(run_e2e_tests(args.verbose))
-        test_results.append(run_performance_tests(args.verbose))
-        test_results.append(run_lint_checks())
+    if args.fast:
+        test_types = ['unit', 'integration', 'quality']
+    elif args.ci:
+        test_types = ['unit', 'integration', 'e2e', 'performance', 'security', 'dependencies', 'quality']
     else:
-        # Default: run unit and integration tests
-        test_results.append(run_config_tests())
-        test_results.append(run_unit_tests(args.verbose))
-        test_results.append(run_integration_tests(args.verbose))
+        test_types = args.types
     
-    # Summary
-    print("\n📋 Test Summary")
-    print("=" * 60)
+    success = runner.run_all_tests(test_types)
     
-    total_tests = len(test_results)
-    passed_tests = sum(1 for result in test_results if result == 0)
-    failed_tests = total_tests - passed_tests
+    if not success:
+        logger.error("Some tests failed!")
+        sys.exit(1)
     
-    if failed_tests == 0:
-        print(f"✅ All {total_tests} test suite(s) passed!")
-        print("\n🎉 Testing completed successfully!")
-        return 0
-    else:
-        print(f"❌ {failed_tests} out of {total_tests} test suite(s) failed")
-        print(f"✅ {passed_tests} test suite(s) passed")
-        print("\n💡 Tip: Use --verbose for more detailed output")
-        print("💡 Tip: Use --quick for fast feedback during development")
-        return 1
+    logger.info("All tests passed!")
+    sys.exit(0)
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
