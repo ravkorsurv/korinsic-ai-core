@@ -3,56 +3,70 @@
 ## ✅ Configuration Status
 - ✅ GitHub Actions Workflows Removed (ci-cd.yml, ci.yml)
 - ✅ Korbit Configuration File Created (`.korbit.yml`)
-- ✅ Auto-review enabled for PRs and commits on main branch
-- ✅ Python AI/ML specific settings configured
+- ✅ Repository configured for automatic code reviews
+- ✅ Python/AI-ML specific settings applied
 
 ## 🚀 Korbit AI Features Enabled
 
-### Auto-Review Settings:
-- **Pull Request Reviews**: ✅ Enabled with auto-descriptions
-- **Commit Reviews**: ✅ Enabled for main/master/develop branches
-- **Code Quality Analysis**: ✅ Bug detection, security, performance, style
-- **AI/ML Framework Support**: ✅ scikit-learn, pandas, numpy, flask, pytest
-
-### File Coverage:
-- ✅ `src/**/*.py` - Core application code
-- ✅ `tests/**/*.py` - Test files
-- ✅ `scripts/**/*.py` - Utility scripts
-- ✅ Root Python files
+### Configuration Applied:
+- **Automatic Reviews**: ✅ Enabled for PRs and commits
+- **Python Analysis**: ✅ Focused on Python codebase
+- **File Coverage**: ✅ `src/`, `tests/`, `scripts/`, root Python files
+- **Code Quality Focus**: ✅ Security, performance, maintainability, bugs
 
 ### What Korbit Will Do:
-✨ **Automatic PR reviews** with inline comments
+✨ **Automatic PR reviews** with actionable feedback
 🐛 **Bug detection** and security vulnerability scanning
-📝 **Auto-generated PR descriptions** 
-🤖 **Performance and style analysis**
-🔒 **Data processing and model accuracy checks**
-📊 **Focus on AI/ML best practices**
+📝 **Code quality analysis** with improvement suggestions
+🔧 **Performance optimization** recommendations
+🛡️ **Security best practices** enforcement
+📊 **Maintainability** and technical debt analysis
 
-## 📋 Next Steps
+## 📋 Next Steps Required
 
-### For Repository Maintainers:
-1. **Verify Korbit Installation**: Visit [GitHub Marketplace - Korbit AI](https://github.com/marketplace/korbit-ai-mentor)
-2. **Check App Permissions**: Ensure Korbit has access to `ravkorsurv/korinsic-ai-core`
-3. **Test Auto-Review**: Create a test PR to verify Korbit responds
+### 1. Install Korbit GitHub App
+Visit [GitHub Marketplace - Korbit AI](https://github.com/marketplace/korbit-ai-mentor) and:
+- Click "Install it for free"
+- Select this repository (`ravkorsurv/korinsic-ai-core`)
+- Complete the installation process
 
-### For Developers:
-- Korbit will now automatically review all new PRs
-- Expect inline code comments and suggestions
-- Check PR descriptions - they'll be auto-generated
-- Address high-priority security and performance issues
+### 2. Verify Installation
+- Check that Korbit has repository access
+- Ensure the app appears in your GitHub organization settings
+- Confirm permissions are properly configured
+
+### 3. Test Auto-Review
+- Create a test PR to verify Korbit responds
+- Make a small code change and observe the review feedback
+- Check that comments appear on PRs automatically
+
+### 4. Monitor and Adjust
+- Review Korbit's feedback quality
+- Adjust configuration if needed
+- Train your team on interpreting Korbit suggestions
 
 ## 🔧 Configuration Details
 
 The `.korbit.yml` file includes:
-- **Confidence Threshold**: 0.7 (high-quality suggestions only)
-- **Max Issues per PR**: 20 (focused feedback)
-- **Review Drafts**: Disabled (only final PRs)
-- **Critical Issue Alerts**: Enabled
+- **Enabled**: Repository-wide activation
+- **Include Patterns**: Python files in key directories
+- **Exclude Patterns**: Build artifacts, dependencies, logs
+- **Language Support**: Python with AI/ML focus
+- **Review Scope**: PRs and commits
+- **Quality Focus**: Security, performance, maintainability, bugs
 
-## 📚 Documentation
+## 📚 Documentation & Support
 - [Korbit Getting Started](https://docs.korbit.ai/getting-started)
-- [Repository Configuration](https://docs.korbit.ai/configuration/repository-settings)
-- [Korbit Commands](https://docs.korbit.ai/pull-request-experience/korbit-commands)
+- [GitHub Marketplace](https://github.com/marketplace/korbit-ai-mentor)
+- [Korbit Documentation](https://docs.korbit.ai/)
+
+## ⚠️ Important Notes
+
+1. **GitHub App Required**: The configuration file alone isn't sufficient - you must install the Korbit GitHub App
+2. **Repository Access**: Ensure Korbit has proper permissions to access this repository
+3. **Team Training**: Brief your team on how to interpret and act on Korbit feedback
+4. **Iteration**: The configuration can be adjusted based on your team's needs
 
 ---
-**Status**: 🟢 **ACTIVE** - Korbit AI is now monitoring this repository for automatic code reviews!
+**Status**: 🟡 **PENDING** - Configuration complete, GitHub App installation required
+**Next Action**: Install Korbit GitHub App from marketplace
