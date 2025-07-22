@@ -1,0 +1,1 @@
+# Core package for Kor.ai Surveillance Platform
