@@ -21,7 +21,10 @@ instrument_app()
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app)
+
+# Setup CORS with configuration
+cors_origins = config.get_security_config().get('cors_origins', ["http://localhost:3000"])
+CORS(app, origins=cors_origins, allow_headers=["Content-Type", "Authorization"])
 
 # Setup logging
 logger = setup_logger()
