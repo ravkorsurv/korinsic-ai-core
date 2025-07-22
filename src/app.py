@@ -12,6 +12,11 @@ from core.risk_calculator import RiskCalculator
 from utils.config import Config
 from utils.logger import setup_logger
 from openinference.instrumentation import instrument_app
+from api.v1.routes.trading_data import trading_data_bp
+
+# Initialize core components
+config = Config()
+instrument_app()
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -21,13 +26,11 @@ CORS(app)
 logger = setup_logger()
 
 # Initialize core components
-config = Config()
 bayesian_engine = BayesianEngine()
 data_processor = DataProcessor()
 alert_generator = AlertGenerator()
 risk_calculator = RiskCalculator()
 
-instrument_app()
 
 @app.route('/health', methods=['GET'])
 def health_check():
