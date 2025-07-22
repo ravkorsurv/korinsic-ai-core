@@ -11,6 +11,7 @@ from core.alert_generator import AlertGenerator
 from core.risk_calculator import RiskCalculator
 from utils.config import Config
 from utils.logger import setup_logger
+from openinference.instrumentation import instrument_app
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -25,6 +26,8 @@ bayesian_engine = BayesianEngine()
 data_processor = DataProcessor()
 alert_generator = AlertGenerator()
 risk_calculator = RiskCalculator()
+
+instrument_app()
 
 @app.route('/health', methods=['GET'])
 def health_check():
