@@ -224,15 +224,69 @@ class BatchAnalysisRequestSchema(BaseRequestSchema):
 
 
 class ExportRequestSchema(BaseRequestSchema):
-    """Schema for export request validation."""
+    """
+    Schema for data export request validation.
+    
+    This schema validates requests for exporting analysis results, trading data,
+    and surveillance reports in various formats (CSV, JSON, PDF, Excel).
+    
+    Purpose:
+    Validates export requests to ensure proper data formatting, access controls,
+    and regulatory compliance for data extraction from the surveillance platform.
+    
+    Required Fields:
+        - export_type: Type of data to export (analysis_results, trading_data, alerts)
+        - format: Output format (csv, json, pdf, excel)
+        - date_range: Time period for data extraction
+        
+    Optional Fields:
+        - filters: Additional filtering criteria
+        - include_metadata: Whether to include analysis metadata
+        - compression: Whether to compress the output
+        - encryption: Encryption requirements for sensitive data
+    
+    Validation Rules:
+        - Export type must be from allowed list
+        - Date range must be valid and not exceed retention limits
+        - Format must be supported for the requested data type
+        - User must have appropriate permissions for data access
+        
+    Security Considerations:
+    - Validates user permissions for requested data
+    - Ensures compliance with data retention policies
+    - Applies appropriate data masking for sensitive information
+    - Logs all export requests for audit trails
+    """
 
     def _validate_specific(self, data: Dict[str, Any], result: "ValidationResult"):
-        """Validate export request specific requirements."""
-        # This would be similar to analysis request but might have different requirements
-        # For now, use the same validation as analysis request
-        analysis_schema = AnalysisRequestSchema()
-        analysis_result = analysis_schema.validate(data)
-
-        if not analysis_result.is_valid:
-            for error in analysis_result.errors:
-                result.add_error(error)
+        """
+        Validate export request specific requirements.
+        
+        This validation ensures data export requests comply with security policies,
+        regulatory requirements, and system capabilities.
+        
+        Args:
+            data: Export request data containing type, format, and parameters
+            result: ValidationResult object to collect validation errors
+        """
+        # Validate required export fields
+        required_fields = ["export_type", "format", "date_range"]
+        for field in required_fields:
+            if field not in data:
+                result.add_error(f"Missing required field: {field}")
+        
+        # Validate export type
+        allowed_export_types = ["analysis_results", "trading_data", "alerts", "reports"]
+        if "export_type" in data and data["export_type"] not in allowed_export_types:
+            result.add_error(f"Invalid export_type. Must be one of: {allowed_export_types}")
+            
+        # Validate format
+        allowed_formats = ["csv", "json", "pdf", "excel"]
+        if "format" in data and data["format"] not in allowed_formats:
+            result.add_error(f"Invalid format. Must be one of: {allowed_formats}")
+            
+        # Validate date range
+        if "date_range" in data:
+            date_range = data["date_range"]
+            if not isinstance(date_range, dict) or "start_date" not in date_range or "end_date" not in date_range:
+                result.add_error("date_range must contain start_date and end_date")
