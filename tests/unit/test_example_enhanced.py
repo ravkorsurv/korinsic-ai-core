@@ -93,7 +93,7 @@ class TestEnhancedTestInfrastructure:
         
         # Test mock Bayesian engine
         mock_engine = MockEngineFactory.create_mock_bayesian_engine()
-        insider_result = mock_engine.calculate_insider_dealing_risk({})
+        insider_result = mock_engine.analyze_insider_dealing({})
         
         assert "overall_score" in insider_result
         assert "risk_level" in insider_result
@@ -239,7 +239,7 @@ class TestEnhancedTestInfrastructure:
     def test_with_mock_marker(self, mock_bayesian_engine):
         """Test using pytest markers for test organization."""
         # This test is marked as 'mock' for filtering
-        result = mock_bayesian_engine.calculate_insider_dealing_risk({})
+        result = mock_bayesian_engine.analyze_insider_dealing({})
         assert_risk_score_valid(result)
     
     def test_temporary_directory_fixture(self, temp_dir):

@@ -100,24 +100,26 @@ class EvidenceSufficiencyIndex:
                 contribution_spread="Balanced" if contribution_entropy > 0.7 else "Concentrated",
                 clusters=self._get_evidence_clusters(result),
                 calculation_details={
-                    "node_activation_ratio": round(node_activation_ratio, 3),
-                    "mean_confidence_score": round(mean_confidence_score, 3),
-                    "fallback_ratio": round(fallback_ratio, 3),
-                    "contribution_entropy": round(contribution_entropy, 3),
-                    "cross_cluster_diversity": round(cross_cluster_diversity, 3),
-                    "weighted_components": {
-                        "activation_component": round(
-                            self.weights["W1"] * node_activation_ratio, 3
-                        ),
-                        "confidence_component": round(
-                            self.weights["W2"] * mean_confidence_score, 3
-                        ),
-                        "fallback_component": round(self.weights["W3"] * (1 - fallback_ratio), 3),
-                        "entropy_component": round(self.weights["W4"] * contribution_entropy, 3),
-                        "diversity_component": round(
-                            self.weights["W5"] * cross_cluster_diversity, 3
-                        ),
-                    },
+                    "calculation_details": {
+                        "node_activation_ratio": round(node_activation_ratio, 3),
+                        "mean_confidence_score": round(mean_confidence_score, 3),
+                        "fallback_ratio": round(fallback_ratio, 3),
+                        "contribution_entropy": round(contribution_entropy, 3),
+                        "cross_cluster_diversity": round(cross_cluster_diversity, 3),
+                        "weighted_components": {
+                            "activation_component": round(
+                                self.weights["W1"] * node_activation_ratio, 3
+                            ),
+                            "confidence_component": round(
+                                self.weights["W2"] * mean_confidence_score, 3
+                            ),
+                            "fallback_component": round(self.weights["W3"] * (1 - fallback_ratio), 3),
+                            "entropy_component": round(self.weights["W4"] * contribution_entropy, 3),
+                            "diversity_component": round(
+                                self.weights["W5"] * cross_cluster_diversity, 3
+                            ),
+                        },
+                    }
                 },
             )
 

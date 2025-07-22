@@ -101,7 +101,7 @@ def display_ui_results():
     bayesian_engine = BayesianEngine()
     
     processed_data = data_processor.process(test_data)
-    result = bayesian_engine.calculate_insider_dealing_risk(processed_data)
+    result = bayesian_engine.analyze_insider_dealing(processed_data)
     
     # RISK OVERVIEW SECTION
     print("🎯 RISK OVERVIEW")

@@ -75,7 +75,12 @@ class SpoofingConfig:
                 'volume_participation_fallback_prior': [0.72, 0.23, 0.05],
                 'order_behavior_fallback_prior': [0.70, 0.25, 0.05],
                 'intent_to_execute_fallback_prior': [0.80, 0.15, 0.05],
-                'order_cancellation_fallback_prior': [0.75, 0.20, 0.05]
+                'order_cancellation_fallback_prior': [0.75, 0.20, 0.05],
+                'market_impact_fallback_prior': [0.70, 0.25, 0.05],
+                'behavior_pattern_fallback_prior': [0.70, 0.25, 0.05],
+                'execution_intent_fallback_prior': [0.80, 0.15, 0.05],
+                'cancellation_pattern_fallback_prior': [0.75, 0.20, 0.05],
+                'volume_pattern_fallback_prior': [0.72, 0.23, 0.05]
             },
             'validation_parameters': {
                 'min_evidence_nodes': 3,

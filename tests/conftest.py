@@ -32,6 +32,13 @@ except ImportError as e:
     # Allow fixtures to be loaded even if dependencies are missing
     print(f"Warning: Some imports failed in conftest.py: {e}")
 
+import pytest
+from tests.e2e.test_e2e_enhanced import E2ETestFramework
+
+@pytest.fixture(scope="function")
+def framework():
+    return E2ETestFramework()
+
 # Test configuration
 @pytest.fixture(scope="session")
 def test_config():
@@ -80,13 +87,13 @@ def mock_data_processor():
 def mock_bayesian_engine():
     """Mock Bayesian engine for unit tests."""
     mock = Mock(spec=BayesianEngine)
-    mock.calculate_insider_dealing_risk.return_value = {
+    mock.analyze_insider_dealing.return_value = {
         "overall_score": 0.5,
         "risk_level": "MEDIUM",
         "evidence_factors": {},
         "model_type": "standard"
     }
-    mock.calculate_spoofing_risk.return_value = {
+    mock.analyze_spoofing.return_value = {
         "overall_score": 0.3,
         "risk_level": "LOW",
         "evidence_factors": {},
@@ -339,7 +346,8 @@ def spoofing_scenario():
             "volatility": 0.03,
             "price_movement": 0.02,
             "volume": 800000
-        }
+        },
+        "trader_info": {"id": "trader_002", "role": "trader", "access_level": "standard"}
     }
 
 # Test utilities fixtures

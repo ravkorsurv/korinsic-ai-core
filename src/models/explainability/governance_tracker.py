@@ -6,7 +6,7 @@ performance monitoring, drift detection, and approval workflows.
 """
 
 from typing import Dict, Any, List, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import logging
 from dataclasses import dataclass, asdict
 
@@ -92,7 +92,7 @@ class ModelGovernanceTracker:
             metadata: Event metadata
         """
         try:
-            timestamp = datetime.utcnow().isoformat()
+            timestamp = datetime.now(timezone.utc).isoformat()
 
             # Log lifecycle event
             lifecycle_event = {
@@ -190,7 +190,7 @@ class ModelGovernanceTracker:
 
             return {
                 "model_id": model_id,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "governance_score": governance_score,
                 "performance_status": recent_performance,
                 "drift_status": drift_status,
@@ -209,7 +209,7 @@ class ModelGovernanceTracker:
             logger.error(f"Error getting governance status: {str(e)}")
             return {
                 "model_id": model_id,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "governance_score": 0.0,
                 "error": str(e),
             }
@@ -303,7 +303,7 @@ class ModelPerformanceMonitor:
     ) -> Dict[str, Any]:
         """Evaluate model performance."""
 
-        timestamp = datetime.utcnow().isoformat()
+        timestamp = datetime.now(timezone.utc).isoformat()
         performance_metrics = []
 
         for metric_name, value in performance_data.items():
@@ -349,7 +349,7 @@ class ModelPerformanceMonitor:
     def get_recent_performance(self, model_id: str, days: int = 7) -> Dict[str, Any]:
         """Get recent performance for a model."""
 
-        cutoff_date = (datetime.utcnow() - timedelta(days=days)).isoformat()
+        cutoff_date = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
 
         recent_metrics = [
             m
@@ -431,7 +431,7 @@ class ModelDriftDetector:
         """Detect various types of drift."""
 
         drift_results = []
-        timestamp = datetime.utcnow().isoformat()
+        timestamp = datetime.now(timezone.utc).isoformat()
 
         # Feature drift detection
         feature_drift = self._detect_feature_drift(current_data, reference_data)
@@ -471,7 +471,7 @@ class ModelDriftDetector:
     def get_drift_status(self, model_id: str, days: int = 7) -> Dict[str, Any]:
         """Get drift status for a model."""
 
-        cutoff_date = (datetime.utcnow() - timedelta(days=days)).isoformat()
+        cutoff_date = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
 
         recent_drifts = [
             d for d in self.drift_history if d.model_id == model_id and d.timestamp >= cutoff_date
@@ -574,13 +574,13 @@ class ModelApprovalWorkflow:
     ) -> str:
         """Submit model for approval."""
 
-        event_id = f"approval_{model_id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
+        event_id = f"approval_{model_id}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
 
         approval_event = ModelApprovalEvent(
             event_id=event_id,
             model_id=model_id,
             event_type="submitted",
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
             approval_criteria=criteria,
         )
 

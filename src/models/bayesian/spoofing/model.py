@@ -162,18 +162,21 @@ class SpoofingModel:
                     variable_card=len(node.states),
                     values=np.array([node.fallback_prior]).T
                 )
-                model.add_cpd(cpd)
+                model.add_cpds(cpd)
         
-        # Add CPDs for latent intent or risk factor
         if use_latent_intent:
-            # Latent intent CPD (simplified)
+            # Latent intent CPD (corrected: 6 parents, 3 states each)
             spoofing_intent_cpd = TabularCPD(
                 variable='spoofing_latent_intent',
                 variable_card=3,
-                values=np.array([[0.92, 0.06, 0.02]]).T
+                values=np.full((3, 729), 1/3),
+                evidence=[
+                    'order_clustering', 'price_impact_ratio', 'volume_participation',
+                    'order_behavior', 'intent_to_execute', 'order_cancellation'
+                ],
+                evidence_card=[3, 3, 3, 3, 3, 3]
             )
-            model.add_cpd(spoofing_intent_cpd)
-            
+            model.add_cpds(spoofing_intent_cpd)
             # Risk factor CPD (depends on latent intent)
             risk_factor_cpd = TabularCPD(
                 variable='risk_factor',
@@ -186,17 +189,21 @@ class SpoofingModel:
                 evidence=['spoofing_latent_intent'],
                 evidence_card=[3]
             )
-            model.add_cpd(risk_factor_cpd)
+            model.add_cpds(risk_factor_cpd)
         else:
-            # Standard risk factor CPD
+            # Standard risk factor CPD (6 parents, 3 states each)
             risk_factor_cpd = TabularCPD(
                 variable='risk_factor',
                 variable_card=3,
-                values=np.array([[0.80, 0.15, 0.05]]).T
+                values=np.full((3, 729), 1/3),
+                evidence=[
+                    'order_clustering', 'price_impact_ratio', 'volume_participation',
+                    'order_behavior', 'intent_to_execute', 'order_cancellation'
+                ],
+                evidence_card=[3, 3, 3, 3, 3, 3]
             )
-            model.add_cpd(risk_factor_cpd)
-        
-        # Outcome CPD
+            model.add_cpds(risk_factor_cpd)
+        # Outcome CPD (depends on risk_factor)
         outcome_cpd = TabularCPD(
             variable='spoofing',
             variable_card=2,
@@ -207,7 +214,7 @@ class SpoofingModel:
             evidence=['risk_factor'],
             evidence_card=[3]
         )
-        model.add_cpd(outcome_cpd)
+        model.add_cpds(outcome_cpd)
     
     def calculate_risk(self, evidence: Dict[str, Any]) -> Dict[str, Any]:
         """

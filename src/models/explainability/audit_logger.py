@@ -6,7 +6,7 @@ and regulatory compliance tracking.
 """
 
 from typing import Dict, Any, List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 from dataclasses import dataclass, asdict
 
@@ -80,7 +80,7 @@ class ModelAuditLogger:
             # Create audit entry
             audit_entry = AuditLogEntry(
                 entry_id=entry_id,
-                timestamp=datetime.utcnow().isoformat(),
+                timestamp=datetime.now(timezone.utc).isoformat(),
                 model_id=model_id,
                 event_type="model_decision",
                 event_data={
@@ -141,7 +141,7 @@ class ModelAuditLogger:
 
         audit_entry = AuditLogEntry(
             entry_id=entry_id,
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
             model_id=model_id,
             event_type=f"compliance_{event_type}",
             event_data=event_data,
@@ -206,7 +206,7 @@ class ModelAuditLogger:
 
     def _generate_audit_entry_id(self) -> str:
         """Generate unique audit entry ID."""
-        return f"audit_{datetime.utcnow().strftime('%Y%m%d_%H%M%S_%f')}"
+        return f"audit_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S_%f')}"
 
     def _get_regulatory_context(
         self, decision: Dict[str, Any], explanation: Dict[str, Any]
@@ -236,7 +236,7 @@ class ModelAuditLogger:
 
         compliance_entry = AuditLogEntry(
             entry_id=f"{entry_id}_compliance",
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
             model_id=entry_id,
             event_type="compliance_check",
             event_data=compliance_result,
@@ -394,10 +394,10 @@ class RegulatoryReporter:
         model_entries = [entry for entry in audit_log if entry.model_id == model_id]
 
         return {
-            "report_id": f"compliance_{model_id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}",
+            "report_id": f"compliance_{model_id}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}",
             "model_id": model_id,
             "report_type": report_type,
-            "generation_timestamp": datetime.utcnow().isoformat(),
+            "generation_timestamp": datetime.now(timezone.utc).isoformat(),
             "total_decisions": len([e for e in model_entries if e.event_type == "model_decision"]),
             "compliance_summary": self._generate_compliance_summary(model_entries),
             "regulatory_frameworks": ["MAR", "MiFID II", "GDPR"],
@@ -456,7 +456,7 @@ class RiskDocumenter:
         risk_document = {
             "document_id": document_id,
             "audit_entry_id": entry_id,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "risk_level": decision.get("risk_assessment", {}).get("risk_level", "unknown"),
             "risk_score": decision.get("risk_scores", {}).get("overall_score", 0.0),
             "key_risk_factors": explanation.get("regulatory_summary", {}).get("key_factors", []),

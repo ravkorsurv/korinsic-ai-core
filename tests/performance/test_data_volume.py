@@ -93,7 +93,7 @@ def test_data_volume():
     bayesian_engine = BayesianEngine()
     
     processed_data = data_processor.process(test_data)
-    result = bayesian_engine.calculate_insider_dealing_risk(processed_data)
+    result = bayesian_engine.analyze_insider_dealing(processed_data)
     
     print(f"\n✅ ENHANCED PROCESSING COMPLETE:")
     print(f"   • Data processed through Bayesian engine")

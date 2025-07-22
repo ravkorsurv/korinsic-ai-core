@@ -7,7 +7,7 @@ explainability features, audit logging, and governance tracking for all models.
 
 from typing import Dict, Any, List, Optional
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 
 from ..shared import BaseModel, ModelMetadata
@@ -69,7 +69,7 @@ class EnhancedBaseModel(BaseModel):
         try:
             # Record decision start
             decision_id = self._generate_decision_id()
-            start_time = datetime.utcnow()
+            start_time = datetime.now(timezone.utc)
 
             # Log audit trail
             if self.audit_enabled:
@@ -97,7 +97,7 @@ class EnhancedBaseModel(BaseModel):
             result["decision_metadata"] = {
                 "decision_id": decision_id,
                 "timestamp": start_time.isoformat(),
-                "processing_time": (datetime.utcnow() - start_time).total_seconds(),
+                "processing_time": (datetime.now(timezone.utc) - start_time).total_seconds(),
                 "explainability_enabled": self.explainability_enabled,
                 "audit_enabled": self.audit_enabled,
                 "model_version": self.metadata.version,
@@ -287,7 +287,7 @@ class EnhancedBaseModel(BaseModel):
 
     def _generate_decision_id(self) -> str:
         """Generate unique decision ID."""
-        return f"decision_{datetime.utcnow().strftime('%Y%m%d_%H%M%S_%f')}"
+        return f"decision_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S_%f')}"
 
     def _log_decision_start(self, decision_id: str, evidence: Dict[str, Any], timestamp: datetime):
         """Log decision start."""
@@ -308,7 +308,7 @@ class EnhancedBaseModel(BaseModel):
                 "decision_id": decision_id,
                 "evidence": evidence,
                 "result": result,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         )
 
@@ -388,7 +388,7 @@ class EnhancedBaseModel(BaseModel):
         """Trace data lineage for audit purposes."""
         return {
             "data_sources": list(evidence.keys()),
-            "processing_timestamp": datetime.utcnow().isoformat(),
+            "processing_timestamp": datetime.now(timezone.utc).isoformat(),
             "transformation_steps": ["validation", "normalization", "feature_extraction"],
             "lineage_complete": True,
         }
@@ -430,7 +430,7 @@ class EnhancedModelMetadata(ModelMetadata):
                 "decision_id": decision_id,
                 "event": "decision_completion",
                 "risk_score": result.get("risk_scores", {}).get("overall_score", 0.0),
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         )
 
@@ -441,7 +441,7 @@ class EnhancedModelMetadata(ModelMetadata):
                 "decision_id": decision_id,
                 "event": "decision_error",
                 "error": error,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         )
         self.audit_metrics["errors_logged"] += 1

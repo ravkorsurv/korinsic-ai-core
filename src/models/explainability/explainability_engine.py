@@ -7,7 +7,7 @@ visualization for regulatory compliance.
 """
 
 from typing import Dict, Any, List, Optional, Tuple
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 from dataclasses import dataclass, asdict
 
@@ -134,7 +134,7 @@ class ModelExplainabilityEngine:
             # Comprehensive explanation
             comprehensive_explanation = {
                 "explanation_id": explanation_id,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "model_type": model_type,
                 "feature_attributions": [asdict(fa) for fa in feature_attributions],
                 "counterfactual_scenarios": [asdict(cs) for cs in counterfactuals],
@@ -167,7 +167,7 @@ class ModelExplainabilityEngine:
 
     def _generate_explanation_id(self) -> str:
         """Generate unique explanation ID."""
-        return f"explanation_{datetime.utcnow().strftime('%Y%m%d_%H%M%S_%f')}"
+        return f"explanation_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S_%f')}"
 
     def _generate_regulatory_summary(
         self,
@@ -349,7 +349,7 @@ class ModelExplainabilityEngine:
 
         return {
             "explanation_id": self._generate_explanation_id(),
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "model_type": model_type,
             "feature_attributions": [],
             "counterfactual_scenarios": [],

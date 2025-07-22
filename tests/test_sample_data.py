@@ -1,7 +1,7 @@
 import json
 import sys
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 # Add src to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
@@ -11,13 +11,13 @@ from core.bayesian_engine import BayesianEngine
 
 def generate_sample_insider_data():
     """Generate sample data for insider dealing scenario"""
-    base_time = datetime.utcnow() - timedelta(days=7)
+    base_time = datetime.now(timezone.utc) - timedelta(days=7)
     
     return {
         "trades": [
             {
                 "id": "trade_001",
-                "timestamp": (base_time + timedelta(days=1)).isoformat() + "Z",
+                "timestamp": (base_time + timedelta(days=1)).isoformat(),
                 "instrument": "ENERGY_STOCK_A",
                 "volume": 50000,
                 "price": 45.50,
@@ -26,7 +26,7 @@ def generate_sample_insider_data():
             },
             {
                 "id": "trade_002", 
-                "timestamp": (base_time + timedelta(days=2)).isoformat() + "Z",
+                "timestamp": (base_time + timedelta(days=2)).isoformat(),
                 "instrument": "ENERGY_STOCK_A",
                 "volume": 75000,
                 "price": 46.20,
@@ -35,7 +35,7 @@ def generate_sample_insider_data():
             },
             {
                 "id": "trade_003",
-                "timestamp": (base_time + timedelta(days=3)).isoformat() + "Z",
+                "timestamp": (base_time + timedelta(days=3)).isoformat(),
                 "instrument": "ENERGY_STOCK_A",
                 "volume": 100000,
                 "price": 47.10,
@@ -62,7 +62,7 @@ def generate_sample_insider_data():
         "material_events": [
             {
                 "id": "event_001",
-                "timestamp": (base_time + timedelta(days=5)).isoformat() + "Z",
+                "timestamp": (base_time + timedelta(days=5)).isoformat(),
                 "type": "earnings_announcement",
                 "description": "Quarterly earnings beat expectations by 15%",
                 "instruments_affected": ["ENERGY_STOCK_A"],
@@ -78,7 +78,7 @@ def generate_sample_insider_data():
 
 def generate_sample_spoofing_data():
     """Generate sample data for spoofing scenario"""
-    base_time = datetime.utcnow() - timedelta(hours=2)
+    base_time = datetime.now(timezone.utc) - timedelta(hours=2)
     
     orders = []
     trades = []
@@ -90,7 +90,7 @@ def generate_sample_spoofing_data():
         if i % 10 == 0:  # Every 10th order becomes a trade
             order = {
                 "id": f"order_{i:03d}",
-                "timestamp": order_time.isoformat() + "Z",
+                "timestamp": order_time.isoformat(),
                 "instrument": "CRUDE_OIL_FUTURE",
                 "size": 1000,
                 "price": 75.50 + (i * 0.01),
@@ -101,7 +101,7 @@ def generate_sample_spoofing_data():
             
             trade = {
                 "id": f"trade_{i//10:03d}",
-                "timestamp": order_time.isoformat() + "Z",
+                "timestamp": order_time.isoformat(),
                 "instrument": "CRUDE_OIL_FUTURE",
                 "volume": 1000,
                 "price": 75.50 + (i * 0.01),
@@ -113,14 +113,14 @@ def generate_sample_spoofing_data():
             # Large orders that get cancelled
             order = {
                 "id": f"order_{i:03d}",
-                "timestamp": order_time.isoformat() + "Z",
+                "timestamp": order_time.isoformat(),
                 "instrument": "CRUDE_OIL_FUTURE",
                 "size": 10000,  # Much larger
                 "price": 75.50 + (i * 0.01),
                 "side": "sell",
                 "status": "cancelled",
                 "trader_id": "trader_spoofer_001",
-                "cancellation_time": (order_time + timedelta(seconds=30)).isoformat() + "Z"
+                "cancellation_time": (order_time + timedelta(seconds=30)).isoformat()
             }
         
         orders.append(order)
@@ -166,7 +166,7 @@ def test_sample_data():
     
     insider_data = generate_sample_insider_data()
     processed_insider = data_processor.process(insider_data)
-    insider_risk = bayesian_engine.calculate_insider_dealing_risk(processed_insider)
+    insider_risk = bayesian_engine.analyze_insider_dealing(processed_insider)
     
     print(f"Processed {len(processed_insider['trades'])} trades")
     print(f"Insider Dealing Risk Score: {insider_risk.get('overall_score', 0):.3f}")
@@ -178,7 +178,7 @@ def test_sample_data():
     
     spoofing_data = generate_sample_spoofing_data()
     processed_spoofing = data_processor.process(spoofing_data)
-    spoofing_risk = bayesian_engine.calculate_spoofing_risk(processed_spoofing)
+    spoofing_risk = bayesian_engine.analyze_spoofing(processed_spoofing)
     
     print(f"Processed {len(processed_spoofing['orders'])} orders")
     print(f"Spoofing Risk Score: {spoofing_risk.get('overall_score', 0):.3f}")

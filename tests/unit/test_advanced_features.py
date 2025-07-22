@@ -78,8 +78,8 @@ def test_model_comparison():
     processed_data = data_processor.process(test_data)
     
     # Get results
-    insider_dynamic = bayesian_engine_dynamic.calculate_insider_dealing_risk(processed_data)
-    spoofing_dynamic = bayesian_engine_dynamic.calculate_spoofing_risk(processed_data)
+    insider_dynamic = bayesian_engine_dynamic.analyze_insider_dealing(processed_data)
+    spoofing_dynamic = bayesian_engine_dynamic.analyze_spoofing(processed_data)
     
     print(f"📈 Dynamic Model Results:")
     print(f"   Insider dealing score: {insider_dynamic.get('overall_score', 0):.3f}")

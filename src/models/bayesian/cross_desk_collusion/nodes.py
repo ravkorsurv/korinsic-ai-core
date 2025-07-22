@@ -126,6 +126,7 @@ class CrossDeskCollusionNodes:
         node = self.node_library.create_node(
             node_type=node_def['type'],
             name=node_name,
+            states=node_def['states'],
             description=final_description,
             fallback_prior=final_fallback_prior
         )
@@ -263,7 +264,7 @@ class CrossDeskCollusionNodes:
             
         except Exception as e:
             logger.error(f"Error validating node {node_name}: {str(e)}")
-            return False
+            raise ValueError(f"Error validating node {node_name}: {str(e)}")
     
     def get_node_statistics(self) -> Dict[str, Any]:
         """

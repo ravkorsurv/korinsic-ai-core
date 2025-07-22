@@ -2,7 +2,7 @@ import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 import traceback
 
 from core.bayesian_engine import BayesianEngine
@@ -40,7 +40,7 @@ def health_check():
     """Health check endpoint"""
     return jsonify({
         'status': 'healthy',
-        'timestamp': datetime.utcnow().isoformat(),
+        'timestamp': datetime.now(timezone.utc).isoformat(),
         'service': 'kor-ai-surveillance-platform'
     })
 
@@ -115,8 +115,8 @@ def analyze_trading_data():
                     logger.error(f"Error generating regulatory rationale for alert {alert['id']}: {str(e)}")
         
         response = {
-            'timestamp': datetime.utcnow().isoformat(),
-            'analysis_id': f"analysis_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}",
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'analysis_id': f"analysis_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}",
             'risk_scores': {
                 'insider_dealing': insider_dealing_score,
                 'spoofing': spoofing_score,
@@ -174,7 +174,7 @@ def simulate_scenario():
             'parameters': parameters,
             'risk_score': risk_score,
             'simulated_data': simulated_data,
-            'timestamp': datetime.utcnow().isoformat()
+            'timestamp': datetime.now(timezone.utc).isoformat()
         }
         
         return jsonify(response)
@@ -195,7 +195,7 @@ def get_alerts_history():
         return jsonify({
             'alerts': alerts,
             'count': len(alerts),
-            'timestamp': datetime.utcnow().isoformat()
+            'timestamp': datetime.now(timezone.utc).isoformat()
         })
         
     except Exception as e:

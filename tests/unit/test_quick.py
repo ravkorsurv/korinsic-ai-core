@@ -58,7 +58,7 @@ def test_risk_aggregation():
     processed_data = data_processor.process(test_data)
     
     # Test insider dealing
-    insider_result = bayesian_engine.calculate_insider_dealing_risk(processed_data)
+    insider_result = bayesian_engine.analyze_insider_dealing(processed_data)
     print(f"\n📊 INSIDER DEALING:")
     print(f"✅ Risk Score: {insider_result.get('overall_score', 0):.3f}")
     print(f"✅ Risk Level: {insider_result.get('risk_level', 'Unknown')}")
@@ -67,7 +67,7 @@ def test_risk_aggregation():
     print(f"✅ Critical Nodes: {len(insider_result.get('critical_nodes', []))}")
     
     # Test spoofing
-    spoofing_result = bayesian_engine.calculate_spoofing_risk(processed_data)
+    spoofing_result = bayesian_engine.analyze_spoofing(processed_data)
     print(f"\n📊 SPOOFING:")
     print(f"✅ Risk Score: {spoofing_result.get('overall_score', 0):.3f}")
     print(f"✅ Risk Level: {spoofing_result.get('risk_level', 'Unknown')}")

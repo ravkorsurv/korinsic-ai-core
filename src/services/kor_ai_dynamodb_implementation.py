@@ -5,7 +5,7 @@ Modern NoSQL implementation with access patterns optimization
 
 import boto3
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
 from decimal import Decimal
@@ -53,7 +53,7 @@ class KorAiDynamoDBRepository:
         Access Pattern: Direct key access
         """
         try:
-            ttl = int((datetime.utcnow() + timedelta(days=5*365)).timestamp())
+            ttl = int((datetime.now(timezone.utc) + timedelta(days=5*365)).timestamp())
             
             item = {
                 'PK': f"TRADER#{trader_data['trader_id']}",
@@ -67,7 +67,7 @@ class KorAiDynamoDBRepository:
                 'StartDate': trader_data.get('start_date', ''),
                 'Supervisors': trader_data.get('supervisors', []),
                 'Status': trader_data.get('status', 'active'),
-                'LastUpdated': datetime.utcnow().isoformat(),
+                'LastUpdated': datetime.now(timezone.utc).isoformat(),
                 'RiskProfile': trader_data.get('risk_profile', {}),
                 'TradingMetrics': trader_data.get('trading_metrics', {}),
                 'TTL': ttl
@@ -114,7 +114,7 @@ class KorAiDynamoDBRepository:
                 return {}
             
             # Get recent alerts using GSI1
-            cutoff_date = datetime.utcnow() - timedelta(days=days)
+            cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
             alerts = self.get_trader_alerts(trader_id, since=cutoff_date)
             
             # Get recent trades using GSI2 (date-based)
@@ -143,7 +143,7 @@ class KorAiDynamoDBRepository:
         Access Pattern: Multiple access via PK and GSIs
         """
         try:
-            ttl = int((datetime.utcnow() + timedelta(days=7*365)).timestamp())
+            ttl = int((datetime.now(timezone.utc) + timedelta(days=7*365)).timestamp())
             timestamp = trade_data['timestamp']
             trader_id = trade_data['trader_id']
             
@@ -190,7 +190,7 @@ class KorAiDynamoDBRepository:
         Access Pattern: PK query with SK prefix
         """
         try:
-            cutoff_date = datetime.utcnow() - timedelta(days=days)
+            cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
             cutoff_str = cutoff_date.isoformat()
             
             response = self.table.query(
@@ -238,7 +238,7 @@ class KorAiDynamoDBRepository:
         Access Pattern: Multiple GSIs for different query patterns
         """
         try:
-            ttl = int((datetime.utcnow() + timedelta(days=3*365)).timestamp())
+            ttl = int((datetime.now(timezone.utc) + timedelta(days=3*365)).timestamp())
             timestamp = alert_data['timestamp']
             alert_id = alert_data['alert_id']
             
@@ -377,7 +377,7 @@ class KorAiDynamoDBRepository:
         Access Pattern: Multiple GSIs for analysis queries
         """
         try:
-            ttl = int((datetime.utcnow() + timedelta(days=2*365)).timestamp())
+            ttl = int((datetime.now(timezone.utc) + timedelta(days=2*365)).timestamp())
             timestamp = risk_data['timestamp']
             trader_id = risk_data['trader_id']
             
@@ -479,7 +479,7 @@ class KorAiDynamoDBRepository:
         Access Pattern: Alert-based queries and compliance workflows
         """
         try:
-            ttl = int((datetime.utcnow() + timedelta(days=3*365)).timestamp())
+            ttl = int((datetime.now(timezone.utc) + timedelta(days=3*365)).timestamp())
             alert_id = rationale_data['alert_id']
             
             item = {
@@ -558,7 +558,7 @@ class KorAiDynamoDBRepository:
         Access Pattern: Regulatory queries and compliance reporting
         """
         try:
-            ttl = int((datetime.utcnow() + timedelta(days=10*365)).timestamp())
+            ttl = int((datetime.now(timezone.utc) + timedelta(days=10*365)).timestamp())
             record_id = stor_data['record_id']
             
             item = {
@@ -686,7 +686,7 @@ class KorAiDynamoDBRepository:
             pending_compliance = self.get_pending_compliance_reviews()
             
             # Get today's risk scores
-            today_risks = self.get_risk_scores_by_date(datetime.utcnow())
+            today_risks = self.get_risk_scores_by_date(datetime.now(timezone.utc))
             
             return {
                 'high_severity_alerts': high_alerts,
@@ -713,7 +713,7 @@ class KorAiDynamoDBRepository:
         Access Pattern: PK query with date range filtering
         """
         try:
-            cutoff_date = datetime.utcnow() - timedelta(days=days)
+            cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
             cutoff_str = cutoff_date.isoformat()
             
             response = self.table.query(

@@ -66,8 +66,8 @@ def test_engine_integration():
     }
     
     processed_explained = data_processor.process(explained_data)
-    insider_result_explained = bayesian_engine.calculate_insider_dealing_risk(processed_explained)
-    spoofing_result_explained = bayesian_engine.calculate_spoofing_risk(processed_explained)
+    insider_result_explained = bayesian_engine.analyze_insider_dealing(processed_explained)
+    spoofing_result_explained = bayesian_engine.analyze_spoofing(processed_explained)
     
     print(f"📊 INSIDER DEALING:")
     print(f"   Risk Score: {insider_result_explained.get('overall_score', 0):.3f}")
@@ -122,8 +122,8 @@ def test_engine_integration():
     }
     
     processed_unexplained = data_processor.process(unexplained_data)
-    insider_result_unexplained = bayesian_engine.calculate_insider_dealing_risk(processed_unexplained)
-    spoofing_result_unexplained = bayesian_engine.calculate_spoofing_risk(processed_unexplained)
+    insider_result_unexplained = bayesian_engine.analyze_insider_dealing(processed_unexplained)
+    spoofing_result_unexplained = bayesian_engine.analyze_spoofing(processed_unexplained)
     
     print(f"📊 INSIDER DEALING:")
     print(f"   Risk Score: {insider_result_unexplained.get('overall_score', 0):.3f}")

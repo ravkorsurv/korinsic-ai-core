@@ -126,6 +126,7 @@ class SpoofingNodes:
         node = self.node_library.create_node(
             node_type=node_def['type'],
             name=node_name,
+            states=node_def['states'],
             description=final_description,
             fallback_prior=final_fallback_prior
         )

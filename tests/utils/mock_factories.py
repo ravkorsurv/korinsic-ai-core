@@ -143,9 +143,9 @@ class MockEngineFactory:
             "critical_nodes": []
         }
         
-        mock.calculate_insider_dealing_risk.return_value = default_insider_result
-        mock.calculate_insider_dealing_risk_with_latent_intent.return_value = default_insider_result
-        mock.calculate_spoofing_risk.return_value = default_spoofing_result
+        mock.analyze_insider_dealing.return_value = default_insider_result
+        mock.analyze_insider_dealing_with_latent_intent = mock.analyze_insider_dealing
+        mock.analyze_spoofing.return_value = default_spoofing_result
         mock.get_models_info.return_value = {
             "models": ["insider_dealing", "spoofing"],
             "version": "1.0.0"
@@ -224,7 +224,8 @@ class MockResponseFactory:
                     "severity": "MEDIUM",
                     "risk_score": 0.6,
                     "description": "Suspicious trading pattern detected",
-                    "timestamp": datetime.now().isoformat() + "Z"
+                    "timestamp": datetime.now().isoformat() + "Z",
+                    "trader_id": "trader_001"
                 }
             ]
         

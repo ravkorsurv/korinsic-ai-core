@@ -162,17 +162,22 @@ class CommodityManipulationModel:
                     variable_card=len(node.states),
                     values=np.array([node.fallback_prior]).T
                 )
-                model.add_cpd(cpd)
+                model.add_cpds(cpd)
         
         # Add CPDs for latent intent or risk factor
         if use_latent_intent:
-            # Latent intent CPD (simplified)
+            # Latent intent CPD (corrected: evidence matches parents)
             latent_intent_cpd = TabularCPD(
                 variable='manipulation_latent_intent',
                 variable_card=3,
-                values=np.array([[0.95, 0.04, 0.01]]).T
+                values=np.full((3, 729), 1/3),  # 6 evidence nodes, 3^6=729 combinations
+                evidence=[
+                    'liquidity_context', 'benchmark_timing', 'order_clustering',
+                    'price_impact_ratio', 'volume_participation', 'cross_venue_coordination'
+                ],
+                evidence_card=[3, 3, 3, 3, 3, 3]
             )
-            model.add_cpd(latent_intent_cpd)
+            model.add_cpds(latent_intent_cpd)
             
             # Risk factor CPD (depends on latent intent)
             risk_factor_cpd = TabularCPD(
@@ -186,7 +191,7 @@ class CommodityManipulationModel:
                 evidence=['manipulation_latent_intent'],
                 evidence_card=[3]
             )
-            model.add_cpd(risk_factor_cpd)
+            model.add_cpds(risk_factor_cpd)
         else:
             # Standard risk factor CPD
             risk_factor_cpd = TabularCPD(
@@ -194,7 +199,7 @@ class CommodityManipulationModel:
                 variable_card=3,
                 values=np.array([[0.8, 0.15, 0.05]]).T
             )
-            model.add_cpd(risk_factor_cpd)
+            model.add_cpds(risk_factor_cpd)
         
         # Outcome CPD
         outcome_cpd = TabularCPD(
@@ -207,7 +212,7 @@ class CommodityManipulationModel:
             evidence=['risk_factor'],
             evidence_card=[3]
         )
-        model.add_cpd(outcome_cpd)
+        model.add_cpds(outcome_cpd)
     
     def calculate_risk(self, evidence: Dict[str, Any]) -> Dict[str, Any]:
         """

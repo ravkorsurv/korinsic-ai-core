@@ -162,17 +162,22 @@ class CrossDeskCollusionModel:
                     variable_card=len(node.states),
                     values=np.array([node.fallback_prior]).T
                 )
-                model.add_cpd(cpd)
+                model.add_cpds(cpd)
         
         # Add CPDs for latent intent or risk factor
         if use_latent_intent:
-            # Latent intent CPD (simplified)
+            # Latent intent CPD (corrected: evidence matches parents)
             collusion_intent_cpd = TabularCPD(
                 variable='collusion_latent_intent',
                 variable_card=3,
-                values=np.array([[0.90, 0.08, 0.02]]).T
+                values=np.full((3, 729), 1/3),  # 6 evidence nodes, 3^6=729 combinations
+                evidence=[
+                    'comms_metadata', 'profit_motivation', 'order_behavior',
+                    'cross_venue_coordination', 'access_pattern', 'market_segmentation'
+                ],
+                evidence_card=[3, 3, 3, 3, 3, 3]
             )
-            model.add_cpd(collusion_intent_cpd)
+            model.add_cpds(collusion_intent_cpd)
             
             # Risk factor CPD (depends on latent intent)
             risk_factor_cpd = TabularCPD(
@@ -186,15 +191,20 @@ class CrossDeskCollusionModel:
                 evidence=['collusion_latent_intent'],
                 evidence_card=[3]
             )
-            model.add_cpd(risk_factor_cpd)
+            model.add_cpds(risk_factor_cpd)
         else:
-            # Standard risk factor CPD
+            # Standard risk factor CPD (corrected: evidence matches parents)
             risk_factor_cpd = TabularCPD(
                 variable='risk_factor',
                 variable_card=3,
-                values=np.array([[0.85, 0.12, 0.03]]).T
+                values=np.full((3, 729), 1/3),  # 6 evidence nodes, 3^6=729 combinations
+                evidence=[
+                    'comms_metadata', 'profit_motivation', 'order_behavior',
+                    'cross_venue_coordination', 'access_pattern', 'market_segmentation'
+                ],
+                evidence_card=[3, 3, 3, 3, 3, 3]
             )
-            model.add_cpd(risk_factor_cpd)
+            model.add_cpds(risk_factor_cpd)
         
         # Outcome CPD
         outcome_cpd = TabularCPD(
@@ -207,7 +217,7 @@ class CrossDeskCollusionModel:
             evidence=['risk_factor'],
             evidence_card=[3]
         )
-        model.add_cpd(outcome_cpd)
+        model.add_cpds(outcome_cpd)
     
     def calculate_risk(self, evidence: Dict[str, Any]) -> Dict[str, Any]:
         """

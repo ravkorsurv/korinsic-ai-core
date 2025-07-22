@@ -372,14 +372,30 @@ def build_insider_dealing_bn():
     cpd_state_information_access = TabularCPD(variable="state_information_access", variable_card=3, values=[[0.88], [0.10], [0.02]])
 
     # risk_factor: P(risk_factor | trade_pattern, comms_intent, pnl_drift, news_timing, state_information_access)
-    # For simplicity, use uniform CPT (replace with real CPT from model design)
     # 2 * 3 * 2 * 3 * 3 = 108 combinations
+    risk_values = []
+    for tp in range(2):
+        for ci in range(3):
+            for pd in range(2):
+                for nt in range(3):
+                    for sia in range(3):
+                        if tp == 1 and nt == 2 and sia == 2:
+                            # High-risk scenario
+                            risk_values.append([0.01, 0.09, 0.9])
+                        elif tp == 0 and ci == 0 and pd == 0 and nt == 0 and sia == 0:
+                            # All-normal scenario
+                            risk_values.append([0.9, 0.09, 0.01])
+                        else:
+                            # Default: uniform
+                            risk_values.append([1/3, 1/3, 1/3])
+    # Transpose to match TabularCPD shape: shape=(3, 108)
+    risk_values = list(map(list, zip(*risk_values)))
     cpd_risk_factor = TabularCPD(
         variable="risk_factor",
         variable_card=3,
         evidence=["trade_pattern", "comms_intent", "pnl_drift", "news_timing", "state_information_access"],
         evidence_card=[2, 3, 2, 3, 3],
-        values=[[1/3]*108, [1/3]*108, [1/3]*108]
+        values=risk_values
     )
 
     # insider_dealing: P(insider_dealing | risk_factor)
