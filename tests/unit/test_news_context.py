@@ -132,7 +132,7 @@ def test_news_contextualization():
     
     # Test explained move scenario with full engine
     processed_explained = data_processor.process(explained_data)
-    result_explained = bayesian_engine.calculate_insider_dealing_risk(processed_explained)
+    result_explained = bayesian_engine.analyze_insider_dealing(processed_explained)
     print(f"\n🔵 EXPLAINED MOVE SCENARIO:")
     print(f"   Risk Score: {result_explained.get('overall_score', 0):.3f}")
     print(f"   Risk Level: {result_explained.get('risk_level', 'Unknown')}")
@@ -141,7 +141,7 @@ def test_news_contextualization():
     
     # Test unexplained move scenario with full engine
     processed_unexplained = data_processor.process(unexplained_data)
-    result_unexplained = bayesian_engine.calculate_insider_dealing_risk(processed_unexplained)
+    result_unexplained = bayesian_engine.analyze_insider_dealing(processed_unexplained)
     print(f"\n🔴 UNEXPLAINED MOVE SCENARIO:")
     print(f"   Risk Score: {result_unexplained.get('overall_score', 0):.3f}")
     print(f"   Risk Level: {result_unexplained.get('risk_level', 'Unknown')}")

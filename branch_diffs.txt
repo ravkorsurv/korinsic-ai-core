@@ -1,0 +1,178 @@
+----------------- chore/cleanup-root-and-tests -----------------
+
+2ad2473 (origin/cleanup/remove-repository-summary, cleanup/remove-repository-summary) Add comprehensive branch cleanup summary documentation
+7f3ea0f Remove REPOSITORY_CLEANUP_SUMMARY.md file from main branch
+----------------- cleanup/remove-repository-summary -----------------
+
+47edf58 (origin/cursor/add-dqsi-trust-bucket-to-scoring-output-ccdc, cursor/add-dqsi-trust-bucket-to-scoring-output-ccdc) Add DQSI trust bucket feature with role-aware and fallback strategies
+83e2ae7 Checkpoint before follow-up message
+----------------- cursor/add-dqsi-trust-bucket-to-scoring-output-ccdc -----------------
+
+----------------- cursor/add-raw-trading-data-feature-3e59 -----------------
+
+----------------- cursor/build-and-test-dqsi-feature-a107 -----------------
+
+----------------- cursor/confirm-task-completion-731a -----------------
+
+----------------- cursor/create-comprehensive-data-model-54a0 -----------------
+
+af46c53 (origin/cursor/enhance-model-explainability-and-audit-features-df64, cursor/enhance-model-explainability-and-audit-features-df64) Create quality gates failure analysis documentation for CI/CD pipeline
+c3f11f7 Refactor explainability modules with improved code style and formatting
+962785f Add final validation report for ESI explainability implementation
+cd9282d Add ESI component with comprehensive testing and CI/CD pipeline
+29c73f9 Add Evidence Sufficiency Index (ESI) component for explainability
+54e504f Add comprehensive requirements compliance assessment document
+edfb08d Implement comprehensive model explainability and audit framework
+----------------- cursor/enhance-model-explainability-and-audit-features-df64 -----------------
+
+2614c08 (origin/cursor/enhance-nodes-for-wash-trade-detection-bffd, cursor/enhance-nodes-for-wash-trade-detection-bffd) Update regression test results for wash trade detection implementation
+6a4322e Add wash trade detection evidence mapping and regulatory explainability
+639dbad Add wash trade detection regression test results documentation
+2f73c64 Add wash trade detection model with Bayesian network implementation
+----------------- cursor/enhance-nodes-for-wash-trade-detection-bffd -----------------
+
+----------------- cursor/establish-feature-development-checklist-f49a -----------------
+
+----------------- cursor/expand-qatar-aligned-market-abuse-typologies-40c2 -----------------
+
+----------------- cursor/expand-qatar-aligned-market-abuse-typologies-46c6 -----------------
+
+----------------- cursor/fix-and-simplify-the-cicd-pipeline-bd07 -----------------
+
+7f05dd1 (origin/cursor/identify-subdimensions-of-data-quality-bc78, cursor/identify-subdimensions-of-data-quality-bc78) Implement KDE-first DQ framework with role-aware scoring strategy
+ff4f7d6 Checkpoint before follow-up message
+64fe55f Add comprehensive Data Quality Dimensions and Analysis documentation
+----------------- cursor/identify-subdimensions-of-data-quality-bc78 -----------------
+
+----------------- cursor/organize-and-clean-up-project-files-5195 -----------------
+
+008fb4f (origin/cursor/review-code-for-market-abuse-detection-gaps-2513, cursor/review-code-for-market-abuse-detection-gaps-2513) Optimize node reuse for Qatar implementation across collusion and spoofing models
+926cb09 Add implementation summary and gap analysis for Qatar market surveillance
+----------------- cursor/review-code-for-market-abuse-detection-gaps-2513 -----------------
+
+9e09af7 (origin/cursor/review-code-for-market-abuse-detection-gaps-548e, cursor/review-code-for-market-abuse-detection-gaps-548e) feat: Complete Phase 2 - Enhanced Spoofing Model Implementation
+0251c09 (HEAD -> qatar-energy-commodity-models, origin/qatar-energy-commodity-models) Add Qatar energy market surveillance model with cross-desk collusion detection
+34c3635 Phase 1: Implement Cross-Desk Collusion Model for Qatar Energy & Commodity Surveillance
+008fb4f (origin/cursor/review-code-for-market-abuse-detection-gaps-2513, cursor/review-code-for-market-abuse-detection-gaps-2513) Optimize node reuse for Qatar implementation across collusion and spoofing models
+926cb09 Add implementation summary and gap analysis for Qatar market surveillance
+----------------- cursor/review-code-for-market-abuse-detection-gaps-548e -----------------
+
+----------------- cursor/review-p1-implementation-and-prepare-for-p2-3e09 -----------------
+
+----------------- cursor/suggest-structural-improvements-without-disruption-4682 -----------------
+
+----------------- cursor/update-company-name-from-kor-ai-to-korinsic-764e -----------------
+
+----------------- cursor/update-readme-and-clean-up-branches-9f08 -----------------
+
+c60913b (origin/cursor/update-wiki-page-name-4dae, cursor/update-wiki-page-name-4dae) Update wiki subproject commit reference
+8b2070d Checkpoint before follow-up message
+----------------- cursor/update-wiki-page-name-4dae -----------------
+
+365f5da (origin/cursor/write-complete-code-f9b6, cursor/write-complete-code-f9b6) Switch to SimpleBayesianEngine and add logging for surveillance platform
+f501c32 Initialize Kor.ai surveillance platform with core components and sample data
+----------------- cursor/write-complete-code-f9b6 -----------------
+
+----------------- init/github-pr-bot-service -----------------
+
+----------------- p1-enhanced-insider-dealing-model -----------------
+
+----------------- p3-circular-trading-model -----------------
+
+----------------- p4-market-cornering-model -----------------
+
+98bbfe4 (origin/pr-14, pr-14) Add test results for 1000 trades with varying risk scenarios
+4b68554 Add comprehensive 1000-trade surveillance test with multiple scenarios
+----------------- pr-14 -----------------
+
+----------------- * qatar-energy-commodity-models -----------------
+
+----------------- chore/cleanup-root-and-tests -----------------
+
+2ad2473 (origin/cleanup/remove-repository-summary, cleanup/remove-repository-summary) Add comprehensive branch cleanup summary documentation
+7f3ea0f Remove REPOSITORY_CLEANUP_SUMMARY.md file from main branch
+----------------- cleanup/remove-repository-summary -----------------
+
+47edf58 (origin/cursor/add-dqsi-trust-bucket-to-scoring-output-ccdc, cursor/add-dqsi-trust-bucket-to-scoring-output-ccdc) Add DQSI trust bucket feature with role-aware and fallback strategies
+83e2ae7 Checkpoint before follow-up message
+----------------- cursor/add-dqsi-trust-bucket-to-scoring-output-ccdc -----------------
+
+----------------- cursor/add-raw-trading-data-feature-3e59 -----------------
+
+----------------- cursor/build-and-test-dqsi-feature-a107 -----------------
+
+----------------- cursor/confirm-task-completion-731a -----------------
+
+----------------- cursor/create-comprehensive-data-model-54a0 -----------------
+
+af46c53 (origin/cursor/enhance-model-explainability-and-audit-features-df64, cursor/enhance-model-explainability-and-audit-features-df64) Create quality gates failure analysis documentation for CI/CD pipeline
+c3f11f7 Refactor explainability modules with improved code style and formatting
+962785f Add final validation report for ESI explainability implementation
+cd9282d Add ESI component with comprehensive testing and CI/CD pipeline
+29c73f9 Add Evidence Sufficiency Index (ESI) component for explainability
+54e504f Add comprehensive requirements compliance assessment document
+edfb08d Implement comprehensive model explainability and audit framework
+----------------- cursor/enhance-model-explainability-and-audit-features-df64 -----------------
+
+2614c08 (origin/cursor/enhance-nodes-for-wash-trade-detection-bffd, cursor/enhance-nodes-for-wash-trade-detection-bffd) Update regression test results for wash trade detection implementation
+6a4322e Add wash trade detection evidence mapping and regulatory explainability
+639dbad Add wash trade detection regression test results documentation
+2f73c64 Add wash trade detection model with Bayesian network implementation
+----------------- cursor/enhance-nodes-for-wash-trade-detection-bffd -----------------
+
+----------------- cursor/establish-feature-development-checklist-f49a -----------------
+
+----------------- cursor/expand-qatar-aligned-market-abuse-typologies-40c2 -----------------
+
+----------------- cursor/expand-qatar-aligned-market-abuse-typologies-46c6 -----------------
+
+----------------- cursor/fix-and-simplify-the-cicd-pipeline-bd07 -----------------
+
+7f05dd1 (origin/cursor/identify-subdimensions-of-data-quality-bc78, cursor/identify-subdimensions-of-data-quality-bc78) Implement KDE-first DQ framework with role-aware scoring strategy
+ff4f7d6 Checkpoint before follow-up message
+64fe55f Add comprehensive Data Quality Dimensions and Analysis documentation
+----------------- cursor/identify-subdimensions-of-data-quality-bc78 -----------------
+
+----------------- cursor/organize-and-clean-up-project-files-5195 -----------------
+
+008fb4f (origin/cursor/review-code-for-market-abuse-detection-gaps-2513, cursor/review-code-for-market-abuse-detection-gaps-2513) Optimize node reuse for Qatar implementation across collusion and spoofing models
+926cb09 Add implementation summary and gap analysis for Qatar market surveillance
+----------------- cursor/review-code-for-market-abuse-detection-gaps-2513 -----------------
+
+9e09af7 (origin/cursor/review-code-for-market-abuse-detection-gaps-548e, cursor/review-code-for-market-abuse-detection-gaps-548e) feat: Complete Phase 2 - Enhanced Spoofing Model Implementation
+0251c09 (HEAD -> qatar-energy-commodity-models, origin/qatar-energy-commodity-models) Add Qatar energy market surveillance model with cross-desk collusion detection
+34c3635 Phase 1: Implement Cross-Desk Collusion Model for Qatar Energy & Commodity Surveillance
+008fb4f (origin/cursor/review-code-for-market-abuse-detection-gaps-2513, cursor/review-code-for-market-abuse-detection-gaps-2513) Optimize node reuse for Qatar implementation across collusion and spoofing models
+926cb09 Add implementation summary and gap analysis for Qatar market surveillance
+----------------- cursor/review-code-for-market-abuse-detection-gaps-548e -----------------
+
+----------------- cursor/review-p1-implementation-and-prepare-for-p2-3e09 -----------------
+
+----------------- cursor/suggest-structural-improvements-without-disruption-4682 -----------------
+
+----------------- cursor/update-company-name-from-kor-ai-to-korinsic-764e -----------------
+
+----------------- cursor/update-readme-and-clean-up-branches-9f08 -----------------
+
+c60913b (origin/cursor/update-wiki-page-name-4dae, cursor/update-wiki-page-name-4dae) Update wiki subproject commit reference
+8b2070d Checkpoint before follow-up message
+----------------- cursor/update-wiki-page-name-4dae -----------------
+
+365f5da (origin/cursor/write-complete-code-f9b6, cursor/write-complete-code-f9b6) Switch to SimpleBayesianEngine and add logging for surveillance platform
+f501c32 Initialize Kor.ai surveillance platform with core components and sample data
+----------------- cursor/write-complete-code-f9b6 -----------------
+
+----------------- init/github-pr-bot-service -----------------
+
+----------------- p1-enhanced-insider-dealing-model -----------------
+
+----------------- p3-circular-trading-model -----------------
+
+----------------- p4-market-cornering-model -----------------
+
+98bbfe4 (origin/pr-14, pr-14) Add test results for 1000 trades with varying risk scenarios
+4b68554 Add comprehensive 1000-trade surveillance test with multiple scenarios
+----------------- pr-14 -----------------
+
+----------------- * qatar-energy-commodity-models -----------------
+

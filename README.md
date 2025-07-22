@@ -1,6 +1,6 @@
-# Kor.ai – AI-Powered Surveillance Platform
+# Korinsic – AI-Powered Surveillance Platform
 
-Kor.ai is a professional-grade AI surveillance platform designed to detect market abuse risks including insider dealing and spoofing. This repository contains the core analytical engine, Bayesian inference system, and service orchestration components.
+Korinsic is a professional-grade AI surveillance platform designed to detect market abuse risks including insider dealing and spoofing. This repository contains the core analytical engine, Bayesian inference system, and service orchestration components.
 
 ---
 
@@ -92,22 +92,46 @@ kor-ai-core/
 # 1. Environment Setup
 python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
+pip install -r requirements-dev.txt
 
 # 2. Configuration
 cp .env.example .env
 # Edit .env with your settings
 
-# 3. Development Server
+# 3. Pre-commit Setup (MANDATORY)
+pre-commit install
+
+# 4. Development Server
 python scripts/development/run_server.py
 
-# 4. Testing
-python scripts/development/run_tests.py
+# 5. Testing (MANDATORY before PR)
+python scripts/development/run_tests.py --fast
 
-# 5. API Testing
+# 6. Quality Checks (MANDATORY before PR)
+python scripts/development/run_quality_checks.py
+
+# 7. API Testing
 curl -X POST http://localhost:5000/api/v1/analyze \
   -H "Content-Type: application/json" \
   -d @tests/fixtures/sample_request.json
 ```
+
+### 🚨 MANDATORY: Feature Development Process
+
+**Before starting any new feature or enhancement, you MUST follow the Feature Development Checklist:**
+
+1. **Read the checklist:** `FEATURE_DEVELOPMENT_CHECKLIST.md`
+2. **Follow the process:** Complete all pre-development requirements
+3. **Use the PR template:** Follow `.github/PULL_REQUEST_TEMPLATE.md`
+4. **Run all checks:** Use automation scripts provided
+
+**Key Requirements:**
+- ✅ 80% minimum test coverage
+- ✅ All quality checks must pass
+- ✅ Security scans must pass
+- ✅ Documentation must be updated
+- ✅ Regulatory compliance addressed
+- ✅ API documentation updated
 
 ---
 
@@ -649,4 +673,4 @@ For questions and support:
 
 ---
 
-*This README serves as your primary navigation guide for the Kor.ai surveillance platform. For detailed technical documentation, see the `docs/` directory.*
+*This README serves as your primary navigation guide for the Korinsic surveillance platform. For detailed technical documentation, see the `docs/` directory.*

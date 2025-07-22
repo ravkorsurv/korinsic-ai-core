@@ -11,6 +11,11 @@ import logging
 from .insider_dealing import InsiderDealingModel
 from .spoofing import SpoofingModel
 from .latent_intent import LatentIntentModel
+from .commodity_manipulation import CommodityManipulationModel
+from .circular_trading import CircularTradingModel
+from .market_cornering import MarketCorneringModel
+from .cross_desk_collusion import CrossDeskCollusionModel
+from .wash_trade_detection import WashTradeDetectionModel
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +33,12 @@ class BayesianModelRegistry:
         self.registered_models = {
             'insider_dealing': InsiderDealingModel,
             'spoofing': SpoofingModel,
-            'latent_intent': LatentIntentModel
+            'latent_intent': LatentIntentModel,
+            'commodity_manipulation': CommodityManipulationModel,
+            'circular_trading': CircularTradingModel,
+            'market_cornering': MarketCorneringModel,
+            'cross_desk_collusion': CrossDeskCollusionModel,
+            'wash_trade_detection': WashTradeDetectionModel
         }
         
         self.model_instances = {}
@@ -64,8 +74,8 @@ class BayesianModelRegistry:
         model_class = self.registered_models[model_type]
         
         # Create instance based on model type
-        if model_type == 'insider_dealing':
-            use_latent_intent = config.get('use_latent_intent', False) if config else False
+        if model_type in ['insider_dealing', 'commodity_manipulation', 'circular_trading', 'market_cornering', 'cross_desk_collusion', 'wash_trade_detection']:
+            use_latent_intent = config.get('use_latent_intent', True) if config else True
             model_instance = model_class(use_latent_intent=use_latent_intent, config=config)
         else:
             model_instance = model_class(config=config)

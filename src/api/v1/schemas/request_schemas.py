@@ -6,6 +6,7 @@ This module contains schema classes for validating incoming API requests.
 
 from typing import Dict, Any, List, Optional
 from datetime import datetime
+from marshmallow import Schema, fields, validate
 
 
 class BaseRequestSchema:
@@ -49,133 +50,47 @@ class BaseRequestSchema:
 
 
 class AnalysisRequestSchema(BaseRequestSchema):
-    """Schema for analysis request validation."""
+    """Schema for analysis request validation"""
+    pass
+
+class DQSIRequestSchema(BaseRequestSchema):
+    """Schema for DQSI request validation"""
     
     def _validate_specific(self, data: Dict[str, Any], result: 'ValidationResult'):
-        """Validate analysis request specific requirements."""
-        # Check required fields
-        required_fields = ['trades', 'trader_info']
-        for field in required_fields:
-            if field not in data:
-                result.add_error(f"Missing required field: {field}")
+        """Validate DQSI request specific requirements."""
+        # Check required fields based on endpoint
+        if 'dataset' not in data and 'batch_data' not in data and 'time_series_data' not in data:
+            result.add_error("Missing required field: dataset, batch_data, or time_series_data")
         
-        if not result.is_valid:
-            return
+        # Validate dataset if provided
+        if 'dataset' in data:
+            if not isinstance(data['dataset'], dict):
+                result.add_error("Dataset must be a dictionary")
         
-        # Validate trades
-        self._validate_trades(data.get('trades', []), result)
+        # Validate batch_data if provided
+        if 'batch_data' in data:
+            if not isinstance(data['batch_data'], list):
+                result.add_error("Batch data must be a list")
         
-        # Validate trader info
-        self._validate_trader_info(data.get('trader_info', {}), result)
+        # Validate time_series_data if provided
+        if 'time_series_data' in data:
+            if not isinstance(data['time_series_data'], list):
+                result.add_error("Time series data must be a list")
         
-        # Validate optional fields
-        if 'orders' in data:
-            self._validate_orders(data['orders'], result)
+        # Validate custom weights if provided
+        if 'custom_weights' in data:
+            if not isinstance(data['custom_weights'], dict):
+                result.add_error("Custom weights must be a dictionary")
         
-        if 'material_events' in data:
-            self._validate_material_events(data['material_events'], result)
-        
-        if 'market_data' in data:
-            self._validate_market_data(data['market_data'], result)
-    
-    def _validate_trades(self, trades: List[Dict[str, Any]], result: 'ValidationResult'):
-        """Validate trades data."""
-        if not isinstance(trades, list):
-            result.add_error("Trades must be a list")
-            return
-        
-        if len(trades) == 0:
-            result.add_error("Trades list cannot be empty")
-            return
-        
-        required_trade_fields = ['id', 'timestamp', 'instrument', 'volume', 'price', 'side', 'trader_id']
-        
-        for i, trade in enumerate(trades):
-            if not isinstance(trade, dict):
-                result.add_error(f"Trade {i} must be a dictionary")
-                continue
-            
-            for field in required_trade_fields:
-                if field not in trade:
-                    result.add_error(f"Trade {i} missing required field: {field}")
-            
-            # Validate trade field types
-            if 'volume' in trade and not isinstance(trade['volume'], (int, float)):
-                result.add_error(f"Trade {i} volume must be numeric")
-            
-            if 'price' in trade and not isinstance(trade['price'], (int, float)):
-                result.add_error(f"Trade {i} price must be numeric")
-            
-            if 'side' in trade and trade['side'] not in ['buy', 'sell']:
-                result.add_error(f"Trade {i} side must be 'buy' or 'sell'")
-    
-    def _validate_trader_info(self, trader_info: Dict[str, Any], result: 'ValidationResult'):
-        """Validate trader info data."""
-        if not isinstance(trader_info, dict):
-            result.add_error("Trader info must be a dictionary")
-            return
-        
-        required_fields = ['id', 'role']
-        for field in required_fields:
-            if field not in trader_info:
-                result.add_error(f"Trader info missing required field: {field}")
-        
-        # Validate access level if provided
-        if 'access_level' in trader_info:
-            valid_levels = ['low', 'medium', 'high']
-            if trader_info['access_level'] not in valid_levels:
-                result.add_error(f"Invalid access level. Must be one of: {valid_levels}")
-    
-    def _validate_orders(self, orders: List[Dict[str, Any]], result: 'ValidationResult'):
-        """Validate orders data."""
-        if not isinstance(orders, list):
-            result.add_error("Orders must be a list")
-            return
-        
-        required_order_fields = ['id', 'timestamp', 'instrument', 'volume', 'price', 'side', 'status', 'trader_id']
-        
-        for i, order in enumerate(orders):
-            if not isinstance(order, dict):
-                result.add_error(f"Order {i} must be a dictionary")
-                continue
-            
-            for field in required_order_fields:
-                if field not in order:
-                    result.add_error(f"Order {i} missing required field: {field}")
-            
-            # Validate order status
-            if 'status' in order:
-                valid_statuses = ['filled', 'cancelled', 'partial', 'pending']
-                if order['status'] not in valid_statuses:
-                    result.add_error(f"Order {i} invalid status. Must be one of: {valid_statuses}")
-    
-    def _validate_material_events(self, events: List[Dict[str, Any]], result: 'ValidationResult'):
-        """Validate material events data."""
-        if not isinstance(events, list):
-            result.add_error("Material events must be a list")
-            return
-        
-        for i, event in enumerate(events):
-            if not isinstance(event, dict):
-                result.add_error(f"Material event {i} must be a dictionary")
-                continue
-            
-            required_fields = ['id', 'timestamp', 'type', 'instruments_affected']
-            for field in required_fields:
-                if field not in event:
-                    result.add_error(f"Material event {i} missing required field: {field}")
-    
-    def _validate_market_data(self, market_data: Dict[str, Any], result: 'ValidationResult'):
-        """Validate market data."""
-        if not isinstance(market_data, dict):
-            result.add_error("Market data must be a dictionary")
-            return
-        
-        # Validate numeric fields
-        numeric_fields = ['volatility', 'volume', 'price_movement']
-        for field in numeric_fields:
-            if field in market_data and not isinstance(market_data[field], (int, float)):
-                result.add_error(f"Market data {field} must be numeric")
+        # Validate enabled dimensions if provided
+        if 'enabled_dimensions' in data:
+            if not isinstance(data['enabled_dimensions'], list):
+                result.add_error("Enabled dimensions must be a list")
+            else:
+                valid_dimensions = ['completeness', 'accuracy', 'consistency', 'validity', 'uniqueness', 'timeliness']
+                for dim in data['enabled_dimensions']:
+                    if dim not in valid_dimensions:
+                        result.add_error(f"Invalid dimension: {dim}. Must be one of: {valid_dimensions}")
 
 
 class SimulationRequestSchema(BaseRequestSchema):

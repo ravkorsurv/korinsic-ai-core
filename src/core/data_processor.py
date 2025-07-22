@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Any
 import logging
 
@@ -22,13 +22,28 @@ class DataProcessor:
     def process(self, raw_data: Dict[str, Any]) -> Dict[str, Any]:
         """Main processing pipeline for incoming trading data"""
         try:
+            # Patch: extract trader_info from hr_data if not present
+            trader_info = raw_data.get('trader_info')
+            if not trader_info and 'hr_data' in raw_data:
+                trader_info = {
+                    'id': raw_data['hr_data'].get('employee_id'),
+                    'role': 'executive' if raw_data['hr_data'].get('access_level') == 'high' else 'trader',
+                    'access_level': raw_data['hr_data'].get('access_level', 'standard'),
+                    'department': raw_data['hr_data'].get('department', 'trading')
+                }
+            # Patch: extract volatility and price_movement from price_change if missing
+            market_data = raw_data.get('market_data', {})
+            if 'volatility' not in market_data and 'price_change' in market_data:
+                market_data['volatility'] = abs(market_data['price_change'])
+            if 'price_movement' not in market_data and 'price_change' in market_data:
+                market_data['price_movement'] = market_data['price_change']
             processed_data = {
                 'raw_data': raw_data,
-                'timestamp': datetime.utcnow().isoformat(),
+                'timestamp': datetime.now(timezone.utc).isoformat(),
                 'trades': self._process_trades(raw_data.get('trades', [])),
                 'orders': self._process_orders(raw_data.get('orders', [])),
-                'trader_info': self._process_trader_info(raw_data.get('trader_info', {})),
-                'market_data': self._process_market_data(raw_data.get('market_data', {})),
+                'trader_info': self._process_trader_info(trader_info or {}),
+                'market_data': self._process_market_data(market_data),
                 'material_events': self._process_material_events(raw_data.get('material_events', [])),
                 'historical_metrics': self._calculate_historical_metrics(raw_data),
                 'metrics': {}
@@ -49,6 +64,10 @@ class DataProcessor:
         except Exception as e:
             logger.error(f"Error processing data: {str(e)}")
             raise
+    
+    def process_data(self, raw_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Alias for process to support E2E tests."""
+        return self.process(raw_data)
     
     def _process_trades(self, trades: List[Dict]) -> List[Dict]:
         """Process and normalize trade data"""
@@ -297,7 +316,7 @@ class DataProcessor:
     def _generate_insider_scenario(self, params: Dict) -> Dict[str, Any]:
         """Generate insider dealing simulation data"""
         num_trades = params.get('num_trades', 50)
-        base_time = datetime.utcnow() - timedelta(days=7)
+        base_time = datetime.now(timezone.utc) - timedelta(days=7)
         
         # Generate material event
         event_time = base_time + timedelta(days=5)
@@ -343,7 +362,7 @@ class DataProcessor:
     def _generate_spoofing_scenario(self, params: Dict) -> Dict[str, Any]:
         """Generate spoofing simulation data"""
         num_orders = params.get('num_orders', 100)
-        base_time = datetime.utcnow() - timedelta(hours=1)
+        base_time = datetime.now(timezone.utc) - timedelta(hours=1)
         
         orders = []
         trades = []

@@ -226,7 +226,7 @@ def test_esi_integration():
         processed_data = data_processor.process(test_case['data'])
         
         # Calculate insider dealing risk with ESI
-        insider_result = bayesian_engine.calculate_insider_dealing_risk(processed_data)
+        insider_result = bayesian_engine.analyze_insider_dealing(processed_data)
         
         if 'esi' in insider_result:
             esi = insider_result['esi']

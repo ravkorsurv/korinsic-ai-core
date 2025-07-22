@@ -6,7 +6,7 @@ across different model types in the surveillance platform.
 """
 
 from typing import Dict, Any, Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 from abc import ABC, abstractmethod
 
 
@@ -96,7 +96,7 @@ class ModelMetadata:
     
     def __init__(self):
         """Initialize model metadata."""
-        self.creation_time = datetime.utcnow().isoformat()
+        self.creation_time = datetime.now(timezone.utc).isoformat()
         self.version = "1.0.0"
         self.performance_metrics = {}
         self.usage_stats = {
@@ -178,7 +178,7 @@ class ModelRegistry:
         """
         self.models[name] = model_instance
         self.metadata[name] = {
-            'registration_time': datetime.utcnow().isoformat(),
+            'registration_time': datetime.now(timezone.utc).isoformat(),
             'model_class': model_instance.__class__.__name__
         }
     

@@ -3,7 +3,7 @@ Model Builder for Kor.ai Bayesian Risk Engine
 Assembles Bayesian Networks for specific use cases (e.g., Insider Dealing) using the node library and pgmpy.
 """
 
-from pgmpy.models import BayesianNetwork
+from pgmpy.models import DiscreteBayesianNetwork
 from pgmpy.factors.discrete import TabularCPD
 from pgmpy.inference import VariableElimination
 from typing import Dict, List, Any, Optional
@@ -13,6 +13,7 @@ import logging
 from .node_library import (
     EvidenceNode, RiskFactorNode, OutcomeNode, CommsIntentNode, VarianceTunedIndicatorNode,
     LatentIntentNode, ProfitMotivationNode, AccessPatternNode, OrderBehaviorNode, CommsMetadataNode,
+    NewsTimingNode, StateInformationNode, AnnouncementCorrelationNode,
     normalize_cpt
 )
 
@@ -32,7 +33,7 @@ class ModelBuilder:
         self.model_registry = {}
         self.config_cache = {}
     
-    def build_from_config(self, model_config: Dict[str, Any]) -> BayesianNetwork:
+    def build_from_config(self, model_config: Dict[str, Any]) -> DiscreteBayesianNetwork:
         """
         Build a Bayesian network from configuration.
         
@@ -49,7 +50,7 @@ class ModelBuilder:
             cpds = model_config.get('cpds', [])
             
             # Build the network structure
-            model = BayesianNetwork(edges)
+            model = DiscreteBayesianNetwork(edges)
             
             # Add CPDs
             cpd_objects = []
@@ -103,7 +104,7 @@ class ModelBuilder:
             evidence_card=evidence_card if evidence_card else None
         )
     
-    def build_insider_dealing_model(self, use_latent_intent: bool = False) -> BayesianNetwork:
+    def build_insider_dealing_model(self, use_latent_intent: bool = False) -> DiscreteBayesianNetwork:
         """
         Build insider dealing detection model.
         
@@ -118,7 +119,7 @@ class ModelBuilder:
         else:
             return build_insider_dealing_bn()
     
-    def build_spoofing_model(self) -> BayesianNetwork:
+    def build_spoofing_model(self) -> DiscreteBayesianNetwork:
         """
         Build spoofing detection model.
         
@@ -127,7 +128,7 @@ class ModelBuilder:
         """
         return build_spoofing_bn()
     
-    def register_model(self, name: str, model: BayesianNetwork):
+    def register_model(self, name: str, model: DiscreteBayesianNetwork):
         """
         Register a model in the builder registry.
         
@@ -138,7 +139,7 @@ class ModelBuilder:
         self.model_registry[name] = model
         logger.info(f"Registered model: {name}")
     
-    def get_registered_model(self, name: str) -> Optional[BayesianNetwork]:
+    def get_registered_model(self, name: str) -> Optional[DiscreteBayesianNetwork]:
         """
         Get a registered model.
         
@@ -210,6 +211,11 @@ def build_insider_dealing_bn_with_latent_intent():
     order_behavior = OrderBehaviorNode("order_behavior", description="Order behavior evidence")
     comms_metadata = CommsMetadataNode("comms_metadata", description="Communications metadata")
     
+    # NEW: Enhanced evidence nodes
+    news_timing = NewsTimingNode("news_timing", description="News-trade timing analysis")
+    state_information_access = StateInformationNode("state_information_access", description="State-level information access")
+    announcement_correlation = AnnouncementCorrelationNode("announcement_correlation", description="Trading correlation with announcements")
+    
     # NEW: Latent intent node (unobservable core abusive intent)
     latent_intent = LatentIntentNode("latent_intent", description="Latent intent to manipulate")
     
@@ -219,13 +225,16 @@ def build_insider_dealing_bn_with_latent_intent():
     # Outcome node
     insider_dealing = OutcomeNode("insider_dealing", ["no", "yes"], description="Insider dealing outcome")
 
-    # Define network structure with latent intent
+    # Define network structure with latent intent including enhanced nodes
     edges = [
         # Evidence paths converging on latent intent
         ("profit_motivation", "latent_intent"),
         ("access_pattern", "latent_intent"),
         ("order_behavior", "latent_intent"),
         ("comms_metadata", "latent_intent"),
+        ("news_timing", "latent_intent"),
+        ("state_information_access", "latent_intent"),
+        ("announcement_correlation", "latent_intent"),
         
         # Traditional evidence paths
         ("trade_pattern", "risk_factor"),
@@ -239,7 +248,7 @@ def build_insider_dealing_bn_with_latent_intent():
         ("risk_factor", "insider_dealing"),
     ]
 
-    model = BayesianNetwork(edges, latents={"latent_intent"})
+    model = DiscreteBayesianNetwork(edges, latents={"latent_intent"})
 
     # Define CPTs for evidence nodes
     cpd_trade_pattern = TabularCPD(variable="trade_pattern", variable_card=2, values=[[0.95], [0.05]])
@@ -251,24 +260,29 @@ def build_insider_dealing_bn_with_latent_intent():
     cpd_access_pattern = TabularCPD(variable="access_pattern", variable_card=3, values=[[0.9], [0.08], [0.02]])
     cpd_order_behavior = TabularCPD(variable="order_behavior", variable_card=3, values=[[0.88], [0.1], [0.02]])
     cpd_comms_metadata = TabularCPD(variable="comms_metadata", variable_card=3, values=[[0.92], [0.06], [0.02]])
+    
+    # NEW: Enhanced CPTs
+    cpd_news_timing = TabularCPD(variable="news_timing", variable_card=3, values=[[0.85], [0.12], [0.03]])
+    cpd_state_information_access = TabularCPD(variable="state_information_access", variable_card=3, values=[[0.88], [0.10], [0.02]])
+    cpd_announcement_correlation = TabularCPD(variable="announcement_correlation", variable_card=3, values=[[0.80], [0.15], [0.05]])
 
-    # NEW: Latent intent CPT - P(latent_intent | profit_motivation, access_pattern, order_behavior, comms_metadata)
+    # NEW: Latent intent CPT - P(latent_intent | profit_motivation, access_pattern, order_behavior, comms_metadata, news_timing, state_information_access, announcement_correlation)
     # This models how converging evidence paths influence the unobservable intent
-    # 3^4 = 81 combinations for 4 evidence variables with 3 states each
+    # 3^7 = 2187 combinations for 7 evidence variables with 3 states each
     cpd_latent_intent = TabularCPD(
         variable="latent_intent",
         variable_card=3,
-        evidence=["profit_motivation", "access_pattern", "order_behavior", "comms_metadata"],
-        evidence_card=[3, 3, 3, 3],
+        evidence=["profit_motivation", "access_pattern", "order_behavior", "comms_metadata", "news_timing", "state_information_access", "announcement_correlation"],
+        evidence_card=[3, 3, 3, 3, 3, 3, 3],
         values=[
-            # P(no_intent | evidence combinations) - 81 values
-            [0.95] * 81,
+            # P(no_intent | evidence combinations) - 2187 values
+            [0.95] * 2187,
             
-            # P(potential_intent | evidence combinations) - 81 values  
-            [0.04] * 81,
+            # P(potential_intent | evidence combinations) - 2187 values  
+            [0.04] * 2187,
             
-            # P(clear_intent | evidence combinations) - 81 values
-            [0.01] * 81
+            # P(clear_intent | evidence combinations) - 2187 values
+            [0.01] * 2187
         ]
     )
 
@@ -309,6 +323,9 @@ def build_insider_dealing_bn_with_latent_intent():
         cpd_access_pattern,
         cpd_order_behavior,
         cpd_comms_metadata,
+        cpd_news_timing,
+        cpd_state_information_access,
+        cpd_announcement_correlation,
         cpd_latent_intent,
         cpd_risk_factor,
         cpd_insider_dealing
@@ -325,32 +342,60 @@ def build_insider_dealing_bn():
     trade_pattern = EvidenceNode("trade_pattern", ["normal", "suspicious"], description="Trade pattern evidence")
     comms_intent = CommsIntentNode("comms_intent", description="Comms intent evidence")
     pnl_drift = VarianceTunedIndicatorNode("pnl_drift", description="PnL drift indicator")
+    
+    # NEW: Enhanced evidence nodes for basic model
+    news_timing = NewsTimingNode("news_timing", description="News-trade timing analysis")
+    state_information_access = StateInformationNode("state_information_access", description="State-level information access")
+    
     risk_factor = RiskFactorNode("risk_factor", ["low", "medium", "high"], description="Latent risk factor")
     insider_dealing = OutcomeNode("insider_dealing", ["no", "yes"], description="Insider dealing outcome")
 
-    # Define network structure (edges)
+    # Define network structure (edges) including enhanced nodes
     edges = [
         ("trade_pattern", "risk_factor"),
         ("comms_intent", "risk_factor"),
         ("pnl_drift", "risk_factor"),
+        ("news_timing", "risk_factor"),
+        ("state_information_access", "risk_factor"),
         ("risk_factor", "insider_dealing"),
     ]
 
-    model = BayesianNetwork(edges)
+    model = DiscreteBayesianNetwork(edges)
 
     # Define CPTs (placeholder values, replace with real ones from your model design)
     cpd_trade_pattern = TabularCPD(variable="trade_pattern", variable_card=2, values=[[0.95], [0.05]])
     cpd_comms_intent = TabularCPD(variable="comms_intent", variable_card=3, values=[[0.8], [0.15], [0.05]])
     cpd_pnl_drift = TabularCPD(variable="pnl_drift", variable_card=2, values=[[0.9], [0.1]])
+    
+    # NEW: Enhanced CPTs
+    cpd_news_timing = TabularCPD(variable="news_timing", variable_card=3, values=[[0.85], [0.12], [0.03]])
+    cpd_state_information_access = TabularCPD(variable="state_information_access", variable_card=3, values=[[0.88], [0.10], [0.02]])
 
-    # risk_factor: P(risk_factor | trade_pattern, comms_intent, pnl_drift)
-    # For simplicity, use uniform CPT (replace with real CPT from model design)
+    # risk_factor: P(risk_factor | trade_pattern, comms_intent, pnl_drift, news_timing, state_information_access)
+    # 2 * 3 * 2 * 3 * 3 = 108 combinations
+    risk_values = []
+    for tp in range(2):
+        for ci in range(3):
+            for pd in range(2):
+                for nt in range(3):
+                    for sia in range(3):
+                        if tp == 1 and nt == 2 and sia == 2:
+                            # High-risk scenario
+                            risk_values.append([0.01, 0.09, 0.9])
+                        elif tp == 0 and ci == 0 and pd == 0 and nt == 0 and sia == 0:
+                            # All-normal scenario
+                            risk_values.append([0.9, 0.09, 0.01])
+                        else:
+                            # Default: uniform
+                            risk_values.append([1/3, 1/3, 1/3])
+    # Transpose to match TabularCPD shape: shape=(3, 108)
+    risk_values = list(map(list, zip(*risk_values)))
     cpd_risk_factor = TabularCPD(
         variable="risk_factor",
         variable_card=3,
-        evidence=["trade_pattern", "comms_intent", "pnl_drift"],
-        evidence_card=[2, 3, 2],
-        values=[[1/3]*12, [1/3]*12, [1/3]*12]
+        evidence=["trade_pattern", "comms_intent", "pnl_drift", "news_timing", "state_information_access"],
+        evidence_card=[2, 3, 2, 3, 3],
+        values=risk_values
     )
 
     # insider_dealing: P(insider_dealing | risk_factor)
@@ -367,6 +412,8 @@ def build_insider_dealing_bn():
         cpd_trade_pattern,
         cpd_comms_intent,
         cpd_pnl_drift,
+        cpd_news_timing,
+        cpd_state_information_access,
         cpd_risk_factor,
         cpd_insider_dealing
     )
@@ -398,7 +445,7 @@ def build_spoofing_bn():
         ("risk_factor", "spoofing"),
     ]
 
-    model = BayesianNetwork(edges)
+    model = DiscreteBayesianNetwork(edges)
 
     # Define CPTs
     cpd_order_pattern = TabularCPD(variable="order_pattern", variable_card=3, values=[[0.85], [0.12], [0.03]])

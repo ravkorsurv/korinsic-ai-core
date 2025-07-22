@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Any
 import logging
 
@@ -24,7 +24,7 @@ class DataProcessor:
         try:
             processed_data = {
                 'raw_data': raw_data,
-                'timestamp': datetime.utcnow().isoformat(),
+                'timestamp': datetime.now(timezone.utc).isoformat(),
                 'trades': self._process_trades(raw_data.get('trades', [])),
                 'orders': self._process_orders(raw_data.get('orders', [])),
                 'trader_info': self._process_trader_info(raw_data.get('trader_info', {})),
@@ -297,7 +297,7 @@ class DataProcessor:
     def _generate_insider_scenario(self, params: Dict) -> Dict[str, Any]:
         """Generate insider dealing simulation data"""
         num_trades = params.get('num_trades', 50)
-        base_time = datetime.utcnow() - timedelta(days=7)
+        base_time = datetime.now(timezone.utc) - timedelta(days=7)
         
         # Generate material event
         event_time = base_time + timedelta(days=5)
@@ -343,7 +343,7 @@ class DataProcessor:
     def _generate_spoofing_scenario(self, params: Dict) -> Dict[str, Any]:
         """Generate spoofing simulation data"""
         num_orders = params.get('num_orders', 100)
-        base_time = datetime.utcnow() - timedelta(hours=1)
+        base_time = datetime.now(timezone.utc) - timedelta(hours=1)
         
         orders = []
         trades = []

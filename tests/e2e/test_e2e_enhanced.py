@@ -419,13 +419,13 @@ def test_bayesian_inference(framework: E2ETestFramework) -> Dict[str, Any]:
     # Test normal scenario
     normal_data = generate_test_data("normal")
     processed_normal = framework.data_processor.process_data(normal_data)
-    normal_risk = framework.bayesian_engine.calculate_insider_dealing_risk(processed_normal)
+    normal_risk = framework.bayesian_engine.analyze_insider_dealing(processed_normal)
     results['normal_scenario'] = normal_risk
     
     # Test high-risk scenario
     high_risk_data = generate_test_data("high_risk")
     processed_high_risk = framework.data_processor.process_data(high_risk_data)
-    high_risk_result = framework.bayesian_engine.calculate_insider_dealing_risk(processed_high_risk)
+    high_risk_result = framework.bayesian_engine.analyze_insider_dealing(processed_high_risk)
     results['high_risk_scenario'] = high_risk_result
     
     # Validate risk scores
@@ -438,7 +438,7 @@ def test_alert_generation(framework: E2ETestFramework) -> Dict[str, Any]:
     """Test alert generation with various risk levels"""
     test_data = generate_test_data("high_risk")
     processed_data = framework.data_processor.process_data(test_data)
-    risk_result = framework.bayesian_engine.calculate_insider_dealing_risk(processed_data)
+    risk_result = framework.bayesian_engine.analyze_insider_dealing(processed_data)
     
     # Generate alert
     alert = framework.alert_generator.generate_alert(
@@ -480,13 +480,14 @@ def test_end_to_end_workflow(framework: E2ETestFramework) -> Dict[str, Any]:
     processed_data = framework.data_processor.process_data(test_data)
     
     # Step 2: Risk calculation
-    risk_result = framework.bayesian_engine.calculate_insider_dealing_risk(processed_data)
-    
+    risk_result = framework.bayesian_engine.analyze_insider_dealing(processed_data)
+    spoofing_result = framework.bayesian_engine.analyze_spoofing(processed_data)
+    overall_risk = max(risk_result.get('overall_score', 0), spoofing_result.get('overall_score', 0))
     # Step 3: Alert generation
-    alert = framework.alert_generator.generate_alert(risk_result, processed_data, "insider_dealing")
+    alert = framework.alert_generator.generate_alert(processed_data, risk_result, spoofing_result, overall_risk)
     
     # Step 4: Validate workflow output
-    if risk_result['overall_score'] < 0.5:  # High-risk scenario should trigger high score
+    if overall_risk < 0.5:  # High-risk scenario should trigger high score
         raise ValueError("High-risk scenario should generate high risk score")
     
     if alert['risk_level'] not in ['medium', 'high', 'critical']:
@@ -516,7 +517,7 @@ def test_performance_benchmark(framework: E2ETestFramework) -> Dict[str, Any]:
     processing_time = time.time() - start_time
     
     start_time = time.time()
-    risk_result = framework.bayesian_engine.calculate_insider_dealing_risk(processed_data)
+    risk_result = framework.bayesian_engine.analyze_insider_dealing(processed_data)
     inference_time = time.time() - start_time
     
     return {

@@ -69,8 +69,8 @@ def test_complete_esi_integration():
     processed_data = data_processor.process(high_risk_data)
     
     # Calculate risks
-    insider_result = bayesian_engine.calculate_insider_dealing_risk(processed_data)
-    spoofing_result = bayesian_engine.calculate_spoofing_risk(processed_data)
+    insider_result = bayesian_engine.analyze_insider_dealing(processed_data)
+    spoofing_result = bayesian_engine.analyze_spoofing(processed_data)
     
     # Display results
     print(f"📊 INSIDER DEALING:")
@@ -133,8 +133,8 @@ def test_complete_esi_integration():
     processed_data = data_processor.process(low_risk_data)
     
     # Calculate risks
-    insider_result = bayesian_engine.calculate_insider_dealing_risk(processed_data)
-    spoofing_result = bayesian_engine.calculate_spoofing_risk(processed_data)
+    insider_result = bayesian_engine.analyze_insider_dealing(processed_data)
+    spoofing_result = bayesian_engine.analyze_spoofing(processed_data)
     
     # Display results
     print(f"📊 INSIDER DEALING:")
