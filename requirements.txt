@@ -21,3 +21,15 @@ pytest==7.4.2
 pytest-cov==4.1.0
 black==23.7.0
 flake8==6.0.0
+
+# OpenInference and OpenTelemetry dependencies for AI observability
+openinference-semantic-conventions==0.1.9
+opentelemetry-api==1.21.0
+opentelemetry-sdk==1.21.0
+opentelemetry-exporter-otlp==1.21.0
+opentelemetry-exporter-jaeger==1.21.0
+opentelemetry-instrumentation-flask==0.42b0
+opentelemetry-instrumentation-requests==0.42b0
+opentelemetry-instrumentation-logging==0.42b0
+phoenix-evals==0.8.0
+arize-phoenix==3.26.0
