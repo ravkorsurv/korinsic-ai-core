@@ -41,6 +41,9 @@ uvicorn = {version = "^0.18.0", optional = true}
 prometheus-client = "^0.14.0"
 opentelemetry-api = "^1.12.0"
 opentelemetry-sdk = "^1.12.0"
+openinference-instrumentation = "^0.1.12"
+openinference-semantic-conventions = "^0.1.9"
+arize-phoenix = {version = "^4.0.0", optional = true}
 
 # Date and time utilities
 python-dateutil = "^2.8.0"
@@ -90,8 +93,9 @@ myst-parser = "^0.18.0"
 
 [tool.poetry.extras]
 api = ["fastapi", "uvicorn"]
-monitoring = ["prometheus-client", "opentelemetry-api", "opentelemetry-sdk"]
-all = ["fastapi", "uvicorn", "prometheus-client", "opentelemetry-api", "opentelemetry-sdk"]
+monitoring = ["prometheus-client", "opentelemetry-api", "opentelemetry-sdk", "openinference-instrumentation", "openinference-semantic-conventions"]
+ai-observability = ["arize-phoenix", "openinference-instrumentation", "openinference-semantic-conventions"]
+all = ["fastapi", "uvicorn", "prometheus-client", "opentelemetry-api", "opentelemetry-sdk", "openinference-instrumentation", "openinference-semantic-conventions"]
 
 [build-system]
 requires = ["poetry-core"]

@@ -4,6 +4,7 @@ from flask_cors import CORS
 import logging
 from datetime import datetime, timezone
 import traceback
+from opentelemetry import trace
 
 from core.bayesian_engine import BayesianEngine
 from core.data_processor import DataProcessor
@@ -12,6 +13,7 @@ from core.risk_calculator import RiskCalculator
 from core.trading_data_service import TradingDataService
 from utils.config import Config
 from utils.logger import setup_logger
+from utils.ai_observability import get_ai_observability
 from api.v1.routes.trading_data import trading_data_bp
 
 # Initialize core components
@@ -24,8 +26,9 @@ app = Flask(__name__)
 cors_origins = config.get_security_config().get('cors_origins', ["http://localhost:3000"])
 CORS(app, origins=cors_origins, allow_headers=["Content-Type", "Authorization"])
 
-# Setup logging
+# Setup logging and AI observability
 logger = setup_logger()
+ai_observability = get_ai_observability()
 bayesian_engine = BayesianEngine()
 data_processor = DataProcessor()
 alert_generator = AlertGenerator()
@@ -47,37 +50,63 @@ def health_check():
 @app.route('/api/v1/analyze', methods=['POST'])
 def analyze_trading_data():
     """Main endpoint to analyze trading data for market abuse risks"""
-    try:
-        data = request.get_json()
-        
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
-        
-        # Process incoming trading data
-        processed_data = data_processor.process(data)
-        
-        # Check for latent intent flag
-        use_latent_intent = data.get('use_latent_intent', False)
-        
-        # Check for regulatory explainability flag
-        include_regulatory_rationale = data.get('include_regulatory_rationale', False)
-        
-        # Calculate risk scores using Bayesian models
-        if use_latent_intent:
-            insider_dealing_score = bayesian_engine.analyze_insider_dealing(processed_data)
-        else:
-            insider_dealing_score = bayesian_engine.analyze_insider_dealing(processed_data)
-        spoofing_score = bayesian_engine.analyze_spoofing(processed_data)
-        
-        # Generate overall risk assessment
-        overall_risk = risk_calculator.calculate_overall_risk(
-            insider_dealing_score, spoofing_score, processed_data
-        )
-        
-        # Generate alerts if thresholds exceeded
-        alerts = alert_generator.generate_alerts(
-            processed_data, insider_dealing_score, spoofing_score, overall_risk
-        )
+    with ai_observability.tracer.start_as_current_span("market_abuse_analysis") as span:
+        try:
+            data = request.get_json()
+            
+            if not data:
+                return jsonify({'error': 'No data provided'}), 400
+            
+            # Extract trader info for tracing
+            trader_id = data.get('trader_info', {}).get('trader_id', 'unknown')
+            analysis_id = f"analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{trader_id}"
+            
+            # Set span attributes
+            span.set_attribute("ai.request.trader_id", trader_id)
+            span.set_attribute("ai.request.analysis_id", analysis_id)
+            span.set_attribute("ai.request.data_size", len(str(data)))
+            span.set_attribute("ai.analysis.timestamp", datetime.now().isoformat())
+            span.set_attribute("ai.request.use_latent_intent", data.get('use_latent_intent', False))
+            span.set_attribute("ai.request.include_regulatory_rationale", data.get('include_regulatory_rationale', False))
+            
+            # Process incoming trading data
+            with ai_observability.tracer.start_as_current_span("data_processing") as data_span:
+                processed_data = data_processor.process(data)
+                data_span.set_attribute("ai.data.processed_fields", len(processed_data))
+            
+            # Check for latent intent flag
+            use_latent_intent = data.get('use_latent_intent', False)
+            
+            # Check for regulatory explainability flag
+            include_regulatory_rationale = data.get('include_regulatory_rationale', False)
+            
+            # Calculate risk scores using Bayesian models
+            with ai_observability.tracer.start_as_current_span("risk_analysis") as risk_span:
+                if use_latent_intent:
+                    insider_dealing_score = bayesian_engine.analyze_insider_dealing(processed_data)
+                else:
+                    insider_dealing_score = bayesian_engine.analyze_insider_dealing(processed_data)
+                spoofing_score = bayesian_engine.analyze_spoofing(processed_data)
+                
+                risk_span.set_attribute("ai.models.insider_dealing_score", insider_dealing_score.get('risk_score', 0.0))
+                risk_span.set_attribute("ai.models.spoofing_score", spoofing_score.get('risk_score', 0.0))
+            
+            # Generate overall risk assessment
+            with ai_observability.tracer.start_as_current_span("risk_aggregation") as agg_span:
+                overall_risk = risk_calculator.calculate_overall_risk(
+                    insider_dealing_score, spoofing_score, processed_data
+                )
+                agg_span.set_attribute("ai.risk.overall_score", overall_risk)
+            
+            # Generate alerts if thresholds exceeded
+            with ai_observability.tracer.start_as_current_span("alert_generation") as alert_span:
+                alerts = alert_generator.generate_alerts(
+                    processed_data, insider_dealing_score, spoofing_score, overall_risk
+                )
+                alert_span.set_attribute("ai.alerts.count", len(alerts))
+                if alerts:
+                    alert_types = [alert.get('type', 'UNKNOWN') for alert in alerts]
+                    alert_span.set_attribute("ai.alerts.types", alert_types)
         
         # Generate regulatory rationale if requested
         regulatory_rationales = []
@@ -114,30 +143,38 @@ def analyze_trading_data():
                 except Exception as e:
                     logger.error(f"Error generating regulatory rationale for alert {alert['id']}: {str(e)}")
         
-        response = {
-            'timestamp': datetime.now(timezone.utc).isoformat(),
-            'analysis_id': f"analysis_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}",
-            'risk_scores': {
-                'insider_dealing': insider_dealing_score,
-                'spoofing': spoofing_score,
-                'overall_risk': overall_risk
-            },
-            'alerts': alerts,
-            'regulatory_rationales': regulatory_rationales if include_regulatory_rationale else [],
-            'processed_data_summary': {
-                'trades_analyzed': len(processed_data.get('trades', [])),
-                'timeframe': processed_data.get('timeframe', 'unknown'),
-                'instruments': processed_data.get('instruments', [])
+            response = {
+                'timestamp': datetime.now(timezone.utc).isoformat(),
+                'analysis_id': analysis_id,
+                'trace_id': format(span.get_span_context().trace_id, '032x'),  # Include trace ID for debugging
+                'risk_scores': {
+                    'insider_dealing': insider_dealing_score,
+                    'spoofing': spoofing_score,
+                    'overall_risk': overall_risk
+                },
+                'alerts': alerts,
+                'regulatory_rationales': regulatory_rationales if include_regulatory_rationale else [],
+                'processed_data_summary': {
+                    'trades_analyzed': len(processed_data.get('trades', [])),
+                    'timeframe': processed_data.get('timeframe', 'unknown'),
+                    'instruments': processed_data.get('instruments', [])
+                }
             }
-        }
-        
-        logger.info(f"Analysis completed for {len(processed_data.get('trades', []))} trades")
-        return jsonify(response)
-        
-    except Exception as e:
-        logger.error(f"Error in analyze_trading_data: {str(e)}")
-        logger.error(traceback.format_exc())
-        return jsonify({'error': 'Internal server error', 'details': str(e)}), 500
+            
+            # Set final span attributes
+            span.set_attribute("ai.response.final_risk_score", overall_risk)
+            span.set_attribute("ai.response.alerts_generated", len(alerts))
+            span.set_attribute("ai.response.trades_analyzed", len(processed_data.get('trades', [])))
+            
+            logger.info(f"Analysis completed for {len(processed_data.get('trades', []))} trades")
+            return jsonify(response)
+            
+        except Exception as e:
+            span.record_exception(e)
+            span.set_status(trace.Status(trace.StatusCode.ERROR, str(e)))
+            logger.error(f"Error in analyze_trading_data: {str(e)}")
+            logger.error(traceback.format_exc())
+            return jsonify({'error': 'Internal server error', 'details': str(e)}), 500
 
 @app.route('/api/v1/models/info', methods=['GET'])
 def get_models_info():

@@ -587,9 +587,37 @@ python scripts/development/migrate_db.py
 
 ## 📊 Monitoring & Observability
 
-### Logging
+### AI-Powered Observability with OpenInference
 
-The application uses structured logging with JSON format in production:
+Korinsic includes comprehensive AI observability using OpenInference standards:
+
+```python
+# Bayesian model tracing with AI-specific attributes
+with ai_observability.trace_bayesian_inference("insider_dealing") as tracer:
+    tracer.set_evidence(evidence_dict)
+    risk_score = model.infer(evidence)
+    tracer.set_result(risk_score, confidence)
+```
+
+**Key Features:**
+- 🧠 **AI Model Tracing**: Complete visibility into Bayesian inference operations
+- 📊 **Evidence Quality Monitoring**: Track data completeness and fallback usage  
+- ⚡ **Performance Metrics**: Inference latency, confidence levels, and throughput
+- 🔍 **End-to-End Tracing**: Full request workflow from API to model results
+- 📈 **Risk Analytics**: Risk score distributions and alert generation patterns
+
+**Quick Setup:**
+```bash
+# Install and configure OpenInference
+./setup_openinference.sh
+
+# Test the integration  
+python test_ai_observability.py
+```
+
+### Traditional Logging
+
+The application also uses structured logging with JSON format in production:
 
 ```python
 from src.utils.logger import get_logger
@@ -605,10 +633,9 @@ logger.info("Analysis completed", extra={
 ### Metrics
 
 Key metrics to monitor:
-- Request latency and throughput
-- Analysis success/failure rates
-- Risk score distributions
-- Model performance metrics
+- **AI Metrics**: Model inference latency, evidence completeness, fallback usage
+- **Business Metrics**: Risk score distributions, alert generation rates
+- **System Metrics**: Request latency and throughput, analysis success/failure rates
 
 ### Health Checks
 
@@ -622,6 +649,13 @@ curl http://localhost:5000/health/db
 # Model status
 curl http://localhost:5000/health/models
 ```
+
+### Observability Documentation
+
+For detailed information about AI observability features, see:
+- 📖 [OpenInference Integration Guide](docs/OPENINFERENCE_INTEGRATION.md)
+- 🧪 [Test AI Observability](test_ai_observability.py)
+- ⚙️ [Setup Script](setup_openinference.sh)
 
 ---
 

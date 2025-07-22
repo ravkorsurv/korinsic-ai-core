@@ -18,6 +18,7 @@ import os
 from .node_library import BayesianNode
 from datetime import datetime
 from src.models.bayesian.shared.model_builder import build_insider_dealing_bn
+from src.utils.ai_observability import get_ai_observability
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +70,7 @@ class BayesianEngine:
         self.models_loaded = False
         self.risk_aggregator = ComplexRiskAggregator()
         self.esi_calculator = EvidenceSufficiencyIndex()
+        self.ai_observability = get_ai_observability()
         self._load_models()
     
     def _load_models(self):
@@ -178,39 +180,64 @@ class BayesianEngine:
     
     def analyze_insider_dealing(self, evidence: Dict[str, Any]) -> Dict[str, Any]:
         """Analyze insider dealing patterns using Bayesian inference"""
-        try:
-            # Map evidence to Bayesian node names and state indices
-            mapped_evidence = map_insider_dealing_evidence(evidence)
-            logger.info(f"Mapped evidence for insider dealing: {mapped_evidence}")
-            # Apply fallback evidence if needed, and track fallback usage
-            evidence, fallback_usage = apply_fallback_evidence_with_usage(mapped_evidence, self.insider_dealing_node_defs)
-            # Perform inference
-            query = self.insider_dealing_inference.query(variables=['insider_dealing'], evidence=evidence)
-            risk_probabilities = query.values
-            # Calculate risk score as probability of 'yes' (index 1)
-            risk_score = float(risk_probabilities[1]) if hasattr(risk_probabilities, '__getitem__') else 0.0
-            logger.info(f"[BAYESIAN] risk_probabilities={risk_probabilities}, risk_score={risk_score}")
-            # Calculate ESI
-            esi_score = self.esi_calculator.calculate_esi(evidence, evidence, fallback_usage)
-            return {
-                'risk_score': risk_score,
-                'overall_score': risk_score,
-                'risk_probabilities': risk_probabilities.tolist() if hasattr(risk_probabilities, 'tolist') else list(risk_probabilities),
-                'esi_score': esi_score,
-                'evidence_used': evidence,
-                'model_type': 'insider_dealing'
-            }
-        except Exception as e:
-            logger.error(f"Error in insider dealing analysis: {str(e)}")
-            return {
-                'risk_score': 0.0,
-                'overall_score': 0.0,
-                'risk_probabilities': [0.0, 0.0, 0.0],
-                'esi_score': 0.0,
-                'evidence_used': {},
-                'model_type': 'insider_dealing',
-                'error': str(e)
-            }
+        with self.ai_observability.trace_bayesian_inference("insider_dealing", "market_abuse_detection") as tracer:
+            try:
+                # Map evidence to Bayesian node names and state indices
+                mapped_evidence = map_insider_dealing_evidence(evidence)
+                logger.info(f"Mapped evidence for insider dealing: {mapped_evidence}")
+                
+                # Set evidence in trace
+                tracer.set_evidence(mapped_evidence)
+                
+                # Apply fallback evidence if needed, and track fallback usage
+                processed_evidence, fallback_usage = apply_fallback_evidence_with_usage(mapped_evidence, self.insider_dealing_node_defs)
+                
+                # Track fallback usage in trace
+                fallback_nodes = [node for node, used in fallback_usage.items() if used]
+                if fallback_nodes:
+                    tracer.span.set_attribute("ai.fallback.used", True)
+                    tracer.span.set_attribute("ai.fallback.nodes", fallback_nodes)
+                    tracer.span.set_attribute("ai.fallback.count", len(fallback_nodes))
+                
+                # Perform inference
+                query = self.insider_dealing_inference.query(variables=['insider_dealing'], evidence=processed_evidence)
+                risk_probabilities = query.values
+                
+                # Calculate risk score as probability of 'yes' (index 1)
+                risk_score = float(risk_probabilities[1]) if hasattr(risk_probabilities, '__getitem__') else 0.0
+                logger.info(f"[BAYESIAN] risk_probabilities={risk_probabilities}, risk_score={risk_score}")
+                
+                # Calculate ESI
+                esi_score = self.esi_calculator.calculate_esi(processed_evidence, processed_evidence, fallback_usage)
+                
+                # Determine confidence level
+                confidence = "high" if risk_score > 0.7 else "medium" if risk_score > 0.3 else "low"
+                
+                # Set results in trace
+                tracer.set_result(risk_score, confidence)
+                tracer.span.set_attribute("ai.esi.score", esi_score)
+                tracer.span.set_attribute("ai.bayesian.posterior_probabilities", str(risk_probabilities.tolist() if hasattr(risk_probabilities, 'tolist') else list(risk_probabilities)))
+                
+                return {
+                    'risk_score': risk_score,
+                    'overall_score': risk_score,
+                    'risk_probabilities': risk_probabilities.tolist() if hasattr(risk_probabilities, 'tolist') else list(risk_probabilities),
+                    'esi_score': esi_score,
+                    'evidence_used': processed_evidence,
+                    'fallback_usage': fallback_usage,
+                    'model_type': 'insider_dealing'
+                }
+            except Exception as e:
+                logger.error(f"Error in insider dealing analysis: {str(e)}")
+                return {
+                    'risk_score': 0.0,
+                    'overall_score': 0.0,
+                    'risk_probabilities': [0.0, 0.0, 0.0],
+                    'esi_score': 0.0,
+                    'evidence_used': {},
+                    'model_type': 'insider_dealing',
+                    'error': str(e)
+                }
     
     def analyze_spoofing(self, evidence: Dict[str, Any]) -> Dict[str, Any]:
         """Analyze spoofing patterns using Bayesian inference"""
