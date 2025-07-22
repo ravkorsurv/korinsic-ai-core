@@ -1,0 +1,156 @@
+# Pre-commit hooks for Korinsic Surveillance Platform
+# Install with: pre-commit install
+
+repos:
+  # Python code formatting
+  - repo: https://github.com/psf/black
+    rev: 23.7.0
+    hooks:
+      - id: black
+        language_version: python3
+        args: [--line-length=88]
+
+  # Import sorting
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+        args: [--profile, black]
+
+  # Linting
+  - repo: https://github.com/PyCQA/flake8
+    rev: 6.0.0
+    hooks:
+      - id: flake8
+        additional_dependencies: [flake8-docstrings, flake8-import-order]
+        args: [--max-line-length=88, --extend-ignore=E203,W503]
+
+  # Type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.5.0
+    hooks:
+      - id: mypy
+        additional_dependencies: [types-requests, types-redis, types-psycopg2]
+        args: [--ignore-missing-imports]
+
+  # Security scanning
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.5
+    hooks:
+      - id: bandit
+        args: [-r, ., -f, json, -o, bandit-report.json]
+        files: ^src/.*\.py$
+
+  # General hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+      - id: check-case-conflict
+      - id: check-docstring-first
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: mixed-line-ending
+      - id: requirements-txt-fixer
+
+  # Dockerfile linting
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.12.0
+    hooks:
+      - id: hadolint-docker
+        args: [--ignore, DL3008, --ignore, DL3009]
+
+  # YAML formatting
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.0.0
+    hooks:
+      - id: prettier
+        types: [yaml]
+
+  # Markdown linting
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.35.0
+    hooks:
+      - id: markdownlint
+        args: [--config, .markdownlint.yaml]
+
+  # Documentation formatting
+  - repo: https://github.com/PyCQA/docformatter
+    rev: v1.7.5
+    hooks:
+      - id: docformatter
+        args: [--in-place]
+
+  # Dead code detection
+  - repo: local
+    hooks:
+      - id: vulture
+        name: vulture
+        entry: vulture
+        language: python
+        types: [python]
+        args: [--min-confidence, "60"]
+        additional_dependencies: [vulture]
+
+  # Complexity checking
+  - repo: local
+    hooks:
+      - id: radon
+        name: radon complexity check
+        entry: radon
+        language: python
+        types: [python]
+        args: [cc, --min, C, .]
+        additional_dependencies: [radon]
+
+  # Dependency vulnerability check
+  - repo: local
+    hooks:
+      - id: safety
+        name: safety
+        entry: safety
+        language: python
+        types: [python]
+        args: [check, --json]
+        additional_dependencies: [safety]
+
+  # Custom hooks for project-specific checks
+  - repo: local
+    hooks:
+      - id: feature-checklist-reminder
+        name: Feature Development Checklist Reminder
+        entry: python scripts/development/check_feature_checklist.py
+        language: python
+        stages: [commit-msg]
+        pass_filenames: false
+        
+      - id: test-coverage-check
+        name: Test Coverage Check
+        entry: python scripts/development/check_test_coverage.py
+        language: python
+        types: [python]
+        pass_filenames: false
+        
+      - id: api-documentation-check
+        name: API Documentation Check
+        entry: python scripts/development/check_api_docs.py
+        language: python
+        files: ^src/api/.*\.py$
+        
+      - id: regulatory-compliance-check
+        name: Regulatory Compliance Check
+        entry: python scripts/development/check_regulatory_compliance.py
+        language: python
+        files: ^src/models/.*\.py$
+
+# Global configuration
+default_stages: [commit, push]
+fail_fast: false
+minimum_pre_commit_version: 2.20.0

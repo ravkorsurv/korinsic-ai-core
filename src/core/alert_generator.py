@@ -80,8 +80,9 @@ class AlertGenerator:
             severity = 'MEDIUM'
         else:
             return alerts
+        alert_id = f"insider_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
         alert = {
-            'id': f"insider_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}",
+            'id': alert_id,
             'type': 'INSIDER_DEALING',
             'severity': severity,
             'timestamp': datetime.utcnow().isoformat(),
@@ -97,7 +98,10 @@ class AlertGenerator:
             'high_nodes': scores.get('high_nodes', []),
             'critical_nodes': scores.get('critical_nodes', []),
             'explanation': scores.get('explanation', None),
-            'esi': scores.get('esi', {})
+            'esi': scores.get('esi', {}),
+            # Raw trading data access
+            'raw_data_available': True,
+            'raw_data_endpoint': f"/api/v1/raw-data/alert/{alert_id}"
         }
         alerts.append(alert)
         return alerts
@@ -115,8 +119,9 @@ class AlertGenerator:
             severity = 'MEDIUM'
         else:
             return alerts
+        alert_id = f"spoofing_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
         alert = {
-            'id': f"spoofing_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}",
+            'id': alert_id,
             'type': 'SPOOFING',
             'severity': severity,
             'timestamp': datetime.utcnow().isoformat(),
@@ -132,7 +137,10 @@ class AlertGenerator:
             'high_nodes': scores.get('high_nodes', []),
             'critical_nodes': scores.get('critical_nodes', []),
             'explanation': scores.get('explanation', None),
-            'esi': scores.get('esi', {})
+            'esi': scores.get('esi', {}),
+            # Raw trading data access
+            'raw_data_available': True,
+            'raw_data_endpoint': f"/api/v1/raw-data/alert/{alert_id}"
         }
         alerts.append(alert)
         return alerts
@@ -151,8 +159,9 @@ class AlertGenerator:
         else:
             return alerts
         
+        alert_id = f"overall_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
         alert = {
-            'id': f"overall_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}",
+            'id': alert_id,
             'type': 'OVERALL_RISK',
             'severity': severity,
             'timestamp': datetime.utcnow().isoformat(),
@@ -167,7 +176,10 @@ class AlertGenerator:
             },
             'recommended_actions': self._get_overall_actions(severity),
             'instruments': data.get('instruments', []),
-            'timeframe': data.get('timeframe', 'unknown')
+            'timeframe': data.get('timeframe', 'unknown'),
+            # Raw trading data access
+            'raw_data_available': True,
+            'raw_data_endpoint': f"/api/v1/raw-data/alert/{alert_id}"
         }
         
         alerts.append(alert)

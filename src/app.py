@@ -9,25 +9,31 @@ from core.bayesian_engine import BayesianEngine
 from core.data_processor import DataProcessor
 from core.alert_generator import AlertGenerator
 from core.risk_calculator import RiskCalculator
+from core.trading_data_service import TradingDataService
 from utils.config import Config
 from utils.logger import setup_logger
-
-# Initialize Flask app
-app = Flask(__name__)
-CORS(app, origins=[
-    "http://localhost:5174",
-    "https://kor-ai-alert-ui.amplifyapp.com"
-], allow_headers=["Content-Type", "Authorization"])
-
-# Setup logging
-logger = setup_logger()
+from api.v1.routes.trading_data import trading_data_bp
 
 # Initialize core components
 config = Config()
+
+# Initialize Flask app
+app = Flask(__name__)
+
+# Setup CORS with configuration
+cors_origins = config.get_security_config().get('cors_origins', ["http://localhost:3000"])
+CORS(app, origins=cors_origins, allow_headers=["Content-Type", "Authorization"])
+
+# Setup logging
+logger = setup_logger()
 bayesian_engine = BayesianEngine()
 data_processor = DataProcessor()
 alert_generator = AlertGenerator()
 risk_calculator = RiskCalculator()
+trading_data_service = TradingDataService()
+
+# Register blueprints
+app.register_blueprint(trading_data_bp, url_prefix='/api/v1')
 
 @app.route('/health', methods=['GET'])
 def health_check():
@@ -58,10 +64,10 @@ def analyze_trading_data():
         
         # Calculate risk scores using Bayesian models
         if use_latent_intent:
-            insider_dealing_score = bayesian_engine.calculate_insider_dealing_risk_with_latent_intent(processed_data)
+            insider_dealing_score = bayesian_engine.analyze_insider_dealing(processed_data)
         else:
-            insider_dealing_score = bayesian_engine.calculate_insider_dealing_risk(processed_data)
-        spoofing_score = bayesian_engine.calculate_spoofing_risk(processed_data)
+            insider_dealing_score = bayesian_engine.analyze_insider_dealing(processed_data)
+        spoofing_score = bayesian_engine.analyze_spoofing(processed_data)
         
         # Generate overall risk assessment
         overall_risk = risk_calculator.calculate_overall_risk(
@@ -94,19 +100,15 @@ def analyze_trading_data():
                         'deterministic_narrative': rationale.deterministic_narrative,
                         'inference_paths': [
                             {
-                                'node_name': path.node_name,
-                                'evidence_value': path.evidence_value,
-                                'probability': path.probability,
-                                'contribution': path.contribution,
-                                'rationale': path.rationale,
-                                'confidence': path.confidence,
-                                'regulatory_relevance': path.regulatory_relevance
+                                'evidence_node': path.evidence_node,
+                                'evidence_state': path.evidence_state,
+                                'evidence_weight': path.evidence_weight,
+                                'inference_rule': path.inference_rule,
+                                'conclusion_impact': path.conclusion_impact,
+                                'confidence_level': path.confidence_level
                             }
                             for path in rationale.inference_paths
                         ],
-                        'voi_analysis': rationale.voi_analysis,
-                        'sensitivity_report': rationale.sensitivity_report,
-                        'regulatory_frameworks': rationale.regulatory_frameworks,
                         'audit_trail': rationale.audit_trail
                     })
                 except Exception as e:
@@ -141,7 +143,7 @@ def analyze_trading_data():
 def get_models_info():
     """Get information about available Bayesian models"""
     try:
-        models_info = bayesian_engine.get_models_info()
+        models_info = bayesian_engine.get_model_info()
         return jsonify(models_info)
     except Exception as e:
         logger.error(f"Error getting models info: {str(e)}")
@@ -163,9 +165,9 @@ def simulate_scenario():
         
         # Analyze simulated data
         if scenario_type == 'insider_dealing':
-            risk_score = bayesian_engine.calculate_insider_dealing_risk(simulated_data)
+            risk_score = bayesian_engine.analyze_insider_dealing(simulated_data)
         else:
-            risk_score = bayesian_engine.calculate_spoofing_risk(simulated_data)
+            risk_score = bayesian_engine.analyze_spoofing(simulated_data)
         
         response = {
             'scenario_type': scenario_type,
@@ -213,8 +215,8 @@ def export_stor_report(alert_id):
         processed_data = data_processor.process(data)
         
         # Calculate risk scores
-        insider_dealing_score = bayesian_engine.calculate_insider_dealing_risk(processed_data)
-        spoofing_score = bayesian_engine.calculate_spoofing_risk(processed_data)
+        insider_dealing_score = bayesian_engine.analyze_insider_dealing(processed_data)
+        spoofing_score = bayesian_engine.analyze_spoofing(processed_data)
         overall_risk = risk_calculator.calculate_overall_risk(
             insider_dealing_score, spoofing_score, processed_data
         )
@@ -249,14 +251,13 @@ def export_stor_report(alert_id):
             'stor_record': {
                 'record_id': stor_record.record_id,
                 'timestamp': stor_record.timestamp,
-                'trader_id': stor_record.trader_id,
-                'instrument': stor_record.instrument,
+                'entity_id': stor_record.entity_id,
                 'transaction_type': stor_record.transaction_type,
-                'suspicious_indicators': stor_record.suspicious_indicators,
                 'risk_score': stor_record.risk_score,
-                'regulatory_rationale': stor_record.regulatory_rationale,
-                'evidence_details': stor_record.evidence_details,
-                'compliance_officer_notes': stor_record.compliance_officer_notes
+                'risk_level': stor_record.risk_level,
+                'narrative': stor_record.narrative,
+                'evidence_summary': stor_record.evidence_summary,
+                'regulatory_basis': stor_record.regulatory_basis
             }
         })
         
@@ -277,8 +278,8 @@ def export_regulatory_csv(alert_id):
         processed_data = data_processor.process(data)
         
         # Calculate risk scores
-        insider_dealing_score = bayesian_engine.calculate_insider_dealing_risk(processed_data)
-        spoofing_score = bayesian_engine.calculate_spoofing_risk(processed_data)
+        insider_dealing_score = bayesian_engine.analyze_insider_dealing(processed_data)
+        spoofing_score = bayesian_engine.analyze_spoofing(processed_data)
         overall_risk = risk_calculator.calculate_overall_risk(
             insider_dealing_score, spoofing_score, processed_data
         )
@@ -329,8 +330,13 @@ def internal_error(error):
     return jsonify({'error': 'Internal server error'}), 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    debug = os.environ.get('DEBUG', 'False').lower() == 'true'
+    server_config = config.get_server_config()
     
-    logger.info(f"Starting Kor.ai Surveillance Platform on port {port}")
-    app.run(host='0.0.0.0', port=port, debug=debug)
+    port = server_config.get('port', 5000)
+    host = server_config.get('host', '0.0.0.0')
+    debug = server_config.get('debug', False)
+    
+    logger.info(f"Starting Korinsic Surveillance Platform on {host}:{port} (debug={debug})")
+    logger.info(f"Environment: {config.environment}")
+    
+    app.run(host=host, port=port, debug=debug)

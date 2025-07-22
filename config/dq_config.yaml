@@ -1,0 +1,271 @@
+# Data Quality Configuration for KDE-First Framework
+# Version: 2.0 - KDE-First Implementation
+
+# Tier Weighting (Foundational vs Enhanced)
+tier_weights:
+  foundational: 1.0
+  enhanced: 0.75
+
+# Risk Weighting Rules
+risk_weights:
+  high: 3
+  medium: 2
+  low: 1
+
+# Synthetic KDEs always use high risk weight (3)
+synthetic_kde_weight: 3
+
+# Coverage Baseline Configuration
+coverage_baseline_days: 30
+
+# Uniqueness Configuration
+max_duplicate_rate: 0.02  # 2% tolerance
+
+# KDE Risk Classification (Global defaults)
+kde_risk:
+  # Trading KDEs
+  trader_id: high
+  notional: high
+  price: high
+  quantity: high
+  trade_date: high
+  settlement_date: medium
+  product_code: medium
+  desk_code: medium
+  counterparty: medium
+  currency: low
+  venue: low
+  
+  # HR/Employee KDEs
+  staff_id: high
+  employee_name: high
+  join_date: medium
+  department: medium
+  manager_id: medium
+  role_code: low
+  office_location: low
+  
+  # Communication KDEs
+  message_id: high
+  sender_id: high
+  recipient_id: high
+  timestamp: high
+  content_hash: medium
+  channel: low
+  
+  # Market Data KDEs
+  symbol: high
+  market_price: high
+  volume: medium
+  bid_price: medium
+  ask_price: medium
+  exchange: low
+
+# Dimension to Tier Mapping
+dimension_tiers:
+  # Foundational Dimensions
+  completeness: foundational
+  coverage: foundational
+  conformity: foundational
+  timeliness: foundational
+  
+  # Enhanced Dimensions
+  accuracy: enhanced
+  uniqueness: enhanced
+  consistency: enhanced
+
+# Timeliness Scoring Buckets
+timeliness_buckets:
+  - max_hours: 1
+    score: 1.0
+  - max_hours: 6
+    score: 0.9
+  - max_hours: 24
+    score: 0.75
+  - max_hours: 48
+    score: 0.6
+  - max_hours: 999999  # represents infinity
+    score: 0.3
+
+# Coverage Scoring (Drop vs Baseline)
+coverage_scoring:
+  - max_drop_percent: 10
+    score: 1.0
+  - max_drop_percent: 20
+    score: 0.9
+  - max_drop_percent: 40
+    score: 0.75
+  - max_drop_percent: 60
+    score: 0.5
+  - max_drop_percent: 100
+    score: 0.25
+  # No baseline = 0.0 (handled in code)
+
+# Role-Based KDE Scope
+role_kde_scope:
+  analyst:
+    - trader_id
+    - notional
+    - price
+    - trade_date
+    - product_code
+    - desk_code
+  
+  trader_role:
+    - trader_id
+    - notional
+    - price
+    - quantity
+    - trade_date
+    - settlement_date
+    - product_code
+    - desk_code
+    - counterparty
+    - currency
+    - venue
+  
+  compliance:
+    - trader_id
+    - notional
+    - price
+    - quantity
+    - trade_date
+    - settlement_date
+    - product_code
+    - desk_code
+    - counterparty
+    - message_id
+    - sender_id
+    - recipient_id
+    - timestamp
+  
+  hr_role:
+    - staff_id
+    - employee_name
+    - join_date
+    - department
+    - manager_id
+    - role_code
+    - office_location
+  
+  auditor:
+    - trader_id
+    - notional
+    - price
+    - quantity
+    - trade_date
+    - settlement_date
+    - product_code
+    - desk_code
+    - counterparty
+    - staff_id
+    - employee_name
+    - join_date
+    - department
+    - manager_id
+    - message_id
+    - sender_id
+    - recipient_id
+    - timestamp
+    - content_hash
+  
+  risk_manager:
+    - trader_id
+    - notional
+    - price
+    - quantity
+    - trade_date
+    - product_code
+    - desk_code
+    - counterparty
+    - symbol
+    - market_price
+    - volume
+
+# Conformity Rules (Length, Range, Format)
+conformity_rules:
+  trader_id:
+    length:
+      min: 3
+      max: 12
+    pattern: "^[A-Z0-9]+$"
+  
+  notional:
+    range:
+      min: 0
+      max: 1000000000  # 1B
+    precision: 2
+  
+  price:
+    range:
+      min: 0
+      max: 999999
+    precision: 4
+  
+  product_code:
+    length:
+      min: 3
+      max: 10
+    pattern: "^[A-Z0-9_]+$"
+  
+  currency:
+    length:
+      min: 3
+      max: 3
+    pattern: "^[A-Z]{3}$"
+
+# Accuracy Rules
+accuracy_rules:
+  # Precision rules (decimal places, format matching)
+  precision_rules:
+    notional: 2
+    price: 4
+    quantity: 0
+  
+  # Validity rules (reference data validation)
+  validity_rules:
+    currency:
+      reference_source: "iso_currency_codes"
+    product_code:
+      reference_source: "product_master"
+    desk_code:
+      reference_source: "desk_master"
+    venue:
+      reference_source: "venue_master"
+
+# Golden Source Configuration
+golden_sources:
+  desk_hr_mapping:
+    source_type: "redis"
+    key_pattern: "desk_hr:{trader_id}"
+    fields: ["desk_id", "department", "manager_id"]
+  
+  product_rules:
+    source_type: "redis"
+    key_pattern: "product:{product_code}"
+    fields: ["valid_venues", "min_notional", "max_notional"]
+  
+  iso_currency_codes:
+    source_type: "static"
+    values: ["USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD", "SEK", "NOK", "DKK"]
+  
+  venue_master:
+    source_type: "redis"
+    key_pattern: "venue:{venue_code}"
+    fields: ["venue_name", "region", "asset_classes"]
+
+# Trust Bucket Thresholds (keeping existing)
+trust_bucket_thresholds:
+  high: 0.85
+  moderate: 0.65
+
+# Legacy Support
+legacy_support:
+  enabled: true
+  include_legacy_score: true
+  legacy_weight_mapping:
+    data_availability: completeness
+    imputation_ratio: completeness
+    kde_coverage: coverage
+    temporal_consistency: timeliness
+    source_reliability: consistency
