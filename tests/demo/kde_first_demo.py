@@ -236,7 +236,21 @@ def demo_weighting_impact():
         'venue': None                # Low risk, poor quality (missing)
     }
     
-    result = calculator.calculate_dqsi(evidence=evidence, user_role="analyst")
+    # Create sample baseline data for consistent parameter usage
+    def create_sample_baseline():
+        return {
+            'trade_count': 1000,
+            'avg_volume': 50000,
+            'price_volatility': 0.02,
+            'market_conditions': 'normal'
+        }
+    
+    result = calculator.calculate_dqsi(
+        evidence=evidence,
+        baseline_data=create_sample_baseline(),
+        user_role="analyst",
+        alert_timestamp=datetime.now()
+    )
     
     print("📊 WEIGHTING ANALYSIS:")
     print("-" * 40)

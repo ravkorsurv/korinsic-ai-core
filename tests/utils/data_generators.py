@@ -18,6 +18,44 @@ class VolatilityRegime(str, Enum):
     HIGH = "high"
     CRISIS = "crisis"
 
+# Global price tracking for consistency across test data generators
+_instrument_prices = {}
+
+def get_consistent_price(instrument: str, base_price_range: tuple = (50.0, 500.0)) -> float:
+    """
+    Get a consistent price for an instrument across all test data generators.
+    
+    Args:
+        instrument: The instrument symbol
+        base_price_range: Range for initial price if not set
+        
+    Returns:
+        Consistent price for the instrument
+    """
+    if instrument not in _instrument_prices:
+        _instrument_prices[instrument] = random.uniform(*base_price_range)
+    return _instrument_prices[instrument]
+
+def update_instrument_price(instrument: str, price_change_percent: float = None) -> float:
+    """
+    Update instrument price with consistent movement.
+    
+    Args:
+        instrument: The instrument symbol
+        price_change_percent: Specific price change, or random if None
+        
+    Returns:
+        Updated price for the instrument
+    """
+    current_price = get_consistent_price(instrument)
+    
+    if price_change_percent is None:
+        price_change_percent = random.uniform(-PRICE_MOVEMENT_PERCENT, PRICE_MOVEMENT_PERCENT)
+    
+    new_price = current_price * (1 + price_change_percent)
+    _instrument_prices[instrument] = max(new_price, 1.0)  # Ensure price stays positive
+    return _instrument_prices[instrument]
+
 
 def generate_trade_data(num_trades: int = 10, 
                        instruments: Optional[List[str]] = None,
@@ -47,23 +85,19 @@ def generate_trade_data(num_trades: int = 10,
     trades = []
     current_time = start_time
     
-    # Base prices for instruments
-    base_prices = {instrument: random.uniform(50.0, 500.0) for instrument in instruments}
-    
     for i in range(num_trades):
         instrument = random.choice(instruments)
         trader_id = random.choice(traders)
         
-        # Price movement (small random walk)
-        price_change = random.uniform(-0.02, 0.02)  # ±2% movement
-        base_prices[instrument] *= (1 + price_change)
+        # Use consistent pricing with controlled movement
+        current_price = update_instrument_price(instrument)
         
         trade = {
             "id": f"trade_{i+1:06d}",
             "timestamp": current_time.isoformat() + "Z",
             "instrument": instrument,
             "volume": random.randint(100, 100000),
-            "price": round(base_prices[instrument], 2),
+            "price": round(current_price, 2),
             "side": random.choice(["buy", "sell"]),
             "trader_id": trader_id,
             "execution_venue": random.choice(["NYSE", "NASDAQ", "LSE", "XETRA"]),
@@ -97,7 +131,7 @@ def generate_order_data(num_orders: int = 20,
         List of order dictionaries
     """
     if instruments is None:
-        instruments = ["AAPL", "GOOGL", "MSFT", "TSLA", "AMZN", "META", "NVDA", "NFLX"]
+        instruments = DEFAULT_INSTRUMENTS
     
     if traders is None:
         traders = [f"trader_{i:03d}" for i in range(1, 21)]
@@ -108,9 +142,6 @@ def generate_order_data(num_orders: int = 20,
     orders = []
     current_time = start_time
     
-    # Base prices for instruments
-    base_prices = {instrument: random.uniform(50.0, 500.0) for instrument in instruments}
-    
     for i in range(num_orders):
         instrument = random.choice(instruments)
         trader_id = random.choice(traders)
@@ -119,9 +150,9 @@ def generate_order_data(num_orders: int = 20,
         is_cancelled = random.random() < cancellation_rate
         status = "cancelled" if is_cancelled else random.choice(["filled", "partial", "pending"])
         
-        # Price variation for limit orders
-        base_price = base_prices[instrument]
-        price_variation = random.uniform(-0.05, 0.05)  # ±5% from base
+        # Use consistent pricing with slight variation for orders
+        base_price = get_consistent_price(instrument)
+        price_variation = random.uniform(-0.05, 0.05)  # ±5% from base for order spread
         order_price = round(base_price * (1 + price_variation), 2)
         
         order = {
@@ -159,7 +190,7 @@ def generate_material_events(num_events: int = 5,
         List of material event dictionaries
     """
     if instruments is None:
-        instruments = ["AAPL", "GOOGL", "MSFT", "TSLA", "AMZN", "META", "NVDA", "NFLX"]
+        instruments = DEFAULT_INSTRUMENTS
     
     if start_time is None:
         start_time = datetime(2024, 1, 1, 8, 0, 0)  # Before market open
@@ -246,26 +277,26 @@ def generate_material_events(num_events: int = 5,
 
 
 def generate_market_data(instruments: Optional[List[str]] = None,
-                        volatility_regime: str = "normal") -> Dict[str, Any]:
+                        volatility_regime: VolatilityRegime = VolatilityRegime.NORMAL) -> Dict[str, Any]:
     """
     Generate realistic market data for testing.
     
     Args:
         instruments: List of instrument names
-        volatility_regime: Market volatility regime ('low', 'normal', 'high', 'crisis')
+        volatility_regime: Market volatility regime with type constraints
         
     Returns:
         Market data dictionary
     """
     if instruments is None:
-        instruments = ["AAPL", "GOOGL", "MSFT", "TSLA", "AMZN"]
+        instruments = DEFAULT_INSTRUMENTS
     
     # Volatility ranges based on regime
     volatility_ranges = {
-        "low": (0.01, 0.02),
-        "normal": (0.02, 0.05),
-        "high": (0.05, 0.10),
-        "crisis": (0.10, 0.30)
+        VolatilityRegime.LOW: (0.01, 0.02),
+        VolatilityRegime.NORMAL: (0.02, 0.05),
+        VolatilityRegime.HIGH: (0.05, 0.10),
+        VolatilityRegime.CRISIS: (0.10, 0.30)
     }
     
     vol_min, vol_max = volatility_ranges[volatility_regime]
@@ -361,7 +392,7 @@ def generate_news_data(num_articles: int = 10,
         News data dictionary with news_events list
     """
     if instruments is None:
-        instruments = ["AAPL", "GOOGL", "MSFT", "TSLA", "AMZN", "META", "NVDA", "NFLX"]
+        instruments = DEFAULT_INSTRUMENTS
     
     if start_time is None:
         start_time = datetime(2024, 1, 1, 6, 0, 0)  # Early morning
