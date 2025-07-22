@@ -20,6 +20,16 @@ from ..models.explainability.governance_tracker import ModelGovernanceTracker
 
 logger = logging.getLogger(__name__)
 
+# Configuration constants
+DEFAULT_MONITORING_INTERVAL_SECONDS = 300  # 5 minutes
+DEFAULT_ALERT_THRESHOLDS = {
+    "high_severity_drift": 0.7,    # 70% confidence threshold
+    "medium_severity_drift": 0.4,  # 40% confidence threshold  
+    "drift_acceleration": 0.1       # 10% change rate threshold
+}
+DEFAULT_MAX_REFERENCE_CACHE_SIZE = 1000  # Maximum reference data entries
+DEFAULT_MAX_ALERT_HISTORY_SIZE = 1000    # Maximum alert history entries
+
 
 class DriftMonitoringService:
     """
@@ -45,12 +55,8 @@ class DriftMonitoringService:
         self.governance_tracker = ModelGovernanceTracker(self.config.get("governance", {}))
         
         # Monitoring configuration
-        self.monitoring_interval = self.config.get("monitoring_interval_seconds", 300)  # 5 minutes
-        self.alert_thresholds = self.config.get("alert_thresholds", {
-            "high_severity_drift": 0.7,
-            "medium_severity_drift": 0.4,
-            "drift_acceleration": 0.1
-        })
+        self.monitoring_interval = self.config.get("monitoring_interval_seconds", DEFAULT_MONITORING_INTERVAL_SECONDS)
+        self.alert_thresholds = self.config.get("alert_thresholds", DEFAULT_ALERT_THRESHOLDS)
         
         # Alert callbacks
         self.alert_callbacks: List[Callable] = []
@@ -58,7 +64,12 @@ class DriftMonitoringService:
         # Monitoring state
         self.is_monitoring = False
         self.last_analysis_time = {}
+        
+        # Initialize bounded reference data cache
+        max_cache_size = self.config.get("max_reference_cache_size", DEFAULT_MAX_REFERENCE_CACHE_SIZE)
         self.reference_data_cache = {}
+        self._cache_access_order = []  # Track access order for LRU
+        self.max_cache_size = max_cache_size
         
         logger.info("Drift monitoring service initialized")
     
@@ -74,8 +85,11 @@ class DriftMonitoringService:
         
         while self.is_monitoring:
             try:
-                for model_id in model_ids:
-                    await self._monitor_model_drift(model_id)
+                # Process multiple models concurrently for better performance
+                await asyncio.gather(*[
+                    self._monitor_model_drift(model_id) 
+                    for model_id in model_ids
+                ])
                 
                 # Wait for next monitoring cycle
                 await asyncio.sleep(self.monitoring_interval)
@@ -90,7 +104,18 @@ class DriftMonitoringService:
         logger.info("Drift monitoring stopped")
     
     async def _monitor_model_drift(self, model_id: str):
-        """Monitor drift for a specific model."""
+        """Core drift monitoring logic for a single model iteration.
+        
+        Performs one complete cycle of drift detection including:
+        - Collecting current model performance data from traces
+        - Comparing against baseline reference data using statistical methods
+        - Analyzing root causes for any detected drift patterns
+        - Triggering alerts for significant drift events
+        - Updating reference data when appropriate for future comparisons
+        
+        This method is called for each model in the monitoring cycle and
+        integrates with OpenInference tracing for comprehensive observability.
+        """
         try:
             with self.tracer.trace_bayesian_inference(
                 model_name="drift_monitoring",
@@ -135,10 +160,27 @@ class DriftMonitoringService:
                 if await self._should_update_reference(model_id):
                     await self._update_reference_data(model_id, current_data)
                 
-                logger.debug(f"Drift monitoring completed for {model_id}: {len(drift_results)} detections")
+                # Enhanced debug logging with drift metrics
+                max_drift_score = max(d.drift_score for d in drift_results) if drift_results else 0
+                affected_features = list(set(f for d in drift_results for f in d.affected_features))
+                logger.debug(
+                    f"Drift monitoring completed for {model_id}: "
+                    f"detections={len(drift_results)}, "
+                    f"max_drift_score={max_drift_score:.3f}, "
+                    f"affected_features={affected_features[:5]}{'...' if len(affected_features) > 5 else ''}"
+                )
                 
         except Exception as e:
-            logger.error(f"Error monitoring drift for model {model_id}: {e}")
+            logger.error(
+                f"Error monitoring drift for model {model_id}",
+                exc_info=True,
+                extra={
+                    "model_id": model_id,
+                    "monitoring_state": self.is_monitoring,
+                    "last_analysis": self.last_analysis_time.get(model_id),
+                    "cache_size": len(self.reference_data_cache)
+                }
+            )
     
     async def _collect_current_trace_data(self, model_id: str) -> Optional[Dict[str, Any]]:
         """Collect current trace data for drift analysis."""
@@ -213,9 +255,20 @@ class DriftMonitoringService:
         return self.reference_data_cache.get(model_id)
     
     async def _update_reference_data(self, model_id: str, current_data: Dict[str, Any]):
-        """Update reference data for future drift comparisons."""
+        """Update reference data for future drift comparisons with LRU cache management."""
+        # Implement LRU cache with size limits
+        if model_id in self.reference_data_cache:
+            # Move to end (most recently used)
+            self._cache_access_order.remove(model_id)
+        elif len(self.reference_data_cache) >= self.max_cache_size:
+            # Remove least recently used item
+            oldest_model = self._cache_access_order.pop(0)
+            del self.reference_data_cache[oldest_model]
+            logger.debug(f"Evicted reference data for model {oldest_model} from cache")
+        
         self.reference_data_cache[model_id] = current_data.copy()
-        logger.debug(f"Updated reference data for model {model_id}")
+        self._cache_access_order.append(model_id)
+        logger.debug(f"Updated reference data for model {model_id} (cache size: {len(self.reference_data_cache)})")
     
     async def _should_update_reference(self, model_id: str) -> bool:
         """Determine if reference data should be updated."""
@@ -466,6 +519,7 @@ class DriftAlertManager:
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         """Initialize the drift alert manager."""
         self.config = config or {}
+        self.max_alert_history_size = self.config.get('max_alert_history', DEFAULT_MAX_ALERT_HISTORY_SIZE)
         self.alert_history = []
         self.notification_handlers = {}
         
@@ -486,9 +540,14 @@ class DriftAlertManager:
     async def handle_drift_alert(self, alert_data: Dict[str, Any]):
         """Handle incoming drift alert."""
         try:
-            # Store alert in history
+            # Store alert in history with size limits
             alert_data["alert_id"] = f"drift_alert_{len(self.alert_history) + 1}"
             alert_data["processed_timestamp"] = datetime.now(timezone.utc).isoformat()
+            
+            # Maintain size-limited history
+            if len(self.alert_history) >= self.max_alert_history_size:
+                self.alert_history.pop(0)  # Remove oldest alert
+                
             self.alert_history.append(alert_data)
             
             # Determine alert priority
@@ -517,7 +576,18 @@ class DriftAlertManager:
             return "low"
     
     async def _route_alert(self, alert_data: Dict[str, Any]):
-        """Route alert to appropriate notification handlers."""
+        """Routes alerts to notification handlers based on priority level.
+        
+        Critical alerts go to all available handlers (console, email, slack, webhook)
+        to ensure immediate attention, while lower priority alerts use a subset of 
+        handlers to avoid notification fatigue and reduce operational overhead.
+        
+        Priority-based routing logic:
+        - Critical: All handlers (console, email, slack, webhook)
+        - High: Console, email, slack  
+        - Medium: Console, email
+        - Low: Console only
+        """
         priority = alert_data.get("priority", "low")
         
         # Determine which handlers to use based on priority
