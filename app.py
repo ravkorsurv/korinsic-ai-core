@@ -1,23 +1,30 @@
+#!/usr/bin/env python3
+"""
+KOR AI Surveillance Platform - Main Application
+Deployed on AWS Amplify
+"""
+
 import os
+import sys
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import logging
 from datetime import datetime
 import traceback
 
-from core.bayesian_engine import BayesianEngine
-from core.data_processor import DataProcessor
-from core.alert_generator import AlertGenerator
-from core.risk_calculator import RiskCalculator
-from utils.config import Config
-from utils.logger import setup_logger
+# Add src directory to Python path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+
+from src.core.bayesian_engine import BayesianEngine
+from src.core.data_processor import DataProcessor
+from src.core.alert_generator import AlertGenerator
+from src.core.risk_calculator import RiskCalculator
+from src.utils.config import Config
+from src.utils.logger import setup_logger
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app, origins=[
-    "http://localhost:5174",
-    "https://kor-ai-alert-ui.amplifyapp.com"
-], allow_headers=["Content-Type", "Authorization"])
+CORS(app, origins="*", allow_headers=["Content-Type", "Authorization"])
 
 # Setup logging
 logger = setup_logger()
@@ -35,7 +42,9 @@ def health_check():
     return jsonify({
         'status': 'healthy',
         'timestamp': datetime.utcnow().isoformat(),
-        'service': 'kor-ai-surveillance-platform'
+        'service': 'kor-ai-surveillance-platform',
+        'environment': config.get('environment'),
+        'version': '1.0.0'
     })
 
 @app.route('/api/v1/analyze', methods=['POST'])
@@ -201,124 +210,54 @@ def get_alerts_history():
         return jsonify({'error': 'Internal server error'}), 500
 
 @app.route('/api/v1/export/stor/<alert_id>', methods=['POST'])
-def export_stor_report(alert_id):
-    """Export alert in STOR format"""
+def export_regulatory_stor(alert_id):
+    """Export regulatory STOR record for an alert"""
     try:
-        data = request.get_json()
+        data = request.get_json() or {}
         
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
-        
-        # Process data and generate alert
-        processed_data = data_processor.process(data)
-        
-        # Calculate risk scores
-        insider_dealing_score = bayesian_engine.calculate_insider_dealing_risk(processed_data)
-        spoofing_score = bayesian_engine.calculate_spoofing_risk(processed_data)
-        overall_risk = risk_calculator.calculate_overall_risk(
-            insider_dealing_score, spoofing_score, processed_data
-        )
-        
-        # Generate alerts
-        alerts = alert_generator.generate_alerts(
-            processed_data, insider_dealing_score, spoofing_score, overall_risk
-        )
-        
-        # Find the specific alert
-        target_alert = None
-        for alert in alerts:
-            if alert['id'] == alert_id:
-                target_alert = alert
-                break
-        
-        if not target_alert:
-            return jsonify({'error': f'Alert {alert_id} not found'}), 404
-        
-        # Determine risk scores for the alert
-        if target_alert['type'] == 'INSIDER_DEALING':
-            risk_scores = insider_dealing_score
-        elif target_alert['type'] == 'SPOOFING':
-            risk_scores = spoofing_score
-        else:
-            risk_scores = {'overall_score': overall_risk}
-        
-        # Export STOR format
-        stor_record = alert_generator.export_stor_report(target_alert, risk_scores, processed_data)
+        stor_record = alert_generator.generate_stor_record(alert_id, data)
         
         return jsonify({
-            'stor_record': {
-                'record_id': stor_record.record_id,
-                'timestamp': stor_record.timestamp,
-                'trader_id': stor_record.trader_id,
-                'instrument': stor_record.instrument,
-                'transaction_type': stor_record.transaction_type,
-                'suspicious_indicators': stor_record.suspicious_indicators,
-                'risk_score': stor_record.risk_score,
-                'regulatory_rationale': stor_record.regulatory_rationale,
-                'evidence_details': stor_record.evidence_details,
-                'compliance_officer_notes': stor_record.compliance_officer_notes
-            }
+            'alert_id': alert_id,
+            'stor_record': stor_record,
+            'timestamp': datetime.utcnow().isoformat()
         })
         
     except Exception as e:
-        logger.error(f"Error exporting STOR report: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"Error exporting STOR record for alert {alert_id}: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
 
 @app.route('/api/v1/export/csv/<alert_id>', methods=['POST'])
 def export_regulatory_csv(alert_id):
-    """Export regulatory rationale as CSV"""
+    """Export regulatory CSV report for an alert"""
     try:
-        data = request.get_json()
+        data = request.get_json() or {}
         
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
-        
-        # Process data and generate alert
-        processed_data = data_processor.process(data)
-        
-        # Calculate risk scores
-        insider_dealing_score = bayesian_engine.calculate_insider_dealing_risk(processed_data)
-        spoofing_score = bayesian_engine.calculate_spoofing_risk(processed_data)
-        overall_risk = risk_calculator.calculate_overall_risk(
-            insider_dealing_score, spoofing_score, processed_data
-        )
-        
-        # Generate alerts
-        alerts = alert_generator.generate_alerts(
-            processed_data, insider_dealing_score, spoofing_score, overall_risk
-        )
-        
-        # Find the specific alert
-        target_alert = None
-        for alert in alerts:
-            if alert['id'] == alert_id:
-                target_alert = alert
-                break
-        
-        if not target_alert:
-            return jsonify({'error': f'Alert {alert_id} not found'}), 404
-        
-        # Determine risk scores for the alert
-        if target_alert['type'] == 'INSIDER_DEALING':
-            risk_scores = insider_dealing_score
-        elif target_alert['type'] == 'SPOOFING':
-            risk_scores = spoofing_score
-        else:
-            risk_scores = {'overall_score': overall_risk}
-        
-        # Export CSV
-        filename = alert_generator.export_regulatory_csv(target_alert, risk_scores, processed_data)
+        csv_data = alert_generator.generate_csv_report(alert_id, data)
         
         return jsonify({
-            'csv_export': {
-                'filename': filename,
-                'message': f'Regulatory report exported to {filename}'
-            }
+            'alert_id': alert_id,
+            'csv_data': csv_data,
+            'timestamp': datetime.utcnow().isoformat()
         })
         
     except Exception as e:
-        logger.error(f"Error exporting regulatory CSV: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"Error exporting CSV report for alert {alert_id}: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/api/v1/config', methods=['GET'])
+def get_config():
+    """Get current configuration (non-sensitive)"""
+    try:
+        return jsonify({
+            'environment': config.get('environment'),
+            'risk_thresholds': config.get('risk_thresholds'),
+            'models': config.get('models'),
+            'timestamp': datetime.utcnow().isoformat()
+        })
+    except Exception as e:
+        logger.error(f"Error getting config: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
 
 @app.errorhandler(404)
 def not_found(error):
@@ -329,8 +268,5 @@ def internal_error(error):
     return jsonify({'error': 'Internal server error'}), 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    debug = os.environ.get('DEBUG', 'False').lower() == 'true'
-    
-    logger.info(f"Starting Kor.ai Surveillance Platform on port {port}")
-    app.run(host='0.0.0.0', port=port, debug=debug)
+    # For local development
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False) 

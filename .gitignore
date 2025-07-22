@@ -8,6 +8,9 @@ venv/
 env/
 .env
 
+# Editor files
+.cursor/
+
 # IDE files
 .vscode/
 .idea/
@@ -21,6 +24,9 @@ Thumbs.db
 # Logs
 *.log
 logs/
+
+# Archives
+*.zip
 
 # Dependencies
 node_modules/
