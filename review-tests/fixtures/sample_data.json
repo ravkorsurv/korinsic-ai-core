@@ -1,0 +1,336 @@
+{
+  "insider_dealing_scenario": {
+    "trades": [
+      {
+        "id": "insider_trade_001",
+        "timestamp": "2024-01-15T09:45:00Z",
+        "instrument": "TECH_CORP",
+        "volume": 500000,
+        "price": 75.50,
+        "side": "buy",
+        "trader_id": "exec_001",
+        "execution_venue": "NASDAQ",
+        "order_type": "market"
+      },
+      {
+        "id": "insider_trade_002",
+        "timestamp": "2024-01-15T09:50:00Z",
+        "instrument": "TECH_CORP",
+        "volume": 250000,
+        "price": 75.75,
+        "side": "buy",
+        "trader_id": "exec_001",
+        "execution_venue": "NASDAQ",
+        "order_type": "limit"
+      }
+    ],
+    "trader_info": {
+      "id": "exec_001",
+      "name": "Jane Executive",
+      "role": "executive",
+      "access_level": "high",
+      "department": "management",
+      "hire_date": "2015-03-01",
+      "clearance_level": "executive"
+    },
+    "material_events": [
+      {
+        "id": "high_impact_event",
+        "timestamp": "2024-01-15T10:00:00Z",
+        "type": "earnings_announcement",
+        "description": "Record-breaking quarterly results",
+        "instruments_affected": ["TECH_CORP"],
+        "expected_impact": 0.20,
+        "materiality_score": 1.0,
+        "public_release": "2024-01-15T10:00:00Z"
+      }
+    ],
+    "market_data": {
+      "volatility": 0.08,
+      "price_movement": 0.18,
+      "volume": 2000000,
+      "liquidity": 0.7,
+      "bid_ask_spread": 0.02
+    }
+  },
+  
+  "spoofing_scenario": {
+    "orders": [
+      {
+        "id": "spoof_order_001",
+        "timestamp": "2024-01-15T10:00:00Z",
+        "instrument": "COMMODITY_A",
+        "volume": 100000,
+        "price": 45.00,
+        "side": "buy",
+        "status": "cancelled",
+        "trader_id": "trader_002",
+        "order_type": "limit"
+      },
+      {
+        "id": "spoof_order_002",
+        "timestamp": "2024-01-15T10:00:30Z",
+        "instrument": "COMMODITY_A",
+        "volume": 150000,
+        "price": 45.10,
+        "side": "buy",
+        "status": "cancelled",
+        "trader_id": "trader_002",
+        "order_type": "limit"
+      },
+      {
+        "id": "spoof_order_003",
+        "timestamp": "2024-01-15T10:00:45Z",
+        "instrument": "COMMODITY_A",
+        "volume": 200000,
+        "price": 45.20,
+        "side": "buy",
+        "status": "cancelled",
+        "trader_id": "trader_002",
+        "order_type": "limit"
+      },
+      {
+        "id": "real_order_001",
+        "timestamp": "2024-01-15T10:01:00Z",
+        "instrument": "COMMODITY_A",
+        "volume": 10000,
+        "price": 44.90,
+        "side": "sell",
+        "status": "filled",
+        "trader_id": "trader_002",
+        "order_type": "market"
+      }
+    ],
+    "trader_info": {
+      "id": "trader_002",
+      "name": "John Trader",
+      "role": "trader",
+      "access_level": "medium",
+      "department": "commodities"
+    },
+    "market_data": {
+      "volatility": 0.03,
+      "price_movement": 0.02,
+      "volume": 800000,
+      "liquidity": 0.85
+    }
+  },
+  
+  "normal_trading_scenario": {
+    "trades": [
+      {
+        "id": "normal_trade_001",
+        "timestamp": "2024-01-15T11:00:00Z",
+        "instrument": "REGULAR_STOCK",
+        "volume": 10000,
+        "price": 25.50,
+        "side": "buy",
+        "trader_id": "trader_003",
+        "execution_venue": "NYSE",
+        "order_type": "limit"
+      },
+      {
+        "id": "normal_trade_002",
+        "timestamp": "2024-01-15T11:15:00Z",
+        "instrument": "REGULAR_STOCK",
+        "volume": 5000,
+        "price": 25.45,
+        "side": "sell",
+        "trader_id": "trader_003",
+        "execution_venue": "NYSE",
+        "order_type": "market"
+      }
+    ],
+    "trader_info": {
+      "id": "trader_003",
+      "name": "Mike Normal",
+      "role": "trader",
+      "access_level": "low",
+      "department": "equity_trading"
+    },
+    "market_data": {
+      "volatility": 0.02,
+      "price_movement": 0.005,
+      "volume": 500000,
+      "liquidity": 0.9
+    }
+  },
+  
+  "mixed_scenario": {
+    "trades": [
+      {
+        "id": "mixed_trade_001",
+        "timestamp": "2024-01-15T14:00:00Z",
+        "instrument": "MIXED_STOCK",
+        "volume": 75000,
+        "price": 100.25,
+        "side": "buy",
+        "trader_id": "trader_004",
+        "execution_venue": "NASDAQ",
+        "order_type": "market"
+      }
+    ],
+    "orders": [
+      {
+        "id": "mixed_order_001",
+        "timestamp": "2024-01-15T13:55:00Z",
+        "instrument": "MIXED_STOCK",
+        "volume": 50000,
+        "price": 100.50,
+        "side": "buy",
+        "status": "cancelled",
+        "trader_id": "trader_004",
+        "order_type": "limit"
+      }
+    ],
+    "trader_info": {
+      "id": "trader_004",
+      "name": "Sarah Mixed",
+      "role": "senior_trader",
+      "access_level": "medium",
+      "department": "equity_trading"
+    },
+    "material_events": [
+      {
+        "id": "minor_event",
+        "timestamp": "2024-01-15T14:30:00Z",
+        "type": "product_launch",
+        "description": "Minor product update",
+        "instruments_affected": ["MIXED_STOCK"],
+        "expected_impact": 0.03,
+        "materiality_score": 0.6,
+        "public_release": "2024-01-15T14:30:00Z"
+      }
+    ],
+    "market_data": {
+      "volatility": 0.04,
+      "price_movement": 0.02,
+      "volume": 1200000,
+      "liquidity": 0.8
+    }
+  },
+  
+  "expected_responses": {
+    "insider_dealing_high_risk": {
+      "overall_score": 0.85,
+      "risk_level": "HIGH",
+      "evidence_factors": {
+        "MaterialInfo": 0.9,
+        "TradingActivity": 0.8,
+        "Timing": 0.95,
+        "PriceImpact": 0.7
+      },
+      "model_type": "standard"
+    },
+    
+    "spoofing_medium_risk": {
+      "overall_score": 0.65,
+      "risk_level": "MEDIUM",
+      "evidence_factors": {
+        "OrderPattern": 0.8,
+        "CancellationRate": 0.9,
+        "PriceMovement": 0.4,
+        "VolumeRatio": 0.6
+      },
+      "model_type": "standard"
+    },
+    
+    "normal_low_risk": {
+      "overall_score": 0.15,
+      "risk_level": "LOW",
+      "evidence_factors": {
+        "MaterialInfo": 0.1,
+        "TradingActivity": 0.2,
+        "Timing": 0.1,
+        "PriceImpact": 0.1
+      },
+      "model_type": "standard"
+    }
+  },
+  
+  "trader_profiles": [
+    {
+      "id": "trader_001",
+      "name": "Alice Johnson",
+      "role": "trader",
+      "access_level": "medium",
+      "department": "equity_trading",
+      "hire_date": "2020-05-15",
+      "clearance_level": "standard",
+      "years_experience": 4,
+      "performance_rating": 4.2
+    },
+    {
+      "id": "trader_002",
+      "name": "Bob Smith",
+      "role": "senior_trader",
+      "access_level": "high",
+      "department": "fixed_income",
+      "hire_date": "2018-02-01",
+      "clearance_level": "elevated",
+      "years_experience": 8,
+      "performance_rating": 4.5
+    },
+    {
+      "id": "exec_001",
+      "name": "Carol Executive",
+      "role": "executive",
+      "access_level": "high",
+      "department": "management",
+      "hire_date": "2015-01-01",
+      "clearance_level": "executive",
+      "years_experience": 15,
+      "performance_rating": 4.8
+    }
+  ],
+  
+  "market_conditions": {
+    "normal_market": {
+      "volatility": 0.02,
+      "liquidity": 0.85,
+      "sentiment": 0.1,
+      "regime": "normal"
+    },
+    "volatile_market": {
+      "volatility": 0.08,
+      "liquidity": 0.6,
+      "sentiment": -0.3,
+      "regime": "high_volatility"
+    },
+    "crisis_market": {
+      "volatility": 0.15,
+      "liquidity": 0.4,
+      "sentiment": -0.8,
+      "regime": "crisis"
+    },
+    "bull_market": {
+      "volatility": 0.015,
+      "liquidity": 0.9,
+      "sentiment": 0.6,
+      "regime": "bull"
+    }
+  },
+  
+  "news_events": [
+    {
+      "id": "news_001",
+      "timestamp": "2024-01-15T08:00:00Z",
+      "headline": "Tech Corp Reports Strong Q4 Results",
+      "sentiment": 0.8,
+      "market_impact": 0.06,
+      "relevance_score": 0.9,
+      "source": "Reuters",
+      "instruments_affected": ["TECH_CORP"]
+    },
+    {
+      "id": "news_002",
+      "timestamp": "2024-01-15T09:30:00Z",
+      "headline": "Commodity Market Faces Regulatory Scrutiny",
+      "sentiment": -0.6,
+      "market_impact": 0.04,
+      "relevance_score": 0.7,
+      "source": "Bloomberg",
+      "instruments_affected": ["COMMODITY_A"]
+    }
+  ]
+}
