@@ -1,0 +1,18 @@
+# https://docs.korbit.ai/configuration/repository-settings
+# yaml-language-server: $schema=https://docs.korbit.ai/configuration/schema.v1.json
+version: "0.1"
+
+reviews:
+  schedule: "auto" # Auto-review all PRs and commits
+  auto_review_target_base_branches:
+    - main
+    - master
+    - develop
+  do_not_auto_review_head_branches:
+    - feature/wip
+    - dev/**
+    - draft/**
+  ascii_art_when_no_issues_found: true
+
+pr_descriptions:
+  schedule: "auto" # Automatically generate PR descriptions
