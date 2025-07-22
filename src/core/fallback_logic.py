@@ -11,13 +11,17 @@ Usage:
 
 """
 
-from typing import Dict, Any, List
-from .node_library import BayesianNode
 import logging
+from typing import Any, Dict, List
+
+from .node_library import BayesianNode
 
 logger = logging.getLogger(__name__)
 
-def apply_fallback_evidence(evidence: Dict[str, Any], node_defs: Dict[str, BayesianNode]) -> Dict[str, Any]:
+
+def apply_fallback_evidence(
+    evidence: Dict[str, Any], node_defs: Dict[str, BayesianNode]
+) -> Dict[str, Any]:
     """
     For each node in node_defs, if evidence is missing, use the node's fallback prior (as the most probable state).
     Returns a complete evidence dict for inference.
@@ -33,6 +37,7 @@ def apply_fallback_evidence(evidence: Dict[str, Any], node_defs: Dict[str, Bayes
             log_fallback_usage(node_name, max_idx, fallback)
     return completed_evidence
 
+
 def get_fallback_state(node: BayesianNode) -> int:
     """
     Returns the index of the most probable state from the node's fallback prior.
@@ -40,8 +45,11 @@ def get_fallback_state(node: BayesianNode) -> int:
     fallback = node.get_fallback_prior()
     return fallback.index(max(fallback))
 
+
 def log_fallback_usage(node_name: str, state_idx: int, fallback_prior: List[float]):
     """
     Log when fallback is used for a node, including the chosen state and prior.
     """
-    logger.info(f"Fallback used for node '{node_name}': state index {state_idx}, prior={fallback_prior}") 
+    logger.info(
+        f"Fallback used for node '{node_name}': state index {state_idx}, prior={fallback_prior}"
+    )

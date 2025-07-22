@@ -5,11 +5,11 @@ This module implements the Evidence Sufficiency Index as specified in wiki secti
 ESI complements the Bayesian risk score by measuring evidence quality, diversity, and completeness.
 """
 
-from dataclasses import dataclass
-from typing import Dict, List, Any, Optional, Union
-import math
-from datetime import datetime
 import logging
+import math
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Any, Dict, List, Optional, Union
 
 logger = logging.getLogger(__name__)
 
@@ -54,13 +54,23 @@ class EvidenceSufficiencyIndex:
         # Node cluster definitions for cross-cluster diversity
         self.node_clusters = {
             "PnL": ["Q20_PnLDeviation", "Q19_HRIncentiveAlignment", "trader_pnl"],
-            "MNPI": ["Q75_CommsIntentInfluence", "Q44_EntityRiskScore", "access_to_mnpi"],
-            "TradePattern": ["Q35_TradeClustering", "Q21_PriceSensitivityAbuse", "trade_pattern"],
+            "MNPI": [
+                "Q75_CommsIntentInfluence",
+                "Q44_EntityRiskScore",
+                "access_to_mnpi",
+            ],
+            "TradePattern": [
+                "Q35_TradeClustering",
+                "Q21_PriceSensitivityAbuse",
+                "trade_pattern",
+            ],
             "Market": ["Q51_NewsSentimentImpact", "market_data", "price_volatility"],
             "System": ["Q99_KDEIntegrityFlag", "data_quality", "system_health"],
         }
 
-    def calculate_esi(self, evidence: Dict[str, Any], result: Dict[str, Any]) -> ESIResult:
+    def calculate_esi(
+        self, evidence: Dict[str, Any], result: Dict[str, Any]
+    ) -> ESIResult:
         """
         Calculate Evidence Sufficiency Index exactly as specified in wiki
 
@@ -97,7 +107,9 @@ class EvidenceSufficiencyIndex:
                 node_count=len(result.get("active_nodes", [])),
                 mean_confidence=self._confidence_to_label(mean_confidence_score),
                 fallback_ratio=round(fallback_ratio, 2),
-                contribution_spread="Balanced" if contribution_entropy > 0.7 else "Concentrated",
+                contribution_spread=(
+                    "Balanced" if contribution_entropy > 0.7 else "Concentrated"
+                ),
                 clusters=self._get_evidence_clusters(result),
                 calculation_details={
                     "calculation_details": {
@@ -113,8 +125,12 @@ class EvidenceSufficiencyIndex:
                             "confidence_component": round(
                                 self.weights["W2"] * mean_confidence_score, 3
                             ),
-                            "fallback_component": round(self.weights["W3"] * (1 - fallback_ratio), 3),
-                            "entropy_component": round(self.weights["W4"] * contribution_entropy, 3),
+                            "fallback_component": round(
+                                self.weights["W3"] * (1 - fallback_ratio), 3
+                            ),
+                            "entropy_component": round(
+                                self.weights["W4"] * contribution_entropy, 3
+                            ),
                             "diversity_component": round(
                                 self.weights["W5"] * cross_cluster_diversity, 3
                             ),
@@ -153,7 +169,11 @@ class EvidenceSufficiencyIndex:
             confidence_numeric = self._confidence_to_numeric(confidence)
             confidence_values.append(confidence_numeric)
 
-        return sum(confidence_values) / len(confidence_values) if confidence_values else 0.5
+        return (
+            sum(confidence_values) / len(confidence_values)
+            if confidence_values
+            else 0.5
+        )
 
     def _calculate_fallback_ratio(self, result: Dict[str, Any]) -> float:
         """Calculate proportion of nodes relying on priors or latent defaults"""
@@ -213,7 +233,13 @@ class EvidenceSufficiencyIndex:
 
     def _confidence_to_numeric(self, confidence: Any) -> float:
         """Convert confidence labels to numeric values"""
-        confidence_map = {"High": 1.0, "Medium": 0.7, "Low": 0.4, "Very Low": 0.2, "Unknown": 0.5}
+        confidence_map = {
+            "High": 1.0,
+            "Medium": 0.7,
+            "Low": 0.4,
+            "Very Low": 0.2,
+            "Unknown": 0.5,
+        }
 
         if isinstance(confidence, (int, float)):
             return float(confidence)
@@ -268,7 +294,9 @@ class EvidenceSufficiencyIndex:
 
         return sorted(list(represented_clusters))
 
-    def _fallback_esi_result(self, evidence: Dict[str, Any], result: Dict[str, Any]) -> ESIResult:
+    def _fallback_esi_result(
+        self, evidence: Dict[str, Any], result: Dict[str, Any]
+    ) -> ESIResult:
         """Generate conservative ESI result when calculation fails"""
         return ESIResult(
             evidence_sufficiency_index=0.5,
@@ -283,7 +311,9 @@ class EvidenceSufficiencyIndex:
             },
         )
 
-    def calculate_adjusted_risk_score(self, risk_score: float, esi_result: ESIResult) -> float:
+    def calculate_adjusted_risk_score(
+        self, risk_score: float, esi_result: ESIResult
+    ) -> float:
         """
         Calculate adjusted risk score using ESI as multiplier (from wiki 12.2)
 
@@ -328,7 +358,11 @@ class EvidenceSufficiencyIndex:
     def get_esi_badge(self, esi_score: float) -> Dict[str, str]:
         """Get UI badge information for ESI score"""
         if esi_score >= 0.8:
-            return {"label": "Strong Evidence", "color": "green", "icon": "shield-check"}
+            return {
+                "label": "Strong Evidence",
+                "color": "green",
+                "icon": "shield-check",
+            }
         elif esi_score >= 0.6:
             return {"label": "Moderate Evidence", "color": "orange", "icon": "shield"}
         elif esi_score >= 0.4:

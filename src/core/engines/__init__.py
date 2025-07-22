@@ -12,7 +12,4 @@ Engines:
 from .bayesian_engine import BayesianEngine
 from .risk_calculator import RiskCalculator
 
-__all__ = [
-    'BayesianEngine',
-    'RiskCalculator'
-]
+__all__ = ["BayesianEngine", "RiskCalculator"]

@@ -5,13 +5,13 @@ This module provides an enhanced base model class that includes comprehensive
 explainability features, audit logging, and governance tracking for all models.
 """
 
-from typing import Dict, Any, List, Optional
+import logging
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
-import logging
+from typing import Any, Dict, List, Optional
 
 from ..shared import BaseModel, ModelMetadata
-from .evidence_sufficiency_index import EvidenceSufficiencyIndex, ESIResult
+from .evidence_sufficiency_index import ESIResult, EvidenceSufficiencyIndex
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,9 @@ class EnhancedBaseModel(BaseModel):
         self.governance_enabled = config.get("governance_enabled", True)
 
         # Initialize ESI calculator
-        self.esi_calculator = EvidenceSufficiencyIndex(weights=config.get("esi_weights"))
+        self.esi_calculator = EvidenceSufficiencyIndex(
+            weights=config.get("esi_weights")
+        )
 
         # Enhanced metadata
         self.metadata = EnhancedModelMetadata()
@@ -97,7 +99,9 @@ class EnhancedBaseModel(BaseModel):
             result["decision_metadata"] = {
                 "decision_id": decision_id,
                 "timestamp": start_time.isoformat(),
-                "processing_time": (datetime.now(timezone.utc) - start_time).total_seconds(),
+                "processing_time": (
+                    datetime.now(timezone.utc) - start_time
+                ).total_seconds(),
                 "explainability_enabled": self.explainability_enabled,
                 "audit_enabled": self.audit_enabled,
                 "model_version": self.metadata.version,
@@ -121,7 +125,9 @@ class EnhancedBaseModel(BaseModel):
             raise
 
     @abstractmethod
-    def calculate_risk_with_explanation(self, evidence: Dict[str, Any]) -> Dict[str, Any]:
+    def calculate_risk_with_explanation(
+        self, evidence: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """
         Calculate risk with detailed explanations.
 
@@ -134,7 +140,9 @@ class EnhancedBaseModel(BaseModel):
         pass
 
     @abstractmethod
-    def generate_counterfactuals(self, evidence: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def generate_counterfactuals(
+        self, evidence: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
         """
         Generate counterfactual explanations.
 
@@ -177,7 +185,9 @@ class EnhancedBaseModel(BaseModel):
             feature_importance = {}
 
             if "feature_contributions" in risk_result:
-                for feature, contribution in risk_result["feature_contributions"].items():
+                for feature, contribution in risk_result[
+                    "feature_contributions"
+                ].items():
                     feature_importance[feature] = contribution.get("importance", 0.0)
 
             return feature_importance
@@ -211,7 +221,10 @@ class EnhancedBaseModel(BaseModel):
                 fallback_ratio=1.0,
                 contribution_spread="Unknown",
                 clusters=["System"],
-                calculation_details={"error": "ESI calculation failed", "fallback_applied": True},
+                calculation_details={
+                    "error": "ESI calculation failed",
+                    "fallback_applied": True,
+                },
             )
 
     def validate_evidence_enhanced(self, evidence: Dict[str, Any]) -> Dict[str, Any]:
@@ -289,7 +302,9 @@ class EnhancedBaseModel(BaseModel):
         """Generate unique decision ID."""
         return f"decision_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S_%f')}"
 
-    def _log_decision_start(self, decision_id: str, evidence: Dict[str, Any], timestamp: datetime):
+    def _log_decision_start(
+        self, decision_id: str, evidence: Dict[str, Any], timestamp: datetime
+    ):
         """Log decision start."""
         self.metadata.record_decision_start(decision_id, evidence, timestamp)
 
@@ -301,7 +316,9 @@ class EnhancedBaseModel(BaseModel):
         """Log decision error."""
         self.metadata.record_decision_error(decision_id, error)
 
-    def _store_decision(self, decision_id: str, evidence: Dict[str, Any], result: Dict[str, Any]):
+    def _store_decision(
+        self, decision_id: str, evidence: Dict[str, Any], result: Dict[str, Any]
+    ):
         """Store decision in history."""
         self.decision_history.append(
             {
@@ -351,7 +368,9 @@ class EnhancedBaseModel(BaseModel):
             return 1.0
 
         present_fields = sum(
-            1 for field in required_fields if field in evidence and evidence[field] is not None
+            1
+            for field in required_fields
+            if field in evidence and evidence[field] is not None
         )
         return present_fields / len(required_fields)
 
@@ -389,7 +408,11 @@ class EnhancedBaseModel(BaseModel):
         return {
             "data_sources": list(evidence.keys()),
             "processing_timestamp": datetime.now(timezone.utc).isoformat(),
-            "transformation_steps": ["validation", "normalization", "feature_extraction"],
+            "transformation_steps": [
+                "validation",
+                "normalization",
+                "feature_extraction",
+            ],
             "lineage_complete": True,
         }
 
@@ -407,7 +430,11 @@ class EnhancedModelMetadata(ModelMetadata):
             "counterfactuals_generated": 0,
             "feature_attributions_calculated": 0,
         }
-        self.audit_metrics = {"decisions_logged": 0, "errors_logged": 0, "compliance_checks": 0}
+        self.audit_metrics = {
+            "decisions_logged": 0,
+            "errors_logged": 0,
+            "compliance_checks": 0,
+        }
 
     def record_decision_start(
         self, decision_id: str, evidence: Dict[str, Any], timestamp: datetime
