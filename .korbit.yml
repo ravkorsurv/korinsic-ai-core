@@ -1,0 +1,97 @@
+#################################################################
+# Korbit AI Configuration
+# This file configures Korbit AI to automatically review PRs and commits
+# Documentation: https://docs.korbit.ai/configuration/repository-settings
+#################################################################
+
+# Enable automatic reviews for pull requests
+pull_request_reviews:
+  enabled: true
+  # Review all PRs automatically
+  auto_review: true
+  # Generate automatic PR descriptions
+  auto_description: true
+  # Review draft PRs as well
+  review_drafts: false
+
+# Enable automatic reviews for commits
+commit_reviews:
+  enabled: true
+  # Review commits on main branch
+  branches:
+    - main
+    - master
+    - develop
+
+# Code quality settings
+code_quality:
+  # Enable bug detection
+  bug_detection: true
+  # Enable security vulnerability detection
+  security_analysis: true
+  # Enable performance analysis
+  performance_analysis: true
+  # Enable code style and best practices
+  style_analysis: true
+
+# Language-specific settings
+languages:
+  python:
+    enabled: true
+    # Python-specific linting and analysis
+    style_guide: "pep8"
+    # Enable AI/ML specific checks for this repository
+    frameworks:
+      - "scikit-learn"
+      - "pandas"
+      - "numpy"
+      - "flask"
+      - "pytest"
+
+# File patterns to include/exclude
+file_patterns:
+  include:
+    - "src/**/*.py"
+    - "tests/**/*.py"
+    - "scripts/**/*.py"
+    - "*.py"
+  exclude:
+    - "__pycache__/**"
+    - "*.pyc"
+    - ".git/**"
+    - "node_modules/**"
+    - ".coverage"
+    - "*.log"
+
+# Review settings
+review_settings:
+  # Minimum confidence level for suggestions (0.0 to 1.0)
+  confidence_threshold: 0.7
+  # Maximum number of issues to report per PR
+  max_issues_per_pr: 20
+  # Focus areas for this AI/ML repository
+  focus_areas:
+    - "data_processing"
+    - "model_accuracy"
+    - "error_handling"
+    - "performance"
+    - "security"
+    - "testing"
+
+# Notification settings
+notifications:
+  # Enable comments on PRs
+  pr_comments: true
+  # Enable inline code comments
+  inline_comments: true
+  # Notify on high-severity issues
+  high_severity_alerts: true
+
+# Integration settings
+integrations:
+  github:
+    enabled: true
+    # Auto-assign reviewers based on code changes
+    auto_assign_reviewers: false
+    # Create issues for critical findings
+    create_issues_for_critical: true
