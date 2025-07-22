@@ -12,7 +12,4 @@ Processors:
 from .data_processor import DataProcessor
 from .evidence_mapper import EvidenceMapper
 
-__all__ = [
-    'DataProcessor',
-    'EvidenceMapper'
-]
+__all__ = ["DataProcessor", "EvidenceMapper"]

@@ -5,8 +5,12 @@ This package provides a comprehensive Bayesian network model for detecting
 collusive behavior between trading desks or entities.
 """
 
+from .config import CrossDeskCollusionConfig
 from .model import CrossDeskCollusionModel
 from .nodes import CrossDeskCollusionNodes
-from .config import CrossDeskCollusionConfig
 
-__all__ = ['CrossDeskCollusionModel', 'CrossDeskCollusionNodes', 'CrossDeskCollusionConfig']
+__all__ = [
+    "CrossDeskCollusionModel",
+    "CrossDeskCollusionNodes",
+    "CrossDeskCollusionConfig",
+]

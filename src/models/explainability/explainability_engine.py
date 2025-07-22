@@ -6,10 +6,10 @@ including feature attribution, counterfactual generation, and decision path
 visualization for regulatory compliance.
 """
 
-from typing import Dict, Any, List, Optional, Tuple
-from datetime import datetime, timezone
 import logging
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -82,12 +82,18 @@ class ModelExplainabilityEngine:
             config: Optional configuration dictionary
         """
         self.config = config or {}
-        self.feature_attributor = FeatureAttributor(self.config.get("feature_attribution", {}))
+        self.feature_attributor = FeatureAttributor(
+            self.config.get("feature_attribution", {})
+        )
         self.counterfactual_generator = CounterfactualGenerator(
             self.config.get("counterfactual", {})
         )
-        self.decision_visualizer = DecisionPathVisualizer(self.config.get("decision_path", {}))
-        self.uncertainty_quantifier = UncertaintyQuantifier(self.config.get("uncertainty", {}))
+        self.decision_visualizer = DecisionPathVisualizer(
+            self.config.get("decision_path", {})
+        )
+        self.uncertainty_quantifier = UncertaintyQuantifier(
+            self.config.get("uncertainty", {})
+        )
 
         # Explanation cache
         self.explanation_cache = {}
@@ -95,7 +101,10 @@ class ModelExplainabilityEngine:
         logger.info("Model explainability engine initialized")
 
     def generate_comprehensive_explanation(
-        self, model_result: Dict[str, Any], evidence: Dict[str, Any], model_type: str = "unknown"
+        self,
+        model_result: Dict[str, Any],
+        evidence: Dict[str, Any],
+        model_type: str = "unknown",
     ) -> Dict[str, Any]:
         """
         Generate comprehensive explanation for model result.
@@ -141,7 +150,10 @@ class ModelExplainabilityEngine:
                 "decision_path": [asdict(dp) for dp in decision_path],
                 "uncertainty_analysis": asdict(uncertainty_analysis),
                 "regulatory_summary": self._generate_regulatory_summary(
-                    feature_attributions, counterfactuals, decision_path, uncertainty_analysis
+                    feature_attributions,
+                    counterfactuals,
+                    decision_path,
+                    uncertainty_analysis,
                 ),
                 "explanation_metadata": {
                     "explanation_quality": self._assess_explanation_quality(
@@ -163,7 +175,9 @@ class ModelExplainabilityEngine:
 
         except Exception as e:
             logger.error(f"Error generating comprehensive explanation: {str(e)}")
-            return self._generate_fallback_explanation(model_result, evidence, model_type)
+            return self._generate_fallback_explanation(
+                model_result, evidence, model_type
+            )
 
     def _generate_explanation_id(self) -> str:
         """Generate unique explanation ID."""
@@ -181,14 +195,20 @@ class ModelExplainabilityEngine:
         # Key factors
         key_factors = [
             fa.feature_name
-            for fa in sorted(feature_attributions, key=lambda x: x.importance, reverse=True)[:3]
+            for fa in sorted(
+                feature_attributions, key=lambda x: x.importance, reverse=True
+            )[:3]
         ]
 
         # Decision rationale
-        decision_rationale = self._generate_decision_rationale(feature_attributions, decision_path)
+        decision_rationale = self._generate_decision_rationale(
+            feature_attributions, decision_path
+        )
 
         # Risk indicators
-        risk_indicators = self._identify_risk_indicators(feature_attributions, decision_path)
+        risk_indicators = self._identify_risk_indicators(
+            feature_attributions, decision_path
+        )
 
         return {
             "key_factors": key_factors,
@@ -197,14 +217,18 @@ class ModelExplainabilityEngine:
             "uncertainty_level": uncertainty_analysis.prediction_uncertainty,
             "confidence_assessment": self._assess_confidence(uncertainty_analysis),
             "regulatory_compliance": {
-                "explainability_score": self._calculate_explainability_score(feature_attributions),
+                "explainability_score": self._calculate_explainability_score(
+                    feature_attributions
+                ),
                 "audit_trail_complete": True,
                 "regulatory_frameworks": ["MAR", "MiFID II", "GDPR"],
             },
         }
 
     def _generate_decision_rationale(
-        self, feature_attributions: List[FeatureAttribution], decision_path: List[DecisionPathNode]
+        self,
+        feature_attributions: List[FeatureAttribution],
+        decision_path: List[DecisionPathNode],
     ) -> str:
         """Generate decision rationale."""
 
@@ -212,9 +236,9 @@ class ModelExplainabilityEngine:
             return "Decision based on standard risk assessment procedures."
 
         # Top contributing factors
-        top_factors = sorted(feature_attributions, key=lambda x: abs(x.contribution), reverse=True)[
-            :3
-        ]
+        top_factors = sorted(
+            feature_attributions, key=lambda x: abs(x.contribution), reverse=True
+        )[:3]
 
         rationale_parts = []
         for factor in top_factors:
@@ -226,7 +250,9 @@ class ModelExplainabilityEngine:
         return f"Decision based on: {'; '.join(rationale_parts)}."
 
     def _identify_risk_indicators(
-        self, feature_attributions: List[FeatureAttribution], decision_path: List[DecisionPathNode]
+        self,
+        feature_attributions: List[FeatureAttribution],
+        decision_path: List[DecisionPathNode],
     ) -> List[str]:
         """Identify risk indicators."""
 
@@ -320,14 +346,18 @@ class ModelExplainabilityEngine:
         return completeness_score
 
     def _check_regulatory_compliance(
-        self, feature_attributions: List[FeatureAttribution], decision_path: List[DecisionPathNode]
+        self,
+        feature_attributions: List[FeatureAttribution],
+        decision_path: List[DecisionPathNode],
     ) -> Dict[str, Any]:
         """Check regulatory compliance."""
 
         # Compliance criteria
         has_feature_explanations = len(feature_attributions) > 0
         has_decision_rationale = len(decision_path) > 0
-        has_regulatory_relevance = any(node.regulatory_relevance for node in decision_path)
+        has_regulatory_relevance = any(
+            node.regulatory_relevance for node in decision_path
+        )
 
         compliance_score = (
             (1.0 if has_feature_explanations else 0.0) * 0.4
@@ -339,7 +369,9 @@ class ModelExplainabilityEngine:
             "compliance_score": compliance_score,
             "meets_explainability_requirements": compliance_score >= 0.8,
             "meets_audit_requirements": has_decision_rationale,
-            "regulatory_frameworks_covered": ["MAR", "MiFID II"] if compliance_score >= 0.8 else [],
+            "regulatory_frameworks_covered": (
+                ["MAR", "MiFID II"] if compliance_score >= 0.8 else []
+            ),
         }
 
     def _generate_fallback_explanation(
@@ -411,7 +443,9 @@ class FeatureAttributor:
                 contribution = value / 100.0 if value != 0 else 0.0
                 confidence = 0.8 if importance > 0.5 else 0.6
                 direction = "positive" if contribution > 0 else "negative"
-                explanation = f"{feature_name} contributes {direction}ly to the risk assessment"
+                explanation = (
+                    f"{feature_name} contributes {direction}ly to the risk assessment"
+                )
 
                 attributions.append(
                     FeatureAttribution(
@@ -439,7 +473,9 @@ class CounterfactualGenerator:
         """Generate counterfactual scenarios."""
 
         scenarios = []
-        original_prediction = model_result.get("risk_scores", {}).get("overall_score", 0.0)
+        original_prediction = model_result.get("risk_scores", {}).get(
+            "overall_score", 0.0
+        )
 
         # Generate simple counterfactuals
         for i, (feature_name, value) in enumerate(evidence.items()):
@@ -454,7 +490,9 @@ class CounterfactualGenerator:
                     CounterfactualScenario(
                         scenario_id=f"scenario_{i+1}",
                         original_prediction=original_prediction,
-                        counterfactual_prediction=max(0.0, min(1.0, counterfactual_prediction)),
+                        counterfactual_prediction=max(
+                            0.0, min(1.0, counterfactual_prediction)
+                        ),
                         changed_features={feature_name: modified_value},
                         explanation=f"If {feature_name} was {modified_value:.2f} instead of {value:.2f}",
                         plausibility=0.8,

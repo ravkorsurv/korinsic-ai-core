@@ -5,10 +5,10 @@ This module provides comprehensive model governance capabilities including
 performance monitoring, drift detection, and approval workflows.
 """
 
-from typing import Dict, Any, List, Optional
-from datetime import datetime, timedelta, timezone
 import logging
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +71,9 @@ class ModelGovernanceTracker:
             config: Optional configuration dictionary
         """
         self.config = config or {}
-        self.performance_monitor = ModelPerformanceMonitor(self.config.get("performance", {}))
+        self.performance_monitor = ModelPerformanceMonitor(
+            self.config.get("performance", {})
+        )
         self.drift_detector = ModelDriftDetector(self.config.get("drift_detection", {}))
         self.approval_workflow = ModelApprovalWorkflow(self.config.get("approval", {}))
 
@@ -82,7 +84,9 @@ class ModelGovernanceTracker:
 
         logger.info("Model governance tracker initialized")
 
-    def track_model_lifecycle(self, model_id: str, event: str, metadata: Dict[str, Any]) -> None:
+    def track_model_lifecycle(
+        self, model_id: str, event: str, metadata: Dict[str, Any]
+    ) -> None:
         """
         Track model lifecycle events.
 
@@ -132,7 +136,10 @@ class ModelGovernanceTracker:
         return self.performance_monitor.evaluate_performance(model_id, performance_data)
 
     def detect_model_drift(
-        self, model_id: str, current_data: Dict[str, Any], reference_data: Dict[str, Any]
+        self,
+        model_id: str,
+        current_data: Dict[str, Any],
+        reference_data: Dict[str, Any],
     ) -> List[DriftDetectionResult]:
         """
         Detect model drift.
@@ -161,7 +168,9 @@ class ModelGovernanceTracker:
         Returns:
             Approval request ID
         """
-        return self.approval_workflow.submit_approval_request(model_id, approval_type, criteria)
+        return self.approval_workflow.submit_approval_request(
+            model_id, approval_type, criteria
+        )
 
     def get_governance_status(self, model_id: str) -> Dict[str, Any]:
         """
@@ -175,7 +184,9 @@ class ModelGovernanceTracker:
         """
         try:
             # Get recent performance metrics
-            recent_performance = self.performance_monitor.get_recent_performance(model_id)
+            recent_performance = self.performance_monitor.get_recent_performance(
+                model_id
+            )
 
             # Get drift status
             drift_status = self.drift_detector.get_drift_status(model_id)
@@ -226,7 +237,9 @@ class ModelGovernanceTracker:
         reference_data = metadata.get("reference_data", {})
 
         if current_data and reference_data:
-            drift_results = self.detect_model_drift(model_id, current_data, reference_data)
+            drift_results = self.detect_model_drift(
+                model_id, current_data, reference_data
+            )
 
             # Check for high severity drifts
             high_severity_drifts = [d for d in drift_results if d.severity == "high"]
@@ -257,7 +270,9 @@ class ModelGovernanceTracker:
         # Approval component (30%)
         approval_score = 1.0 if approval_status.get("is_approved", False) else 0.5
 
-        governance_score = performance_score * 0.4 + drift_score * 0.3 + approval_score * 0.3
+        governance_score = (
+            performance_score * 0.4 + drift_score * 0.3 + approval_score * 0.3
+        )
 
         return governance_score
 
@@ -273,7 +288,9 @@ class ModelGovernanceTracker:
 
         # Performance recommendations
         if performance_status.get("overall_score", 1.0) < 0.7:
-            recommendations.append("Consider model retraining due to performance degradation")
+            recommendations.append(
+                "Consider model retraining due to performance degradation"
+            )
 
         # Drift recommendations
         if drift_status.get("max_drift_score", 0.0) > 0.5:
@@ -281,7 +298,9 @@ class ModelGovernanceTracker:
 
         # Approval recommendations
         if not approval_status.get("is_approved", False):
-            recommendations.append("Submit model for approval before production deployment")
+            recommendations.append(
+                "Submit model for approval before production deployment"
+            )
 
         # Default recommendation
         if not recommendations:
@@ -358,7 +377,12 @@ class ModelPerformanceMonitor:
         ]
 
         if not recent_metrics:
-            return {"model_id": model_id, "overall_score": 0.5, "metrics": [], "status": "unknown"}
+            return {
+                "model_id": model_id,
+                "overall_score": 0.5,
+                "metrics": [],
+                "status": "unknown",
+            }
 
         overall_score = sum(m.value for m in recent_metrics) / len(recent_metrics)
 
@@ -426,7 +450,10 @@ class ModelDriftDetector:
         self.drift_thresholds = self._load_drift_thresholds()
 
     def detect_drift(
-        self, model_id: str, current_data: Dict[str, Any], reference_data: Dict[str, Any]
+        self,
+        model_id: str,
+        current_data: Dict[str, Any],
+        reference_data: Dict[str, Any],
     ) -> List[DriftDetectionResult]:
         """Detect various types of drift."""
 
@@ -474,7 +501,9 @@ class ModelDriftDetector:
         cutoff_date = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
 
         recent_drifts = [
-            d for d in self.drift_history if d.model_id == model_id and d.timestamp >= cutoff_date
+            d
+            for d in self.drift_history
+            if d.model_id == model_id and d.timestamp >= cutoff_date
         ]
 
         if not recent_drifts:
@@ -517,15 +546,22 @@ class ModelDriftDetector:
             current_val = current_data.get(feature, 0)
             reference_val = reference_data.get(feature, 0)
 
-            if isinstance(current_val, (int, float)) and isinstance(reference_val, (int, float)):
+            if isinstance(current_val, (int, float)) and isinstance(
+                reference_val, (int, float)
+            ):
                 # Calculate relative difference
                 if reference_val != 0:
-                    relative_diff = abs(current_val - reference_val) / abs(reference_val)
+                    relative_diff = abs(current_val - reference_val) / abs(
+                        reference_val
+                    )
                     if relative_diff > 0.2:  # 20% threshold
                         drift_score = max(drift_score, relative_diff)
                         affected_features.append(feature)
 
-        return {"drift_score": min(drift_score, 1.0), "affected_features": affected_features}
+        return {
+            "drift_score": min(drift_score, 1.0),
+            "affected_features": affected_features,
+        }
 
     def _detect_prediction_drift(
         self, current_data: Dict[str, Any], reference_data: Dict[str, Any]
@@ -540,11 +576,15 @@ class ModelDriftDetector:
             return {"drift_score": 0.0}
 
         # Calculate simple drift score based on prediction distributions
-        if isinstance(current_predictions, list) and isinstance(reference_predictions, list):
+        if isinstance(current_predictions, list) and isinstance(
+            reference_predictions, list
+        ):
             current_avg = sum(current_predictions) / len(current_predictions)
             reference_avg = sum(reference_predictions) / len(reference_predictions)
 
-            drift_score = abs(current_avg - reference_avg) if reference_avg != 0 else 0.0
+            drift_score = (
+                abs(current_avg - reference_avg) if reference_avg != 0 else 0.0
+            )
         else:
             drift_score = 0.0
 

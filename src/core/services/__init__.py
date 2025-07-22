@@ -12,16 +12,16 @@ Services:
 - ExportService: Handles data export and reporting
 """
 
-from .analysis_service import AnalysisService
 from .alert_service import AlertService
-from .regulatory_service import RegulatoryService
-from .model_service import ModelService
+from .analysis_service import AnalysisService
 from .export_service import ExportService
+from .model_service import ModelService
+from .regulatory_service import RegulatoryService
 
 __all__ = [
-    'AnalysisService',
-    'AlertService', 
-    'RegulatoryService',
-    'ModelService',
-    'ExportService'
+    "AnalysisService",
+    "AlertService",
+    "RegulatoryService",
+    "ModelService",
+    "ExportService",
 ]

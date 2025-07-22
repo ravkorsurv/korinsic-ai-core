@@ -4,7 +4,8 @@ Counterfactual Generator Module
 This module provides counterfactual explanation generation capabilities.
 """
 
-from typing import Dict, Any, List
+from typing import Any, Dict, List
+
 from .explainability_engine import CounterfactualScenario
 
 

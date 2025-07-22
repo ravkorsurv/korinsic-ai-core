@@ -5,10 +5,10 @@ This module provides comprehensive audit logging capabilities for model decision
 and regulatory compliance tracking.
 """
 
-from typing import Dict, Any, List, Optional
-from datetime import datetime, timezone
 import logging
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -90,10 +90,12 @@ class ModelAuditLogger:
                         "risk_level": decision.get("risk_assessment", {}).get(
                             "risk_level", "unknown"
                         ),
-                        "confidence": decision.get("risk_scores", {}).get("confidence", 0.0),
-                        "explainability_score": explanation.get("explanation_metadata", {}).get(
-                            "explanation_quality", 0.0
+                        "confidence": decision.get("risk_scores", {}).get(
+                            "confidence", 0.0
                         ),
+                        "explainability_score": explanation.get(
+                            "explanation_metadata", {}
+                        ).get("explanation_quality", 0.0),
                     },
                 },
                 user_id=user_id,
@@ -114,7 +116,9 @@ class ModelAuditLogger:
 
             # Generate regulatory documentation if high risk
             if self._is_high_risk_decision(decision):
-                self.risk_documenter.document_high_risk_decision(entry_id, decision, explanation)
+                self.risk_documenter.document_high_risk_decision(
+                    entry_id, decision, explanation
+                )
 
             logger.info(f"Model decision logged: {entry_id}")
             return entry_id
@@ -220,7 +224,9 @@ class ModelAuditLogger:
                 "audit_trail_required": True,
                 "risk_documentation_required": self._is_high_risk_decision(decision),
             },
-            "risk_classification": decision.get("risk_assessment", {}).get("risk_level", "unknown"),
+            "risk_classification": decision.get("risk_assessment", {}).get(
+                "risk_level", "unknown"
+            ),
             "explainability_score": explanation.get("explanation_metadata", {}).get(
                 "explanation_quality", 0.0
             ),
@@ -275,7 +281,9 @@ class ComplianceChecker:
         compliance_results["checks_performed"].append(audit_trail_check)
 
         # Check risk documentation requirements
-        risk_doc_check = self._check_risk_documentation_compliance(decision, explanation)
+        risk_doc_check = self._check_risk_documentation_compliance(
+            decision, explanation
+        )
         compliance_results["checks_performed"].append(risk_doc_check)
 
         # Calculate overall compliance
@@ -299,7 +307,9 @@ class ComplianceChecker:
             "minimum_compliance_score": 0.8,
         }
 
-    def _check_explainability_compliance(self, explanation: Dict[str, Any]) -> Dict[str, Any]:
+    def _check_explainability_compliance(
+        self, explanation: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Check explainability compliance."""
 
         has_feature_attributions = len(explanation.get("feature_attributions", [])) > 0
@@ -311,7 +321,8 @@ class ComplianceChecker:
         passed = (
             has_feature_attributions
             and has_decision_path
-            and explanation_quality >= self.compliance_rules["minimum_explanation_quality"]
+            and explanation_quality
+            >= self.compliance_rules["minimum_explanation_quality"]
         )
 
         return {
@@ -329,7 +340,9 @@ class ComplianceChecker:
         """Check audit trail compliance."""
 
         has_decision_metadata = "decision_metadata" in decision
-        has_timestamp = decision.get("decision_metadata", {}).get("timestamp") is not None
+        has_timestamp = (
+            decision.get("decision_metadata", {}).get("timestamp") is not None
+        )
 
         passed = has_decision_metadata and has_timestamp
         score = 1.0 if passed else 0.0
@@ -355,10 +368,14 @@ class ComplianceChecker:
         # High risk decisions require additional documentation
         if is_high_risk:
             has_risk_indicators = (
-                len(explanation.get("regulatory_summary", {}).get("risk_indicators", [])) > 0
+                len(
+                    explanation.get("regulatory_summary", {}).get("risk_indicators", [])
+                )
+                > 0
             )
             has_decision_rationale = (
-                explanation.get("regulatory_summary", {}).get("decision_rationale", "") != ""
+                explanation.get("regulatory_summary", {}).get("decision_rationale", "")
+                != ""
             )
 
             passed = has_risk_indicators and has_decision_rationale
@@ -398,16 +415,22 @@ class RegulatoryReporter:
             "model_id": model_id,
             "report_type": report_type,
             "generation_timestamp": datetime.now(timezone.utc).isoformat(),
-            "total_decisions": len([e for e in model_entries if e.event_type == "model_decision"]),
+            "total_decisions": len(
+                [e for e in model_entries if e.event_type == "model_decision"]
+            ),
             "compliance_summary": self._generate_compliance_summary(model_entries),
             "regulatory_frameworks": ["MAR", "MiFID II", "GDPR"],
             "audit_trail_complete": True,
         }
 
-    def _generate_compliance_summary(self, audit_entries: List[AuditLogEntry]) -> Dict[str, Any]:
+    def _generate_compliance_summary(
+        self, audit_entries: List[AuditLogEntry]
+    ) -> Dict[str, Any]:
         """Generate compliance summary."""
 
-        decision_entries = [e for e in audit_entries if e.event_type == "model_decision"]
+        decision_entries = [
+            e for e in audit_entries if e.event_type == "model_decision"
+        ]
 
         if not decision_entries:
             return {
@@ -428,7 +451,9 @@ class RegulatoryReporter:
             )
 
         avg_compliance_score = (
-            sum(compliance_scores) / len(compliance_scores) if compliance_scores else 0.0
+            sum(compliance_scores) / len(compliance_scores)
+            if compliance_scores
+            else 0.0
         )
 
         return {
@@ -457,15 +482,23 @@ class RiskDocumenter:
             "document_id": document_id,
             "audit_entry_id": entry_id,
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "risk_level": decision.get("risk_assessment", {}).get("risk_level", "unknown"),
+            "risk_level": decision.get("risk_assessment", {}).get(
+                "risk_level", "unknown"
+            ),
             "risk_score": decision.get("risk_scores", {}).get("overall_score", 0.0),
-            "key_risk_factors": explanation.get("regulatory_summary", {}).get("key_factors", []),
+            "key_risk_factors": explanation.get("regulatory_summary", {}).get(
+                "key_factors", []
+            ),
             "decision_rationale": explanation.get("regulatory_summary", {}).get(
                 "decision_rationale", ""
             ),
             "regulatory_context": {
                 "applicable_regulations": ["MAR", "MiFID II"],
-                "compliance_requirements": ["explainability", "audit_trail", "risk_documentation"],
+                "compliance_requirements": [
+                    "explainability",
+                    "audit_trail",
+                    "risk_documentation",
+                ],
                 "documentation_complete": True,
             },
         }
