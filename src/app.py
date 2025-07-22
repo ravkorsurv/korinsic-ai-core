@@ -2,7 +2,7 @@ import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 import traceback
 
 from core.bayesian_engine import BayesianEngine
@@ -34,6 +34,10 @@ bayesian_engine = BayesianEngine()
 data_processor = DataProcessor()
 alert_generator = AlertGenerator()
 risk_calculator = RiskCalculator()
+trading_data_service = TradingDataService()
+
+# Register blueprints
+app.register_blueprint(trading_data_bp, url_prefix='/api/v1')
 
 
 @app.route('/health', methods=['GET'])
