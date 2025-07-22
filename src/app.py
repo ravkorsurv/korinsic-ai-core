@@ -9,6 +9,7 @@ from core.bayesian_engine import BayesianEngine
 from core.data_processor import DataProcessor
 from core.alert_generator import AlertGenerator
 from core.risk_calculator import RiskCalculator
+from core.trading_data_service import TradingDataService
 from utils.config import Config
 from utils.logger import setup_logger
 from openinference.instrumentation import instrument_app
