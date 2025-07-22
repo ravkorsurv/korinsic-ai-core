@@ -42,6 +42,17 @@ class TestRunner:
                 'duration': 0.0
             }
         }
+        self.openinference_available = self._check_openinference_availability()
+    
+    def _check_openinference_availability(self):
+        """Check if OpenInference components are available."""
+        try:
+            sys.path.insert(0, str(self.project_root / 'src'))
+            from utils.openinference_tracer import KorinsicOpenInferenceTracer
+            return True
+        except ImportError:
+            logger.warning("OpenInference components not available - skipping OpenInference tests")
+            return False
         
     def run_command(self, cmd, cwd=None):
         """Run a shell command and return the result."""
@@ -92,6 +103,55 @@ class TestRunner:
             'stderr': stderr
         }
         
+        # Run OpenInference unit tests if available
+        openinference_success = self.run_openinference_unit_tests()
+        
+        return success and openinference_success
+    
+    def run_openinference_unit_tests(self):
+        """Run OpenInference unit tests."""
+        if not self.openinference_available:
+            logger.info("Skipping OpenInference unit tests - components not available")
+            return True
+        
+        logger.info("Running OpenInference unit tests...")
+        
+        # Use the OpenInference test runner
+        cmd = f"python3 {self.project_root}/scripts/test/run_openinference_tests.py --unit-only"
+        success, stdout, stderr = self.run_command(cmd)
+        
+        self.test_results['results']['openinference_unit_tests'] = {
+            'success': success,
+            'stdout': stdout,
+            'stderr': stderr
+        }
+        
+        return success
+    
+    def run_openinference_integration_tests(self):
+        """Run OpenInference integration tests."""
+        if not self.openinference_available:
+            logger.info("Skipping OpenInference integration tests - components not available")
+            return True
+        
+        logger.info("Running OpenInference integration tests...")
+        
+        # Set environment variables for tracing
+        env = os.environ.copy()
+        env.update({
+            'OTEL_TRACING_ENABLED': 'true',
+            'OTEL_CONSOLE_EXPORTER': 'false'
+        })
+        
+        cmd = f"python3 {self.project_root}/scripts/test/run_openinference_tests.py --integration-only"
+        success, stdout, stderr = self.run_command(cmd)
+        
+        self.test_results['results']['openinference_integration_tests'] = {
+            'success': success,
+            'stdout': stdout,
+            'stderr': stderr
+        }
+        
         return success
 
     def run_integration_tests(self):
@@ -113,7 +173,10 @@ class TestRunner:
             'stderr': stderr
         }
         
-        return success
+        # Run OpenInference integration tests if available
+        openinference_success = self.run_openinference_integration_tests()
+        
+        return success and openinference_success
 
     def run_e2e_tests(self):
         """Run end-to-end tests."""

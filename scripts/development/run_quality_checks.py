@@ -410,8 +410,63 @@ class QualityChecker:
         if 'security' in check_types:
             success &= self.check_security_issues()
         
+        # Check OpenInference integration if available
+        success &= self.check_openinference_integration()
+        
         # Generate report
         report_success = self.generate_report()
+    
+    def check_openinference_integration(self):
+        """Check OpenInference integration components."""
+        print("🔍 Checking OpenInference integration...")
+        
+        try:
+            # Test basic imports
+            sys.path.insert(0, str(self.project_root / 'src'))
+            from utils.openinference_tracer import KorinsicOpenInferenceTracer, get_tracer
+            
+            # Test tracer initialization
+            tracer = KorinsicOpenInferenceTracer({'enabled': False})
+            
+            # Test singleton pattern
+            tracer1 = get_tracer()
+            tracer2 = get_tracer()
+            assert tracer1 is tracer2, "Singleton pattern not working"
+            
+            # Test context manager
+            with tracer.trace_bayesian_inference('test_model') as span:
+                pass  # Span may be None if OpenTelemetry not available
+            
+            print("✅ OpenInference integration check passed")
+            
+            self.results['checks']['openinference_integration'] = {
+                'success': True,
+                'message': 'OpenInference integration components working correctly'
+            }
+            self.results['summary']['total_checks'] += 1
+            self.results['summary']['passed_checks'] += 1
+            
+            return True
+            
+        except ImportError as e:
+            print(f"⚠️  OpenInference components not available: {e}")
+            self.results['checks']['openinference_integration'] = {
+                'success': True,  # Not a failure if optional components missing
+                'message': f'OpenInference components not available (optional): {e}'
+            }
+            self.results['summary']['total_checks'] += 1
+            self.results['summary']['passed_checks'] += 1
+            return True
+            
+        except Exception as e:
+            print(f"❌ OpenInference integration check failed: {e}")
+            self.results['checks']['openinference_integration'] = {
+                'success': False,
+                'message': f'OpenInference integration check failed: {e}'
+            }
+            self.results['summary']['total_checks'] += 1
+            self.results['summary']['failed_checks'] += 1
+            return False
         
         return success and report_success
 
