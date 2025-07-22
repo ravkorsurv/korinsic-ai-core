@@ -42,6 +42,17 @@ class TestRunner:
                 'duration': 0.0
             }
         }
+        self.ai_observability_available = self._check_ai_observability()
+    
+    def _check_ai_observability(self):
+        """Check if AI observability (OpenInference) is available"""
+        try:
+            sys.path.append(str(self.project_root / 'src'))
+            from utils.ai_observability import get_ai_observability
+            get_ai_observability()
+            return True
+        except Exception:
+            return False
         
     def run_command(self, cmd, cwd=None):
         """Run a shell command and return the result."""
@@ -187,6 +198,51 @@ class TestRunner:
         }
         
         return security_success
+    
+    def run_ai_observability_tests(self):
+        """Run AI observability tests (OpenInference integration)."""
+        logger.info("Running AI observability tests...")
+        
+        if not self.ai_observability_available:
+            logger.warning("⚠️  AI observability not available - skipping OpenInference tests")
+            self.test_results['results']['ai_observability'] = {
+                'success': False,
+                'reason': 'OpenInference dependencies not installed',
+                'stdout': '',
+                'stderr': 'AI observability dependencies not available'
+            }
+            return False
+        
+        # Run unit tests for AI observability
+        cmd = "python -m pytest tests/unit/test_ai_observability.py -v --tb=short"
+        unit_success, unit_stdout, unit_stderr = self.run_command(cmd)
+        
+        # Run E2E tests for OpenInference integration
+        cmd = "python tests/e2e/test_openinference_e2e.py"
+        e2e_success, e2e_stdout, e2e_stderr = self.run_command(cmd)
+        
+        # Run the standalone AI observability test
+        cmd = "python test_ai_observability.py"
+        standalone_success, standalone_stdout, standalone_stderr = self.run_command(cmd)
+        
+        # Overall success if all tests pass
+        overall_success = unit_success and e2e_success and standalone_success
+        
+        self.test_results['results']['ai_observability'] = {
+            'success': overall_success,
+            'unit_tests_success': unit_success,
+            'e2e_tests_success': e2e_success,
+            'standalone_test_success': standalone_success,
+            'stdout': f"Unit: {unit_stdout}\nE2E: {e2e_stdout}\nStandalone: {standalone_stdout}",
+            'stderr': f"Unit: {unit_stderr}\nE2E: {e2e_stderr}\nStandalone: {standalone_stderr}"
+        }
+        
+        if overall_success:
+            logger.info("✅ AI observability tests completed successfully")
+        else:
+            logger.error("❌ Some AI observability tests failed")
+        
+        return overall_success
 
     def run_dependency_check(self):
         """Check for vulnerable dependencies."""
@@ -348,9 +404,15 @@ class TestRunner:
         start_time = datetime.now()
         
         if test_types is None:
-            test_types = ['unit', 'integration', 'e2e', 'performance', 'security', 'dependencies', 'quality']
+            test_types = ['unit', 'integration', 'e2e', 'performance', 'security', 'dependencies', 'quality', 'ai_observability']
         
         logger.info(f"Starting test execution: {', '.join(test_types)}")
+        
+        # Show AI observability status
+        if self.ai_observability_available:
+            logger.info("🧠 AI observability (OpenInference) is available")
+        else:
+            logger.info("⚠️  AI observability (OpenInference) not available")
         
         success = True
         
@@ -372,6 +434,9 @@ class TestRunner:
         if 'dependencies' in test_types:
             success &= self.run_dependency_check()
         
+        if 'ai_observability' in test_types:
+            success &= self.run_ai_observability_tests()
+        
         if 'quality' in test_types:
             success &= self.run_code_quality_checks()
         
@@ -392,7 +457,7 @@ def main():
     parser.add_argument(
         '--types',
         nargs='*',
-        choices=['unit', 'integration', 'e2e', 'performance', 'security', 'dependencies', 'quality'],
+        choices=['unit', 'integration', 'e2e', 'performance', 'security', 'dependencies', 'quality', 'ai_observability'],
         default=None,
         help='Test types to run (default: all)'
     )
@@ -412,9 +477,9 @@ def main():
     runner = TestRunner()
     
     if args.fast:
-        test_types = ['unit', 'integration', 'quality']
+        test_types = ['unit', 'integration', 'quality', 'ai_observability']
     elif args.ci:
-        test_types = ['unit', 'integration', 'e2e', 'performance', 'security', 'dependencies', 'quality']
+        test_types = ['unit', 'integration', 'e2e', 'performance', 'security', 'dependencies', 'quality', 'ai_observability']
     else:
         test_types = args.types
     

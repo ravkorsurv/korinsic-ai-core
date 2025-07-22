@@ -107,7 +107,10 @@ python scripts/development/run_server.py
 # 5. Testing (MANDATORY before PR)
 python scripts/development/run_tests.py --fast
 
-# 6. Quality Checks (MANDATORY before PR)
+# 6. AI Observability Testing (if OpenInference is installed)
+python test_openinference_integration.py
+
+# 7. Quality Checks (MANDATORY before PR)
 python scripts/development/run_quality_checks.py
 
 # 7. API Testing
@@ -524,20 +527,33 @@ tests/
 ### Running Tests
 
 ```bash
-# All tests
+# All tests (including AI observability)
 python scripts/development/run_tests.py
 
-# Specific test types
-python scripts/development/run_tests.py --mode unit
-python scripts/development/run_tests.py --mode integration
-python scripts/development/run_tests.py --mode e2e
+# Fast tests (unit + integration + quality + AI observability)
+python scripts/development/run_tests.py --fast
 
-# With coverage
-python scripts/development/run_tests.py --mode coverage
+# Specific test types
+python scripts/development/run_tests.py --types unit integration
+python scripts/development/run_tests.py --types e2e
+python scripts/development/run_tests.py --types ai_observability
+
+# AI observability comprehensive testing
+python test_openinference_integration.py
 
 # Performance tests
-python scripts/development/run_tests.py --mode performance
+python scripts/development/run_tests.py --types performance
 ```
+
+**Available Test Types:**
+- `unit` - Unit tests for individual components
+- `integration` - Integration tests for component interactions  
+- `e2e` - End-to-end workflow tests
+- `performance` - Performance and load tests
+- `security` - Security scanning and vulnerability tests
+- `dependencies` - Dependency vulnerability checks
+- `quality` - Code quality and linting checks
+- `ai_observability` - OpenInference AI observability tests
 
 ### Test Fixtures
 

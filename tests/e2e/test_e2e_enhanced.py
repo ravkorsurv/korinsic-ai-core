@@ -413,8 +413,21 @@ def test_data_processing_pipeline(framework: E2ETestFramework) -> Dict[str, Any]
     }
 
 def test_bayesian_inference(framework: E2ETestFramework) -> Dict[str, Any]:
-    """Test Bayesian inference with different scenarios"""
+    """Test Bayesian inference with different scenarios including OpenInference tracing"""
     results = {}
+    
+    # Check for AI observability integration
+    try:
+        import sys
+        from pathlib import Path
+        sys.path.append(str(Path(__file__).parent.parent.parent / 'src'))
+        from utils.ai_observability import get_ai_observability
+        ai_obs = get_ai_observability()
+        logger.info("✅ AI observability integration detected")
+        results['ai_observability_enabled'] = True
+    except Exception as e:
+        logger.warning(f"⚠️  AI observability not available: {e}")
+        results['ai_observability_enabled'] = False
     
     # Test normal scenario
     normal_data = generate_test_data("normal")
@@ -431,6 +444,25 @@ def test_bayesian_inference(framework: E2ETestFramework) -> Dict[str, Any]:
     # Validate risk scores
     if high_risk_result['overall_score'] <= normal_risk['overall_score']:
         raise ValueError("High-risk scenario should have higher risk score than normal scenario")
+    
+    # Additional OpenInference validation
+    if results['ai_observability_enabled']:
+        # Check for enhanced fields that OpenInference adds
+        openinference_features = []
+        
+        if 'fallback_usage' in normal_risk:
+            openinference_features.append('fallback_usage_tracking')
+        
+        if 'esi_score' in normal_risk:
+            openinference_features.append('evidence_sufficiency_index')
+        
+        if any(key.startswith('ai.') for key in str(normal_risk)):
+            openinference_features.append('ai_attributes')
+        
+        results['openinference_features'] = openinference_features
+        results['enhanced_observability'] = len(openinference_features) > 0
+        
+        logger.info(f"🔍 OpenInference features detected: {openinference_features}")
     
     return results
 
