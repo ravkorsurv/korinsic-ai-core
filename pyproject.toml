@@ -57,7 +57,7 @@ pytest-html = "^3.1.0"
 pytest-xdist = "^3.1.0"
 
 # Code quality and linting
-black = "^22.10.0"
+black = "^24.3.0"
 isort = "^5.10.0"
 flake8 = "^5.0.0"
 pylint = "^2.15.0"
