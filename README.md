@@ -88,6 +88,8 @@ kor-ai-core/
 
 ### Development Workflow
 
+**Requirements:** Python 3.8 - 3.12 (Python 3.13+ not supported due to dependency constraints)
+
 ```bash
 # 1. Environment Setup
 python -m venv venv && source venv/bin/activate
@@ -142,7 +144,7 @@ curl -X POST http://localhost:5000/api/v1/analyze \
 **Dockerfile** optimized for production deployment:
 
 ```dockerfile
-FROM python:3.9-slim
+FROM python:3.12-slim
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
