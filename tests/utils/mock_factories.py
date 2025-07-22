@@ -143,8 +143,24 @@ class MockEngineFactory:
             "critical_nodes": []
         }
         
+        # Define a separate latent intent result to properly simulate its unique characteristics
+        default_latent_intent_result = {
+            "overall_score": 0.4,
+            "risk_level": "MEDIUM",
+            "evidence_factors": {
+                "MaterialInfo": 0.3,
+                "TradingActivity": 0.4,
+                "Timing": 0.2,
+                "PriceImpact": 0.3,
+                "LatentBehavior": 0.5
+            },
+            "model_type": "latent_intent",
+            "high_nodes": [],
+            "critical_nodes": []
+        }
+        
         mock.analyze_insider_dealing.return_value = default_insider_result
-        mock.analyze_insider_dealing_with_latent_intent = mock.analyze_insider_dealing
+        mock.analyze_insider_dealing_with_latent_intent.return_value = default_latent_intent_result
         mock.analyze_spoofing.return_value = default_spoofing_result
         mock.get_models_info.return_value = {
             "models": ["insider_dealing", "spoofing"],
@@ -299,10 +315,28 @@ class MockDatabaseFactory:
     """Factory for creating mock database objects."""
     
     @staticmethod
-    def create_mock_session() -> Mock:
-        """Create a mock database session."""
+    def create_mock_session(raise_on_commit: bool = False, raise_on_query: bool = False) -> Mock:
+        """
+        Create a mock database session with error simulation.
+        
+        Args:
+            raise_on_commit: If True, commit() will raise an exception
+            raise_on_query: If True, query operations will raise an exception
+        """
         session = Mock()
-        session.query.return_value = session
+        
+        # Configure error scenarios for testing
+        if raise_on_commit:
+            session.commit.side_effect = Exception("DB commit failed")
+        else:
+            session.commit.return_value = None
+            
+        if raise_on_query:
+            session.query.side_effect = Exception("DB connection failed")
+        else:
+            session.query.return_value = session
+            
+        # Standard mock configuration
         session.filter.return_value = session
         session.filter_by.return_value = session
         session.order_by.return_value = session
@@ -312,7 +346,6 @@ class MockDatabaseFactory:
         session.first.return_value = None
         session.count.return_value = 0
         session.add.return_value = None
-        session.commit.return_value = None
         session.rollback.return_value = None
         session.close.return_value = None
         return session
@@ -332,8 +365,7 @@ class MockDatabaseFactory:
         }
         defaults.update(kwargs)
         
-        mock_record = Mock()
-        for key, value in defaults.items():
-            setattr(mock_record, key, value)
+        # Use Mock's constructor to set all attributes at once for better performance
+        mock_record = Mock(**defaults)
         
         return mock_record

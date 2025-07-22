@@ -5,6 +5,18 @@ Data generators for creating realistic test data.
 import random
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta
+from enum import Enum
+
+# Constants for test data generation
+DEFAULT_INSTRUMENTS = ["AAPL", "GOOGL", "MSFT", "TSLA", "AMZN", "META", "NVDA", "NFLX"]
+PRICE_MOVEMENT_PERCENT = 0.02  # 2% max movement
+
+class VolatilityRegime(str, Enum):
+    """Volatility regime enumeration for type safety."""
+    LOW = "low"
+    NORMAL = "normal"
+    HIGH = "high"
+    CRISIS = "crisis"
 
 
 def generate_trade_data(num_trades: int = 10, 
@@ -24,7 +36,7 @@ def generate_trade_data(num_trades: int = 10,
         List of trade dictionaries
     """
     if instruments is None:
-        instruments = ["AAPL", "GOOGL", "MSFT", "TSLA", "AMZN", "META", "NVDA", "NFLX"]
+        instruments = DEFAULT_INSTRUMENTS
     
     if traders is None:
         traders = [f"trader_{i:03d}" for i in range(1, 21)]  # 20 traders

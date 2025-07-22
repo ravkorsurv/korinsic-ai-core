@@ -13,6 +13,7 @@ dimension-averaged approach. It demonstrates:
 
 import sys
 import os
+import traceback
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
 from datetime import datetime, timedelta
@@ -302,7 +303,6 @@ def main():
         
     except Exception as e:
         print(f"\n❌ Error during demonstration: {e}")
-        import traceback
         traceback.print_exc()
 
 
