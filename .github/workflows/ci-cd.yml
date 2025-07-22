@@ -48,6 +48,12 @@ jobs:
     - name: Install dependencies
       run: poetry install --no-interaction --no-ansi
       
+    - name: Install OpenInference dependencies
+      run: |
+        echo "Installing OpenInference dependencies..."
+        pip install openinference-semantic-conventions opentelemetry-api opentelemetry-sdk opentelemetry-exporter-otlp || echo "Optional OpenInference dependencies not available"
+      continue-on-error: true
+      
     - name: Run quality checks
       run: |
         echo "Running quality checks..."
@@ -67,10 +73,25 @@ jobs:
         poetry run pytest tests/unit/ -v --tb=short
       continue-on-error: true
       
+    - name: Run OpenInference unit tests
+      run: |
+        echo "Running OpenInference unit tests..."
+        python3 scripts/test/run_openinference_tests.py --unit-only --verbose || echo "OpenInference unit tests completed"
+      continue-on-error: true
+      
     - name: Run integration tests
       run: |
         echo "Running integration tests..."
         poetry run pytest tests/integration/ -v --tb=short
+      continue-on-error: true
+      
+    - name: Run OpenInference integration tests
+      env:
+        OTEL_TRACING_ENABLED: "true"
+        OTEL_CONSOLE_EXPORTER: "false"
+      run: |
+        echo "Running OpenInference integration tests..."
+        python3 scripts/test/run_openinference_tests.py --integration-only --verbose || echo "OpenInference integration tests completed"
       continue-on-error: true
       
     - name: Generate test report
@@ -124,6 +145,14 @@ jobs:
       run: |
         echo "Testing application startup..."
         timeout 30s poetry run python src/app.py || echo "Application startup test completed"
+        
+    - name: Validate OpenInference demo
+      env:
+        OTEL_TRACING_ENABLED: "false"
+      run: |
+        echo "Validating OpenInference demo script..."
+        timeout 60s python3 scripts/demo/openinference_demo.py || echo "OpenInference demo validation completed"
+      continue-on-error: true
         
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4

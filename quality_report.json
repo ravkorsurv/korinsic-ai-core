@@ -1,0 +1,36 @@
+{
+  "timestamp": "2025-07-22T16:16:58.370152",
+  "checks": {
+    "black": {
+      "name": "Black Code Formatting",
+      "success": false,
+      "stdout": "",
+      "stderr": "/bin/sh: 1: black: not found\n",
+      "description": "Code formatting check with black"
+    },
+    "flake8": {
+      "name": "Flake8 Linting",
+      "success": false,
+      "stdout": "",
+      "stderr": "/bin/sh: 1: flake8: not found\n",
+      "description": "Code linting with flake8"
+    },
+    "mypy": {
+      "name": "MyPy Type Checking",
+      "success": false,
+      "stdout": "",
+      "stderr": "/bin/sh: 1: mypy: not found\n",
+      "description": "Type annotation checking with mypy"
+    },
+    "openinference_integration": {
+      "success": true,
+      "message": "OpenInference integration components working correctly"
+    }
+  },
+  "summary": {
+    "total_checks": 4,
+    "passed_checks": 1,
+    "failed_checks": 3,
+    "success_rate": 25.0
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "openinference": {
+    "enabled": true,
+    "tracing": {
+      "console_exporter": false,
+      "otlp_endpoint": null,
+      "jaeger_endpoint": null,
+      "phoenix_endpoint": null,
+      "sampling_rate": 1.0,
+      "max_span_attributes": 128,
+      "max_events": 128,
+      "max_links": 128
+    },
+    "instrumentation": {
+      "flask": true,
+      "requests": true,
+      "logging": true,
+      "bayesian_models": true
+    },
+    "semantic_conventions": {
+      "service_name": "korinsic-surveillance-platform",
+      "service_version": "1.0.0",
+      "deployment_environment": "production"
+    },
+    "custom_attributes": {
+      "platform": "korinsic",
+      "domain": "financial_surveillance",
+      "compliance_framework": ["MiFID_II", "MAR", "EMIR"]
+    }
+  },
+  "development": {
+    "openinference": {
+      "enabled": true,
+      "tracing": {
+        "console_exporter": true,
+        "sampling_rate": 1.0
+      }
+    }
+  },
+  "testing": {
+    "openinference": {
+      "enabled": false,
+      "tracing": {
+        "console_exporter": false,
+        "sampling_rate": 0.0
+      }
+    }
+  },
+  "production": {
+    "openinference": {
+      "enabled": true,
+      "tracing": {
+        "console_exporter": false,
+        "otlp_endpoint": "${OTEL_EXPORTER_OTLP_ENDPOINT}",
+        "phoenix_endpoint": "${PHOENIX_ENDPOINT}",
+        "sampling_rate": 0.1
+      }
+    }
+  }
+}
