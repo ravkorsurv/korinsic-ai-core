@@ -53,9 +53,69 @@ class BaseRequestSchema:
 
 
 class AnalysisRequestSchema(BaseRequestSchema):
-    """Schema for analysis request validation"""
-
-    pass
+    """
+    Schema for market surveillance analysis request validation.
+    
+    This schema validates incoming requests for market abuse analysis,
+    ensuring all required trading data and configuration parameters
+    are properly formatted and complete.
+    
+    Required Fields:
+        - trades: List of trade records with timestamp, volume, price
+        - orders: List of order records with placement and execution data
+        
+    Optional Fields:
+        - material_events: List of material events that may impact analysis
+        - trader_info: Additional trader context and access levels
+        - analysis_type: Specific analysis type (insider_dealing, spoofing, etc.)
+        - use_latent_intent: Whether to include latent intent analysis
+        - include_regulatory_rationale: Whether to generate compliance explanations
+    
+    Validation Rules:
+        - Timestamps must be in ISO format
+        - Volumes and prices must be positive numbers
+        - Trader IDs must be consistent across trades and orders
+        - Material events must have valid event types
+    """
+    
+    def _validate_specific(self, data: Dict[str, Any], result: "ValidationResult"):
+        """
+        Validate analysis request specific requirements.
+        
+        Args:
+            data: Request data containing trading information
+            result: ValidationResult object to collect errors
+        """
+        # Validate required trading data
+        if "trades" not in data or not data["trades"]:
+            result.add_error("Missing required field: trades (must contain at least one trade)")
+            
+        if "orders" not in data or not data["orders"]:
+            result.add_error("Missing required field: orders (must contain at least one order)")
+            
+        # Validate trade data structure
+        if "trades" in data and isinstance(data["trades"], list):
+            for i, trade in enumerate(data["trades"]):
+                if not isinstance(trade, dict):
+                    result.add_error(f"Trade {i} must be a dictionary")
+                    continue
+                    
+                required_trade_fields = ["timestamp", "volume", "value", "symbol"]
+                for field in required_trade_fields:
+                    if field not in trade:
+                        result.add_error(f"Trade {i} missing required field: {field}")
+                        
+        # Validate order data structure  
+        if "orders" in data and isinstance(data["orders"], list):
+            for i, order in enumerate(data["orders"]):
+                if not isinstance(order, dict):
+                    result.add_error(f"Order {i} must be a dictionary")
+                    continue
+                    
+                required_order_fields = ["timestamp", "quantity", "price", "side"]
+                for field in required_order_fields:
+                    if field not in order:
+                        result.add_error(f"Order {i} missing required field: {field}")
 
 
 class DQSIRequestSchema(BaseRequestSchema):
