@@ -8,11 +8,56 @@ reviews:
     - main
     - master
     - develop
+    - feature/**
+    - hotfix/**
+    - release/**
   do_not_auto_review_head_branches:
     - feature/wip
     - dev/**
     - draft/**
+    - temp/**
+    - experimental/**
   ascii_art_when_no_issues_found: true
+  # Review all file types and directories
+  include_patterns:
+    - "**/*.py"           # All Python files
+    - "**/*.js"           # All JavaScript files  
+    - "**/*.jsx"          # All React JSX files
+    - "**/*.ts"           # All TypeScript files
+    - "**/*.tsx"          # All TypeScript React files
+    - "**/*.json"         # All JSON config files
+    - "**/*.yaml"         # All YAML config files
+    - "**/*.yml"          # All YML config files
+    - "**/*.toml"         # All TOML config files
+    - "**/*.md"           # All Markdown documentation
+    - "**/*.sql"          # All SQL files
+    - "**/*.sh"           # All shell scripts
+    - "**/*.bat"          # All batch scripts
+    - "**/*.ps1"          # All PowerShell scripts
+    - "**/Dockerfile*"    # All Docker files
+    - "**/*.env*"         # All environment files
+    - "**/*.ini"          # All INI config files
+    - "**/*.cfg"          # All config files
+    - "**/*.conf"         # All configuration files
+  # Focus on comprehensive analysis
+  analysis_depth: "comprehensive"
+  # Include security, performance, and compliance analysis
+  focus_areas:
+    - "security"
+    - "performance" 
+    - "maintainability"
+    - "reliability"
+    - "compliance"
+    - "best_practices"
+    - "code_quality"
+    - "documentation"
+    - "testing"
+    - "architecture"
 
 pr_descriptions:
   schedule: "auto" # Automatically generate PR descriptions
+  # Include comprehensive analysis in PR descriptions
+  include_analysis_summary: true
+  include_security_assessment: true
+  include_performance_impact: true
+  include_compliance_notes: true
