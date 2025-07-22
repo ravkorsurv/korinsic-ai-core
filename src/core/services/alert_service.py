@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 import logging
 
-from .regulatory_explainability import RegulatoryExplainability, RegulatoryRationale, STORRecord
+from ..regulatory_explainability import RegulatoryExplainability, RegulatoryRationale, STORRecord
 
 logger = logging.getLogger(__name__)
 

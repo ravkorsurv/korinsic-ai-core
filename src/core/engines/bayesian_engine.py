@@ -5,10 +5,10 @@ from pgmpy.factors.discrete import TabularCPD
 from pgmpy.inference import VariableElimination
 from typing import Dict, List, Any
 import logging
-from .fallback_logic import apply_fallback_evidence
-from .risk_aggregator import ComplexRiskAggregator
-from .evidence_sufficiency_index import EvidenceSufficiencyIndex
-from .regulatory_explainability import RegulatoryExplainability
+from ..fallback_logic import apply_fallback_evidence
+from ..risk_aggregator import ComplexRiskAggregator
+from ..evidence_sufficiency_index import EvidenceSufficiencyIndex
+from ..regulatory_explainability import RegulatoryExplainability
 import os
 
 logger = logging.getLogger(__name__)
@@ -152,14 +152,6 @@ class BayesianEngine:
         self.insider_dealing_model = model
         self.insider_dealing_inference = VariableElimination(model)
         logger.info("Loaded insider dealing model from config: %s", config_path)
-            values=[
-                [0.8, 0.5, 0.2],  # Low impact
-                [0.15, 0.3, 0.3], # Medium impact
-                [0.05, 0.2, 0.5]  # High impact
-            ],
-            evidence=['TradingActivity'],
-            evidence_card=[3]
-        )
         
         # Risk of Insider Dealing (0: Low, 1: Medium, 2: High)
         cpd_risk = TabularCPD(

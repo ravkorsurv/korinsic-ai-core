@@ -9,7 +9,7 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime
 import logging
 
-from ..regulatory_explainability import generate_regulatory_rationale
+from ..regulatory_explainability import RegulatoryExplainability
 from ...utils.logger import setup_logger
 
 logger = setup_logger()

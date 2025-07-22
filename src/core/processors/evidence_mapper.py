@@ -8,6 +8,21 @@ from typing import Dict, Any, List
 import numpy as np
 from datetime import datetime, timedelta
 
+
+class EvidenceMapper:
+    """Maps raw data to Bayesian Network evidence node states."""
+    
+    def __init__(self):
+        pass
+    
+    def map_trade_pattern(self, trade_data: Dict[str, Any]) -> int:
+        """Map raw trade data to trade_pattern node state index."""
+        return map_trade_pattern(trade_data)
+    
+    def map_comms_intent(self, comms_data: Dict[str, Any]) -> int:
+        """Map raw comms data to comms_intent node state index."""
+        return map_comms_intent(comms_data)
+
 def map_trade_pattern(trade_data: Dict[str, Any]) -> int:
     """
     Map raw trade data to trade_pattern node state index.
