@@ -1,0 +1,76 @@
+service: kor-ai-surveillance-api
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: python3.12
+  region: eu-west-1
+  stage: ${opt:stage, 'staging'}
+  memorySize: 1024
+  timeout: 30
+  
+  environment:
+    STAGE: ${self:provider.stage}
+    REGION: ${self:provider.region}
+    ENVIRONMENT: ${self:provider.stage}
+    FLASK_ENV: production
+    
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - logs:CreateLogGroup
+        - logs:CreateLogStream
+        - logs:PutLogEvents
+      Resource: "*"
+
+functions:
+  api:
+    handler: lambda_handler.lambda_handler
+    events:
+      - http:
+          path: /
+          method: ANY
+          cors: true
+      - http:
+          path: /{proxy+}
+          method: ANY
+          cors: true
+    environment:
+      CORS_ORIGINS: ${self:custom.corsOrigins.${self:provider.stage}}
+
+custom:
+  corsOrigins:
+    staging: "https://staging.korinsic.com,http://localhost:3000,http://localhost:5173"
+    production: "https://korinsic.com"
+  
+  customDomain:
+    domainName: ${self:custom.domainNames.${self:provider.stage}}
+    certificateName: ${self:custom.domainNames.${self:provider.stage}}
+    createRoute53Record: false
+    endpointType: 'regional'
+    securityPolicy: tls_1_2
+    apiType: rest
+    autoDomain: false
+  
+  domainNames:
+    staging: api-staging.korinsic.com
+    production: api.korinsic.com
+
+plugins:
+  - serverless-python-requirements
+  - serverless-domain-manager
+
+package:
+  patterns:
+    - '!node_modules/**'
+    - '!.git/**'
+    - '!.pytest_cache/**'
+    - '!tests/**'
+    - '!.github/**'
+    - '!docs/**'
+    - '!archive/**'
+    - '!*.md'
+    - '!vite.config.js'
+    - '!package.json'
+    - '!index.html'
