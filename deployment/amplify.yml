@@ -1,20 +1,13 @@
 version: 1
-backend:
-  phases:
-    build:
-      commands:
-        - echo "Installing Python dependencies..."
-        - pip install -r requirements.txt
-        - echo "Backend build completed"
 frontend:
   phases:
     preBuild:
       commands:
-        - echo "Installing frontend dependencies..."
-        - npm install
+        - echo "Installing Node.js dependencies..."
+        - npm ci
     build:
       commands:
-        - echo "Building frontend..."
+        - echo "Building React application..."
         - npm run build
   artifacts:
     baseDirectory: dist
@@ -22,4 +15,29 @@ frontend:
       - '**/*'
   cache:
     paths:
-      - node_modules/**/* 
+      - node_modules/**/*
+  customHeaders:
+    - pattern: '**/*'
+      headers:
+        - key: 'Strict-Transport-Security'
+          value: 'max-age=31536000; includeSubDomains'
+        - key: 'X-Content-Type-Options'
+          value: 'nosniff'
+        - key: 'X-Frame-Options'
+          value: 'DENY'
+        - key: 'X-XSS-Protection'
+          value: '1; mode=block'
+        - key: 'Referrer-Policy'
+          value: 'strict-origin-when-cross-origin'
+    - pattern: '/static/js/*.js'
+      headers:
+        - key: 'Cache-Control'
+          value: 'public, max-age=31536000, immutable'
+    - pattern: '/static/css/*.css'
+      headers:
+        - key: 'Cache-Control'
+          value: 'public, max-age=31536000, immutable'
+    - pattern: '/index.html'
+      headers:
+        - key: 'Cache-Control'
+          value: 'no-cache, no-store, must-revalidate' 

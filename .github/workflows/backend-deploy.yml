@@ -1,0 +1,172 @@
+name: Backend CI/CD - Deploy to AWS ECS
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'src/**'
+      - 'requirements.txt'
+      - 'Dockerfile'
+      - 'app.py'
+      - '.github/workflows/backend-deploy.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'requirements.txt'
+      - 'Dockerfile'
+      - 'app.py'
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: kor-ai-core
+  ECS_SERVICE_STAGING: kor-ai-core-staging
+  ECS_SERVICE_PRODUCTION: kor-ai-core-production
+  ECS_CLUSTER: kor-ai-cluster
+  CONTAINER_NAME: kor-ai-core
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt', 'requirements-dev.txt') }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Run linting
+        run: |
+          flake8 src/ --count --select=E9,F63,F7,F82 --show-source --statistics
+          black --check src/
+
+      - name: Run tests
+        run: |
+          pytest tests/ --cov=src --cov-report=xml --cov-report=html
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    outputs:
+      image-uri: ${{ steps.build-image.outputs.image }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+  deploy-staging:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Download task definition
+        run: |
+          aws ecs describe-task-definition --task-definition kor-ai-core-staging --query taskDefinition > task-definition.json
+
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ needs.build-and-push.outputs.image-uri }}
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE_STAGING }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
+
+  deploy-production:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Download task definition
+        run: |
+          aws ecs describe-task-definition --task-definition kor-ai-core-production --query taskDefinition > task-definition.json
+
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ needs.build-and-push.outputs.image-uri }}
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE_PRODUCTION }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true

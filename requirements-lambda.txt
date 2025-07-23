@@ -1,0 +1,30 @@
+# Base Flask requirements
+flask==2.3.3
+flask-cors==4.0.0
+pgmpy==0.1.24
+pandas==2.0.3
+numpy==1.24.3
+scikit-learn==1.3.0
+matplotlib==3.7.2
+seaborn==0.12.2
+requests==2.32.4
+python-dotenv==1.0.0
+redis==4.6.0
+celery==5.3.1
+pydantic==2.3.0
+networkx==3.1
+scipy==1.11.2
+plotly==5.16.1
+
+# Lambda-specific requirements
+mangum==0.17.0
+
+# OpenInference and OpenTelemetry (optional for Lambda)
+openinference-semantic-conventions==0.1.9
+opentelemetry-api==1.21.0
+opentelemetry-sdk==1.21.0
+
+# Remove heavy dependencies for Lambda
+# fastapi==0.103.1  # Not needed for Lambda
+# uvicorn==0.23.2   # Not needed for Lambda
+# gunicorn==21.2.0  # Not needed for Lambda

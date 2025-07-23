@@ -1,0 +1,38 @@
+{
+  "name": "kor-ai-alert-ui",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "KOR.AI Surveillance Platform - Frontend",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint src --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "lint:fix": "eslint src --ext js,jsx --fix"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.8.1",
+    "axios": "^1.6.0",
+    "lucide-react": "^0.263.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.15",
+    "@types/react-dom": "^18.2.7",
+    "@vitejs/plugin-react": "^4.0.3",
+    "eslint": "^8.45.0",
+    "eslint-plugin-react": "^7.32.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.3",
+    "vite": "^4.4.5",
+    "vitest": "^0.34.0",
+    "@vitest/ui": "^0.34.0",
+    "jsdom": "^22.1.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
