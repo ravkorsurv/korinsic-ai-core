@@ -24,7 +24,8 @@ from src.models.person_centric import (
     RiskTypology, 
     CrossTypologySignal, 
     PersonRiskProfile,
-    PersonCentricEvidence
+    PersonCentricEvidence,
+    SignalDirection
 )
 from .person_centric_nodes import PersonRiskNode
 
@@ -183,7 +184,7 @@ class CrossTypologyEngine:
         signal_strength = source_risk * base_correlation * source_weight
         
         # Determine signal direction
-        signal_direction = "positive" if signal_strength > 0 else "neutral"
+                    signal_direction = SignalDirection.POSITIVE if signal_strength > 0 else SignalDirection.NEUTRAL
         
         # Calculate impact on target typology's prior
         impact_on_prior = signal_strength * 0.3  # Max 30% impact on prior
@@ -293,10 +294,31 @@ class CrossTypologyEngine:
         source_node: PersonRiskNode, 
         target_node: PersonRiskNode
     ) -> float:
-        """Calculate timing correlation between two risk nodes"""
+        """
+        Calculate timing correlation between two risk nodes based on suspicious timing patterns.
         
-        # Simplified timing correlation - in real implementation,
-        # this would analyze actual timing patterns
+        This method analyzes the temporal patterns of suspicious activities across different
+        risk typologies for the same person to determine if they exhibit coordinated timing
+        that could indicate related market abuse behaviors.
+        
+        Args:
+            source_node: The source risk node (e.g., insider dealing)
+            target_node: The target risk node (e.g., spoofing)
+            
+        Returns:
+            float: Correlation factor between 0.0 and 1.0 where:
+                   - 0.8: Both typologies show strong suspicious timing patterns (high correlation)
+                   - 0.4: One typology shows suspicious timing (moderate correlation)  
+                   - 0.1: Neither shows suspicious timing (low correlation)
+                   - 0.0: No timing evidence available (no correlation)
+        
+        Logic:
+            The correlation is highest when both risk typologies demonstrate suspicious
+            timing patterns, suggesting coordinated market abuse activities. This supports
+            cross-typology signal propagation where timing evidence in one area (e.g.,
+            pre-announcement trading in insider dealing) can strengthen suspicion in
+            related areas (e.g., coordinated spoofing around the same time).
+        """
         
         source_timing = source_node.evidence_nodes.get("Q3_PersonTiming_" + source_node.person_id)
         target_timing = target_node.evidence_nodes.get("Q3_PersonTiming_" + target_node.person_id)
@@ -514,7 +536,23 @@ class CrossTypologyEngine:
         logger.info(f"Signal cleanup completed. Active signals for {len(self.active_signals)} persons.")
     
     def update_typology_correlations(self, correlations: Dict[Tuple[RiskTypology, RiskTypology], float]):
-        """Update typology correlation matrix"""
+        """
+        Update typology correlation matrix with new correlation values.
+        
+        Args:
+            correlations: Dictionary mapping risk typology pairs to correlation values.
+                         Keys are tuples of (source_typology, target_typology) and values
+                         are correlation coefficients in the range [0.0, 1.0] where:
+                         - 0.0: No correlation between typologies
+                         - 0.5: Moderate correlation 
+                         - 1.0: Strong correlation
+                         
+                         Example:
+                         {
+                             (RiskTypology.INSIDER_DEALING, RiskTypology.SPOOFING): 0.7,
+                             (RiskTypology.SPOOFING, RiskTypology.MARKET_MANIPULATION): 0.8
+                         }
+        """
         self.typology_correlations.update(correlations)
         logger.info("Updated typology correlation matrix")
     

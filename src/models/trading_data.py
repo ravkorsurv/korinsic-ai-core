@@ -35,6 +35,16 @@ class RawTradeData:
     """
     Comprehensive raw trade data structure for analyst investigations
     Enhanced with person-centric identity resolution for individual surveillance.
+    
+    Person-Centric Fields:
+        person_id: Resolved PersonID from entity resolution linking this trade 
+                  to an individual across multiple accounts
+        person_confidence: Confidence score (0.0-1.0) for the PersonID resolution,
+                          indicating reliability of the identity link
+        cross_account_risk_factors: Risk factors aggregated across all accounts
+                                   linked to the same person (see CrossAccountRiskFactors)
+        person_level_context: Person-level contextual information including
+                             behavioral profiles and compliance flags (see PersonLevelContext)
     """
 
     # Core trade identifiers (required fields)
@@ -51,8 +61,8 @@ class RawTradeData:
     trader_id: str
     
     # Person-centric identity fields
-    person_id: Optional[str] = None  # Resolved PersonID from entity resolution
-    person_confidence: Optional[float] = None  # Confidence score for PersonID resolution
+    person_id: Optional[str] = None
+    person_confidence: Optional[float] = None
 
     # Optional fields
     order_id: Optional[str] = None
@@ -95,8 +105,8 @@ class RawTradeData:
     risk_score: Optional[float] = None
     
     # Person-centric risk aggregation
-    cross_account_risk_factors: Dict[str, Any] = field(default_factory=dict)
-    person_level_context: Dict[str, Any] = field(default_factory=dict)
+    cross_account_risk_factors: Dict[str, Any] = field(default_factory=dict)  # See CrossAccountRiskFactors TypedDict
+    person_level_context: Dict[str, Any] = field(default_factory=dict)  # See PersonLevelContext TypedDict
 
     # Metadata
     data_source: Optional[str] = None

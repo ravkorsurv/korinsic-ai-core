@@ -35,8 +35,14 @@ class IdentityLink:
     target_value: str
     confidence: float  # 0.0 to 1.0
     evidence: Dict[str, Any] = field(default_factory=dict)
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(init=False)
+    updated_at: datetime = field(init=False)
+    
+    def __post_init__(self):
+        """Set timestamps to avoid timestamp drift"""
+        now = datetime.now(timezone.utc)
+        self.created_at = now
+        self.updated_at = now
     
     def __hash__(self):
         return hash((self.source_type, self.source_value, self.target_type, self.target_value))
@@ -55,8 +61,14 @@ class PersonIdentity:
     hr_records: List[Dict[str, Any]] = field(default_factory=list)
     primary_name: Optional[str] = None
     primary_role: Optional[str] = None
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(init=False)
+    updated_at: datetime = field(init=False)
+    
+    def __post_init__(self):
+        """Set timestamps to avoid timestamp drift"""
+        now = datetime.now(timezone.utc)
+        self.created_at = now
+        self.updated_at = now
     
     def get_all_identifiers(self) -> Set[str]:
         """Get all identifiers associated with this person"""

@@ -25,7 +25,8 @@ from src.models.person_centric import (
     PersonRiskProfile,
     PersonActivitySummary,
     RiskTypology,
-    CrossTypologySignal
+    CrossTypologySignal,
+    EvidenceType
 )
 from src.models.trading_data import RawTradeData, TradeDirection
 from .entity_resolution import EntityResolutionService, PersonIdentity
@@ -45,10 +46,10 @@ class PersonEvidenceAggregator:
         
         # Evidence weighting parameters
         self.evidence_weights = {
-            "trading_pattern": 0.4,
-            "communication": 0.25,
-            "timing": 0.2,
-            "access": 0.15
+            EvidenceType.TRADING_PATTERN: 0.4,
+            EvidenceType.COMMUNICATION: 0.25,
+            EvidenceType.TIMING_ANOMALY: 0.2,
+            EvidenceType.ACCESS_PRIVILEGE: 0.15
         }
         
         # Cross-account correlation thresholds

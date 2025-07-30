@@ -39,7 +39,7 @@ from src.core.regulatory_explainability import RegulatoryExplainabilityEngine
 
 from src.models.person_centric import (
     PersonRiskProfile, PersonCentricAlert, CrossTypologySignal,
-    RiskTypology, AlertSeverity, PersonCentricEvidence
+    RiskTypology, AlertSeverity, PersonCentricEvidence, SignalDirection
 )
 from src.models.trading_data import RawTradeData
 
@@ -103,16 +103,16 @@ class TestDataFactory:
     ) -> CrossTypologySignal:
         """Create sample cross-typology signal for testing"""
         return CrossTypologySignal(
-            signal_id=f"SIGNAL_{source.value}_{target.value}_{datetime.now().strftime('%Y%m%d')}",
+            person_id="PERSON001",
             source_typology=source,
             target_typology=target,
-            person_id="PERSON001",
-            strength=strength,
-            direction="positive",
-            timestamp=datetime.now(timezone.utc),
-            evidence_correlation=0.8,
-            decay_factor=0.95,
-            metadata={"test_signal": True}
+            signal_strength=strength,
+            signal_direction=SignalDirection.POSITIVE,
+            shared_evidence=["test_evidence"],
+            correlation_factors={"test_correlation": 0.8},
+            signal_duration=1.5,
+            impact_on_prior=0.2,
+            confidence_adjustment=0.1
         )
     
     @staticmethod

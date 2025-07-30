@@ -1,21 +1,21 @@
 """
-Person-Centric Data Models for Individual Surveillance
+Person-Centric Data Models
 
-This module contains data models for aggregating trading, communication,
-and risk data at the individual level to support person-centric surveillance.
+This module defines data structures for person-centric surveillance including
+risk profiles, alerts, evidence, and cross-typology signals.
 """
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set
+from typing import Dict, List, Optional, Any, TypedDict
+from uuid import uuid4
 
 from .trading_data import RawTradeData, TradeDirection
 
 
 class RiskTypology(Enum):
-    """Risk typology enumeration for person-centric analysis"""
-    
+    """Risk typologies for market abuse detection"""
     INSIDER_DEALING = "insider_dealing"
     SPOOFING = "spoofing"
     WASH_TRADING = "wash_trading"
@@ -25,12 +25,78 @@ class RiskTypology(Enum):
 
 
 class AlertSeverity(Enum):
-    """Alert severity levels for person-centric alerts"""
-    
+    """Alert severity levels"""
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
     CRITICAL = "critical"
+
+
+class RiskTrend(Enum):
+    """Risk trend direction enumeration"""
+    INCREASING = "increasing"
+    DECREASING = "decreasing"
+    STABLE = "stable"
+
+
+class FrequencyPattern(Enum):
+    """Frequency pattern enumeration for evidence analysis"""
+    SPORADIC = "sporadic"
+    CONSISTENT = "consistent"
+    CLUSTERED = "clustered"
+    IRREGULAR = "irregular"
+    PERIODIC = "periodic"
+
+
+class SignalDirection(Enum):
+    """Signal direction enumeration for cross-typology signals"""
+    POSITIVE = "positive"
+    NEGATIVE = "negative"
+    NEUTRAL = "neutral"
+
+
+class EvidenceType(Enum):
+    """Evidence type enumeration for structured evidence handling"""
+    TRADING_PATTERN = "trading_pattern"
+    COMMUNICATION = "communication"
+    TIMING_ANOMALY = "timing_anomaly"
+    ACCESS_PRIVILEGE = "access_privilege"
+    VOLUME_ANOMALY = "volume_anomaly"
+    PRICE_IMPACT = "price_impact"
+    BEHAVIORAL_PATTERN = "behavioral_pattern"
+    CROSS_ACCOUNT_CORRELATION = "cross_account_correlation"
+
+
+# TypedDict classes for better type safety
+class CrossAccountRiskFactors(TypedDict, total=False):
+    """Structure for cross-account risk factors in trading data"""
+    temporal_correlation: float
+    volume_correlation: float
+    pattern_similarity: float
+    communication_overlap: float
+    desk_coordination: float
+    timing_synchronization: float
+
+
+class PersonLevelContext(TypedDict, total=False):
+    """Structure for person-level context in trading data"""
+    identity_confidence: float
+    account_linkage_strength: float
+    historical_risk_score: float
+    desk_affiliations: List[str]
+    access_privileges: List[str]
+    compliance_flags: List[str]
+    behavioral_profile: Dict[str, float]
+
+
+class EvidenceMetadata(TypedDict, total=False):
+    """Structure for evidence metadata"""
+    strength: float
+    reliability: float
+    consistency: float
+    temporal_clustering: float
+    cross_account_correlation: float
+    regulatory_significance: float
 
 
 @dataclass
@@ -59,15 +125,21 @@ class PersonRiskProfile:
     
     # Temporal risk evolution
     risk_history: List[Dict[str, Any]] = field(default_factory=list)
-    risk_trend: Optional[str] = None  # "increasing", "decreasing", "stable"
+    risk_trend: Optional[RiskTrend] = None
     
     # Evidence aggregation
     aggregated_evidence: Dict[str, Any] = field(default_factory=dict)
     evidence_sources: Dict[str, List[str]] = field(default_factory=dict)
     
     # Metadata
-    last_updated: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    last_updated: datetime = field(init=False)
+    created_at: datetime = field(init=False)
+    
+    def __post_init__(self):
+        """Set timestamps to avoid timestamp drift"""
+        now = datetime.now(timezone.utc)
+        self.last_updated = now
+        self.created_at = now
 
 
 @dataclass
@@ -136,7 +208,7 @@ class PersonCentricAlert:
     cross_account_patterns: List[Dict[str, Any]] = field(default_factory=list)
     
     # Temporal context
-    detection_timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    detection_timestamp: datetime = field(init=False)
     activity_period_start: Optional[datetime] = None
     activity_period_end: Optional[datetime] = None
     
@@ -153,6 +225,10 @@ class PersonCentricAlert:
     explanation_summary: str = ""
     key_driver_nodes: List[str] = field(default_factory=list)
     evidence_trail: List[Dict[str, Any]] = field(default_factory=list)
+    
+    def __post_init__(self):
+        """Set detection timestamp to avoid timestamp drift"""
+        self.detection_timestamp = datetime.now(timezone.utc)
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert alert to dictionary for JSON serialization"""
@@ -192,7 +268,7 @@ class PersonCentricEvidence:
     """
     
     person_id: str
-    evidence_type: str  # "trading_pattern", "communication", "timing", "access"
+    evidence_type: EvidenceType
     
     # Source aggregation
     source_accounts: List[str] = field(default_factory=list)
@@ -207,19 +283,25 @@ class PersonCentricEvidence:
     # Temporal patterns
     first_occurrence: Optional[datetime] = None
     last_occurrence: Optional[datetime] = None
-    frequency_pattern: Optional[str] = None  # "increasing", "decreasing", "sporadic", "consistent"
+    frequency_pattern: Optional[FrequencyPattern] = None
     
     # Cross-account patterns
     cross_account_consistency: float = 0.0
     account_correlation_strength: float = 0.0
     
     # Evidence details
-    evidence_data: Dict[str, Any] = field(default_factory=dict)
+    evidence_data: EvidenceMetadata = field(default_factory=dict)
     supporting_data: List[Dict[str, Any]] = field(default_factory=list)
     
     # Metadata
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(init=False)
+    updated_at: datetime = field(init=False)
+    
+    def __post_init__(self):
+        """Set timestamps to avoid timestamp drift"""
+        now = datetime.now(timezone.utc)
+        self.created_at = now
+        self.updated_at = now
 
 
 @dataclass
@@ -234,19 +316,23 @@ class CrossTypologySignal:
     
     # Signal strength and direction
     signal_strength: float  # 0.0 to 1.0
-    signal_direction: str  # "positive", "negative", "neutral"
+    signal_direction: SignalDirection
     
     # Evidence for signal
     shared_evidence: List[str] = field(default_factory=list)
     correlation_factors: Dict[str, float] = field(default_factory=dict)
     
     # Temporal aspects
-    signal_timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    signal_timestamp: datetime = field(init=False)
     signal_duration: Optional[float] = None  # Duration in hours
     
     # Impact assessment
     impact_on_prior: float = 0.0  # How much this affects the target typology's prior
     confidence_adjustment: float = 0.0  # Confidence adjustment for target typology
+    
+    def __post_init__(self):
+        """Set timestamp to avoid timestamp drift"""
+        self.signal_timestamp = datetime.now(timezone.utc)
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization"""
@@ -255,7 +341,7 @@ class CrossTypologySignal:
             "source_typology": self.source_typology.value,
             "target_typology": self.target_typology.value,
             "signal_strength": self.signal_strength,
-            "signal_direction": self.signal_direction,
+            "signal_direction": self.signal_direction.value,
             "shared_evidence": self.shared_evidence,
             "correlation_factors": self.correlation_factors,
             "signal_timestamp": self.signal_timestamp.isoformat(),

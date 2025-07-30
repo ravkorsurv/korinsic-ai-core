@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 import numpy as np
 
 from src.core.node_library import BayesianNode, EvidenceNode, RiskFactorNode, OutcomeNode
-from src.models.person_centric import RiskTypology, PersonRiskProfile
+from src.models.person_centric import RiskTypology, PersonRiskProfile, EvidenceType
 from src.models.trading_data import RawTradeData
 
 logger = logging.getLogger(__name__)
@@ -33,7 +33,7 @@ class PersonEvidenceNode(EvidenceNode):
         name: str,
         states: List[str],
         person_id: str,
-        evidence_type: str = "trading",
+        evidence_type: EvidenceType = EvidenceType.TRADING_PATTERN,
         description: str = "",
         fallback_prior: Optional[List[float]] = None,
         identity_confidence: float = 1.0
@@ -133,7 +133,7 @@ class PersonTradingPatternNode(PersonEvidenceNode):
             name=f"Q1_PersonTradingPattern_{person_id}",
             states=["normal", "suspicious", "highly_suspicious"],
             person_id=person_id,
-            evidence_type="trading_pattern",
+            evidence_type=EvidenceType.TRADING_PATTERN,
             description=f"Trading patterns aggregated across all accounts for person {person_id}",
             fallback_prior=[0.7, 0.25, 0.05],
             identity_confidence=identity_confidence
@@ -319,7 +319,7 @@ class PersonCommunicationNode(PersonEvidenceNode):
             name=f"Q2_PersonCommunication_{person_id}",
             states=["benign", "suspicious", "highly_suspicious"],
             person_id=person_id,
-            evidence_type="communication",
+            evidence_type=EvidenceType.COMMUNICATION,
             description=f"Communication patterns aggregated across all channels for person {person_id}",
             fallback_prior=[0.8, 0.15, 0.05],
             identity_confidence=identity_confidence
@@ -420,7 +420,7 @@ class PersonTimingNode(PersonEvidenceNode):
             name=f"Q3_PersonTiming_{person_id}",
             states=["normal", "suspicious", "highly_suspicious"],
             person_id=person_id,
-            evidence_type="timing",
+            evidence_type=EvidenceType.TIMING_ANOMALY,
             description=f"Timing patterns aggregated across all activities for person {person_id}",
             fallback_prior=[0.75, 0.2, 0.05],
             identity_confidence=identity_confidence
@@ -614,7 +614,7 @@ class PersonAccessNode(PersonEvidenceNode):
             name=f"Q4_PersonAccess_{person_id}",
             states=["low_access", "medium_access", "high_access"],
             person_id=person_id,
-            evidence_type="access",
+            evidence_type=EvidenceType.ACCESS_PRIVILEGE,
             description=f"Access and role information for person {person_id}",
             fallback_prior=[0.6, 0.3, 0.1],
             identity_confidence=identity_confidence
@@ -727,10 +727,10 @@ class PersonRiskNode(RiskFactorNode):
         
         # Standard evidence weights
         evidence_weights = {
-            "trading_pattern": 0.4,
-            "communication": 0.25,
-            "timing": 0.2,
-            "access": 0.15
+            EvidenceType.TRADING_PATTERN: 0.4,
+            EvidenceType.COMMUNICATION: 0.25,
+            EvidenceType.TIMING_ANOMALY: 0.2,
+            EvidenceType.ACCESS_PRIVILEGE: 0.15
         }
         
         for node_name, node in self.evidence_nodes.items():
@@ -861,10 +861,10 @@ def create_person_risk_nodes(
     
     # Create evidence nodes
     evidence_nodes = {
-        "trading_pattern": PersonTradingPatternNode(person_id, identity_confidence),
-        "communication": PersonCommunicationNode(person_id, identity_confidence),
-        "timing": PersonTimingNode(person_id, identity_confidence),
-        "access": PersonAccessNode(person_id, identity_confidence)
+        EvidenceType.TRADING_PATTERN.value: PersonTradingPatternNode(person_id, identity_confidence),
+        EvidenceType.COMMUNICATION.value: PersonCommunicationNode(person_id, identity_confidence),
+        EvidenceType.TIMING_ANOMALY.value: PersonTimingNode(person_id, identity_confidence),
+        EvidenceType.ACCESS_PRIVILEGE.value: PersonAccessNode(person_id, identity_confidence)
     }
     
     # Create risk node

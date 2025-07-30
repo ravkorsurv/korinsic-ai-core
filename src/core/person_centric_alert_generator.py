@@ -24,7 +24,8 @@ from src.models.person_centric import (
     PersonRiskProfile,
     RiskTypology,
     AlertSeverity,
-    CrossTypologySignal
+    CrossTypologySignal,
+    EvidenceType
 )
 from src.models.trading_data import RawTradeData
 from .entity_resolution import EntityResolutionService
@@ -327,23 +328,23 @@ class PersonCentricAlertGenerator:
         # Analyze trading patterns
         trades_by_account = self._group_trades_by_account(person_id, trade_data)
         if trades_by_account:
-            evidence_nodes["trading_pattern"].analyze_trading_patterns(trades_by_account)
+            evidence_nodes[EvidenceType.TRADING_PATTERN.value].analyze_trading_patterns(trades_by_account)
         
         # Analyze communications
         if communication_data:
             comms_by_channel = self._group_communications_by_channel(person_id, communication_data)
             if comms_by_channel:
-                evidence_nodes["communication"].analyze_communications(comms_by_channel)
+                evidence_nodes[EvidenceType.COMMUNICATION.value].analyze_communications(comms_by_channel)
         
         # Analyze timing patterns
-        evidence_nodes["timing"].analyze_timing_patterns(
+        evidence_nodes[EvidenceType.TIMING_ANOMALY.value].analyze_timing_patterns(
             trades_by_account, 
             self._group_communications_by_channel(person_id, communication_data or []),
             news_events
         )
         
         # Analyze access patterns
-        evidence_nodes["access"].analyze_access_patterns(person_profile)
+        evidence_nodes[EvidenceType.ACCESS_PRIVILEGE.value].analyze_access_patterns(person_profile)
         
         # Register with cross-typology engine
         self.cross_typology_engine.register_person_risk_node(person_id, risk_typology, risk_node)
