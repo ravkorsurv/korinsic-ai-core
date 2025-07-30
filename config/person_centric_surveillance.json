@@ -1,0 +1,305 @@
+{
+  "person_centric_surveillance": {
+    "enabled": true,
+    "version": "1.0.0",
+    "description": "Configuration for individual-centric surveillance system transitioning from account-based to person-based detection",
+    
+    "entity_resolution": {
+      "identity_matching": {
+        "name_similarity_threshold": 0.8,
+        "email_similarity_threshold": 0.9,
+        "fuzzy_match_threshold": 0.85,
+        "minimum_confidence_threshold": 0.7,
+        "hr_override_enabled": true,
+        "hr_override_confidence": 1.0
+      },
+      
+      "identity_weights": {
+        "name_match": 0.4,
+        "email_match": 0.3,
+        "desk_match": 0.2,
+        "role_match": 0.1
+      },
+      
+      "account_linking": {
+        "max_accounts_per_person": 10,
+        "max_desks_per_person": 5,
+        "cross_account_correlation_threshold": 0.6,
+        "identity_decay_hours": 168
+      }
+    },
+    
+    "evidence_aggregation": {
+      "evidence_weights": {
+        "trading_pattern": 0.4,
+        "communication": 0.25,
+        "timing": 0.2,
+        "access": 0.15
+      },
+      
+      "cross_account_bonuses": {
+        "multi_account_base": 0.1,
+        "pattern_correlation_max": 0.2,
+        "synchronized_activity": 0.15
+      },
+      
+      "time_windows": {
+        "default_hours": 24,
+        "extended_hours": 72,
+        "communication_hours": 48,
+        "news_correlation_hours": 24
+      }
+    },
+    
+    "bayesian_nodes": {
+      "person_evidence_nodes": {
+        "trading_pattern": {
+          "states": ["normal", "suspicious", "highly_suspicious"],
+          "fallback_prior": [0.7, 0.25, 0.05],
+          "strength_thresholds": {
+            "large_volume": 100000,
+            "rapid_succession_count": 5,
+            "time_clustering_threshold": 0.3,
+            "alternation_ratio": 0.7
+          }
+        },
+        
+        "communication": {
+          "states": ["benign", "suspicious", "highly_suspicious"],
+          "fallback_prior": [0.8, 0.15, 0.05],
+          "sensitive_keywords": [
+            "insider", "tip", "confidential", "material", "non-public",
+            "announcement", "merger", "acquisition", "earnings", "guidance"
+          ],
+          "external_ratio_threshold": 0.3,
+          "burst_detection_minutes": 10
+        },
+        
+        "timing": {
+          "states": ["normal", "suspicious", "highly_suspicious"],
+          "fallback_prior": [0.75, 0.2, 0.05],
+          "market_hours": {
+            "start": 9,
+            "end": 16
+          },
+          "pre_announcement_hours": 24,
+          "rapid_succession_minutes": 5
+        },
+        
+        "access": {
+          "states": ["low_access", "medium_access", "high_access"],
+          "fallback_prior": [0.6, 0.3, 0.1],
+          "high_risk_roles": [
+            "executive", "head", "director", "chief", "portfolio_manager"
+          ],
+          "medium_risk_roles": [
+            "senior_trader", "trader", "analyst", "sales"
+          ],
+          "sensitive_desks": [
+            "prop", "proprietary", "research", "investment_banking", "trading"
+          ]
+        }
+      },
+      
+      "person_risk_nodes": {
+        "states": ["low_risk", "medium_risk", "high_risk"],
+        "fallback_prior": [0.8, 0.15, 0.05],
+        "cross_typology_max_adjustment": 0.3
+      }
+    },
+    
+    "cross_typology_engine": {
+      "signal_management": {
+        "signal_decay_hours": 48,
+        "min_signal_strength": 0.1,
+        "cross_signal_strength_threshold": 0.6
+      },
+      
+      "typology_correlations": {
+        "insider_dealing": {
+          "front_running": 0.7,
+          "market_manipulation": 0.6,
+          "wash_trading": 0.4,
+          "spoofing": 0.3,
+          "cross_desk_collusion": 0.5
+        },
+        "spoofing": {
+          "market_manipulation": 0.8,
+          "wash_trading": 0.6,
+          "front_running": 0.5,
+          "cross_desk_collusion": 0.5
+        },
+        "wash_trading": {
+          "market_manipulation": 0.7,
+          "front_running": 0.5,
+          "cross_desk_collusion": 0.5
+        },
+        "front_running": {
+          "market_manipulation": 0.6,
+          "cross_desk_collusion": 0.5
+        },
+        "market_manipulation": {
+          "cross_desk_collusion": 0.5
+        }
+      },
+      
+      "signal_weights": {
+        "insider_dealing": 0.9,
+        "spoofing": 0.8,
+        "market_manipulation": 0.8,
+        "front_running": 0.7,
+        "wash_trading": 0.6,
+        "cross_desk_collusion": 0.7
+      },
+      
+      "escalation_thresholds": {
+        "escalation_threshold": 0.7,
+        "high_risk_threshold": 0.8,
+        "multiple_typology_bonus": 0.2,
+        "systematic_pattern_threshold": 4
+      }
+    },
+    
+    "alert_generation": {
+      "probability_thresholds": {
+        "minimum_alert": 0.4,
+        "low_severity": 0.3,
+        "medium_severity": 0.5,
+        "high_severity": 0.7,
+        "critical_severity": 0.85,
+        "stor_eligible": 0.75,
+        "immediate_escalation": 0.9
+      },
+      
+      "cross_typology_weights": {
+        "multiple_typologies": 0.15,
+        "high_correlation": 0.2,
+        "systematic_pattern": 0.25
+      },
+      
+      "confidence_factors": {
+        "base_identity_weight": 0.4,
+        "data_volume_weight": 0.3,
+        "cross_account_weight": 0.2,
+        "cross_typology_weight": 0.1,
+        "data_volume_normalization": 50,
+        "account_count_normalization": 5
+      },
+      
+      "cross_account_patterns": {
+        "timing_sync_threshold": 300,
+        "timing_sync_min_events": 3,
+        "volume_concentration_threshold": 0.8,
+        "volume_evenness_threshold": 0.1,
+        "instrument_correlation_threshold": 0.7
+      },
+      
+      "stor_criteria": {
+        "probability_threshold": 0.75,
+        "critical_severity_auto": true,
+        "escalation_factor_threshold": 3,
+        "high_risk_typologies": ["insider_dealing", "market_manipulation"],
+        "high_risk_probability_threshold": 0.6
+      }
+    },
+    
+    "regulatory_compliance": {
+      "explainability": {
+        "evidence_trail_enabled": true,
+        "key_driver_threshold": 0.5,
+        "cross_account_pattern_threshold": 0.6,
+        "audit_trail_retention_days": 2555
+      },
+      
+      "regulatory_frameworks": {
+        "mar_article_8": {
+          "applicable_typologies": ["insider_dealing"],
+          "evidence_requirements": ["information_access", "timing_correlation", "material_impact"]
+        },
+        "mar_article_12": {
+          "applicable_typologies": ["spoofing", "market_manipulation", "wash_trading"],
+          "evidence_requirements": ["price_impact", "volume_patterns", "order_manipulation"]
+        }
+      },
+      
+      "stor_filing": {
+        "enabled": true,
+        "auto_generate_rationale": true,
+        "include_cross_account_evidence": true,
+        "include_cross_typology_signals": true,
+        "minimum_evidence_strength": 0.6
+      }
+    },
+    
+    "performance_optimization": {
+      "caching": {
+        "evidence_cache_ttl_hours": 1,
+        "identity_cache_ttl_hours": 24,
+        "signal_cache_ttl_hours": 2
+      },
+      
+      "batch_processing": {
+        "max_persons_per_batch": 100,
+        "max_trades_per_person": 1000,
+        "parallel_processing_enabled": true,
+        "max_worker_threads": 4
+      },
+      
+      "monitoring": {
+        "performance_logging": true,
+        "alert_generation_timeout_seconds": 30,
+        "cross_typology_analysis_timeout_seconds": 15,
+        "identity_resolution_timeout_seconds": 10
+      }
+    },
+    
+    "data_quality": {
+      "minimum_requirements": {
+        "min_trades_for_analysis": 3,
+        "min_time_span_hours": 1,
+        "min_identity_confidence": 0.5,
+        "max_data_age_days": 30
+      },
+      
+      "validation": {
+        "validate_timestamps": true,
+        "validate_trader_ids": true,
+        "validate_instrument_symbols": true,
+        "handle_missing_data": "graceful_degradation"
+      }
+    },
+    
+    "feature_flags": {
+      "enhanced_timing_analysis": true,
+      "communication_sentiment_analysis": false,
+      "ml_enhanced_patterns": false,
+      "real_time_processing": false,
+      "advanced_correlation_analysis": true,
+      "multi_jurisdiction_support": false
+    },
+    
+    "logging_and_monitoring": {
+      "log_levels": {
+        "entity_resolution": "INFO",
+        "evidence_aggregation": "INFO",
+        "cross_typology_engine": "INFO",
+        "alert_generation": "INFO",
+        "performance": "DEBUG"
+      },
+      
+      "metrics": {
+        "track_identity_resolution_accuracy": true,
+        "track_alert_generation_latency": true,
+        "track_cross_typology_signal_effectiveness": true,
+        "track_false_positive_rates": true
+      },
+      
+      "alerts": {
+        "system_performance_degradation": true,
+        "identity_resolution_failures": true,
+        "cross_typology_engine_errors": true,
+        "data_quality_issues": true
+      }
+    }
+  }
+}

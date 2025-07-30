@@ -34,6 +34,7 @@ class OrderStatus(Enum):
 class RawTradeData:
     """
     Comprehensive raw trade data structure for analyst investigations
+    Enhanced with person-centric identity resolution for individual surveillance.
     """
 
     # Core trade identifiers (required fields)
@@ -48,6 +49,10 @@ class RawTradeData:
     executed_price: float
     notional_value: float
     trader_id: str
+    
+    # Person-centric identity fields
+    person_id: Optional[str] = None  # Resolved PersonID from entity resolution
+    person_confidence: Optional[float] = None  # Confidence score for PersonID resolution
 
     # Optional fields
     order_id: Optional[str] = None
@@ -88,6 +93,10 @@ class RawTradeData:
     # Alert correlation
     alert_ids: List[str] = field(default_factory=list)
     risk_score: Optional[float] = None
+    
+    # Person-centric risk aggregation
+    cross_account_risk_factors: Dict[str, Any] = field(default_factory=dict)
+    person_level_context: Dict[str, Any] = field(default_factory=dict)
 
     # Metadata
     data_source: Optional[str] = None
