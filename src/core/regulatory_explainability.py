@@ -25,7 +25,7 @@ from collections import defaultdict
 
 from ..models.person_centric import (
     PersonCentricAlert, PersonRiskProfile, CrossTypologySignal,
-    RiskTypology, AlertSeverity, PersonCentricEvidence
+    RiskTypology, AlertSeverity, PersonCentricEvidence, EvidenceType
 )
 from ..models.trading_data import RawTradeData
 
@@ -40,18 +40,6 @@ class RegulatoryFramework(Enum):
     STOR_REQUIREMENTS = "stor_requirements"  # Suspicious Transaction and Order Reporting
     FCA_MAR_GUIDANCE = "fca_mar_guidance"  # FCA Market Abuse Regulation Guidance
     ESMA_GUIDELINES = "esma_guidelines"  # ESMA Technical Standards
-
-
-class EvidenceType(Enum):
-    """Types of evidence for regulatory documentation"""
-    TRADING_PATTERN = "trading_pattern"
-    COMMUNICATION = "communication"
-    TIMING_ANOMALY = "timing_anomaly"
-    ACCESS_PRIVILEGE = "access_privilege"
-    CROSS_ACCOUNT_CORRELATION = "cross_account_correlation"
-    PRICE_IMPACT = "price_impact"
-    VOLUME_ANOMALY = "volume_anomaly"
-    BEHAVIORAL_PATTERN = "behavioral_pattern"
 
 
 @dataclass
