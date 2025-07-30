@@ -207,6 +207,204 @@ def simulate_scenario():
         return jsonify({"error": "Internal server error"}), 500
 
 
+@app.route("/api/v1/analyze/economic-withholding", methods=["POST"])
+def analyze_economic_withholding():
+    """
+    Analyze power plant data for economic withholding using ARERA methodology.
+    
+    Expected request format:
+    {
+        "plant_data": {
+            "unit_id": "PLANT_001",
+            "fuel_type": "gas",
+            "capacity_mw": 400.0,
+            "heat_rate": 7200,
+            "efficiency": 0.47,
+            "variable_costs": {
+                "fuel_cost_ratio": 0.85,
+                "vom_cost": 3.2,
+                "emission_cost": 1.1
+            }
+        },
+        "offers": [
+            {
+                "timestamp": "2024-01-15T08:00:00Z",
+                "price_eur_mwh": 52.5,
+                "quantity_mw": 100.0,
+                "product_block": "hour_09"
+            }
+        ],
+        "market_data": {
+            "system_load_mw": 25000,
+            "load_factor": "normal_demand",
+            "market_tightness": "balanced",
+            "transmission_constraints": "unconstrained"
+        },
+        "fuel_prices": {
+            "gas": 48.0
+        },
+        "use_latent_intent": false,
+        "model_config": {}
+    }
+    """
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+        
+        # Validate required fields
+        required_fields = ["plant_data", "offers", "market_data", "fuel_prices"]
+        missing_fields = [field for field in required_fields if field not in data]
+        
+        if missing_fields:
+            return jsonify({
+                "error": f"Missing required fields: {', '.join(missing_fields)}"
+            }), 400
+        
+        # Validate plant data
+        plant_data = data.get("plant_data", {})
+        required_plant_fields = ["unit_id", "fuel_type", "capacity_mw"]
+        missing_plant_fields = [field for field in required_plant_fields if field not in plant_data]
+        
+        if missing_plant_fields:
+            return jsonify({
+                "error": f"Missing required plant data fields: {', '.join(missing_plant_fields)}"
+            }), 400
+        
+        # Validate offers
+        offers = data.get("offers", [])
+        if not offers:
+            return jsonify({"error": "At least one offer is required"}), 400
+        
+        # Validate offer structure
+        required_offer_fields = ["price_eur_mwh", "quantity_mw"]
+        for i, offer in enumerate(offers):
+            missing_offer_fields = [field for field in required_offer_fields if field not in offer]
+            if missing_offer_fields:
+                return jsonify({
+                    "error": f"Offer {i+1} missing required fields: {', '.join(missing_offer_fields)}"
+                }), 400
+        
+        # Log analysis request
+        logger.info(f"Economic withholding analysis requested for plant: {plant_data.get('unit_id')}")
+        
+        # Prepare data for analysis
+        processed_data = {
+            "plant_data": plant_data,
+            "offers": offers,
+            "market_data": data.get("market_data", {}),
+            "fuel_prices": data.get("fuel_prices", {}),
+            "use_latent_intent": data.get("use_latent_intent", False),
+            "model_config": data.get("model_config", {})
+        }
+        
+        # Perform economic withholding analysis using Bayesian engine
+        analysis_results = bayesian_engine.calculate_economic_withholding_risk(processed_data)
+        
+        # Validate analysis results structure
+        required_result_fields = ['risk_level', 'risk_score']
+        missing_result_fields = []
+        for field in required_result_fields:
+            if field not in analysis_results:
+                missing_result_fields.append(field)
+        
+        if missing_result_fields and "error" not in analysis_results:
+            error_msg = f"Analysis results missing required fields: {', '.join(missing_result_fields)}"
+            logger.error(error_msg)
+            return jsonify({
+                "error": "Invalid analysis results",
+                "details": error_msg
+            }), 500
+        
+        # Check for analysis errors
+        if "error" in analysis_results:
+            logger.error(f"Economic withholding analysis failed: {analysis_results['error']}")
+            return jsonify({
+                "error": "Analysis failed",
+                "details": analysis_results["error"]
+            }), 500
+        
+        # Extract key metrics for response
+        risk_level = analysis_results.get("risk_level", "unknown")
+        risk_score = analysis_results.get("risk_score", 0.0)
+        compliance_report = analysis_results.get("compliance_report")
+        
+        # Process compliance report efficiently
+        if compliance_report:
+            if isinstance(compliance_report, dict):
+                compliance_status = compliance_report.get('compliance_status', 'unknown')
+                violations = compliance_report.get('violations', [])
+            else:
+                compliance_status = getattr(compliance_report, 'compliance_status', 'unknown')
+                violations = getattr(compliance_report, 'violations', [])
+            violations_count = len(violations)
+        else:
+            compliance_status = 'unknown'
+            violations_count = 0
+        
+        # Generate alerts if high risk detected
+        alerts = []
+        if risk_level == "high" or risk_score > 0.8:
+            alerts.append({
+                "type": "ECONOMIC_WITHHOLDING",
+                "severity": "high",
+                "plant_id": plant_data.get("unit_id"),
+                "risk_score": risk_score,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "description": f"High risk of economic withholding detected for plant {plant_data.get('unit_id')}"
+            })
+        elif risk_level == "medium" or risk_score > 0.6:
+            alerts.append({
+                "type": "ECONOMIC_WITHHOLDING",
+                "severity": "medium", 
+                "plant_id": plant_data.get("unit_id"),
+                "risk_score": risk_score,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "description": f"Moderate risk of economic withholding detected for plant {plant_data.get('unit_id')}"
+            })
+        
+        # Compile response
+        response = {
+            "analysis_type": "economic_withholding",
+            "methodology": "arera_counterfactual_bayesian",
+            "plant_id": plant_data.get("unit_id"),
+            "risk_assessment": {
+                "risk_level": risk_level,
+                "risk_score": risk_score,
+                "confidence": analysis_results.get("confidence", 0.0),
+                "risk_probabilities": analysis_results.get("risk_probabilities", {})
+            },
+            "counterfactual_analysis": analysis_results.get("counterfactual_analysis", {}),
+            "compliance_status": compliance_status,
+            "violations_count": violations_count,
+            "regulatory_rationale": analysis_results.get("regulatory_rationale", {}),
+            "alerts": alerts,
+            "evidence_sufficiency": analysis_results.get("evidence_sufficiency", {}),
+            "analysis_metadata": analysis_results.get("analysis_metadata", {}),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        
+        # Include full results if requested
+        if data.get("include_full_results", False):
+            response["full_analysis_results"] = analysis_results.get("full_analysis_results", {})
+        
+        logger.info(f"Economic withholding analysis completed for plant {plant_data.get('unit_id')} - Risk Level: {risk_level}")
+        return jsonify(response)
+        
+    except ValueError as e:
+        logger.error(
+            f"Validation error in economic withholding analysis for plant {plant_data.get('unit_id', 'unknown')}: {str(e)}"
+        )
+        return jsonify({"error": f"Validation error: {str(e)}"}), 400
+    except Exception as e:
+        logger.error(
+            f"Error in economic withholding analysis for plant {plant_data.get('unit_id', 'unknown')}: {str(e)}"
+        )
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return jsonify({"error": "Internal server error"}), 500
+
+
 @app.route("/api/v1/alerts/history", methods=["GET"])
 def get_alerts_history():
     """Get historical alerts"""
