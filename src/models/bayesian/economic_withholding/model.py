@@ -202,6 +202,43 @@ class EconomicWithholdingModel:
         # to create proper probability distributions
         return []
 
+    def _get_state_index(self, node_name: str, state_value: str) -> int:
+        """
+        Convert string state value to numeric index for a given node.
+        
+        Args:
+            node_name: Name of the node
+            state_value: String value of the state
+            
+        Returns:
+            Numeric index of the state
+        """
+        node_states = self.nodes.get_node_states(node_name)
+        if node_states and state_value in node_states:
+            return node_states.index(state_value)
+        # Return default index 0 if state not found
+        return 0
+    
+    def _convert_numeric_to_string_evidence(self, numeric_evidence: Dict[str, int]) -> Dict[str, str]:
+        """
+        Convert numeric evidence indices back to string states for compatibility.
+        
+        Args:
+            numeric_evidence: Evidence with numeric state indices
+            
+        Returns:
+            Evidence with string state values
+        """
+        string_evidence = {}
+        for node_name, state_index in numeric_evidence.items():
+            node_states = self.nodes.get_node_states(node_name)
+            if node_states and 0 <= state_index < len(node_states):
+                string_evidence[node_name] = node_states[state_index]
+            else:
+                # Use first state as default
+                string_evidence[node_name] = node_states[0] if node_states else ""
+        return string_evidence
+
     def analyze_economic_withholding(
         self, 
         plant_data: Dict[str, Any],
@@ -423,67 +460,33 @@ class EconomicWithholdingModel:
             market_data: Market conditions
             
         Returns:
-            Evidence dictionary for Bayesian network
+            Evidence dictionary for Bayesian network (numeric indices)
         """
-        evidence = {}
+        # Import the standard evidence mapper
+        from ....core.evidence_mapper import map_economic_withholding_evidence
         
-        try:
-            # Extract evidence from counterfactual results
-            if 'comparisons' in counterfactual_results:
-                comparisons = counterfactual_results['comparisons']
-                if comparisons:
-                    avg_markup = max(comp.get('average_markup', 0) for comp in comparisons)
-                    
-                    # Marginal cost deviation evidence
-                    if avg_markup > 0.20:
-                        evidence['marginal_cost_deviation'] = 'excessive_markup'
-                    elif avg_markup > 0.10:
-                        evidence['marginal_cost_deviation'] = 'moderate_markup'
-                    else:
-                        evidence['marginal_cost_deviation'] = 'cost_reflective'
-            
-            # Extract evidence from cost analysis
-            if 'anomaly_detection' in cost_analysis:
-                anomalies = cost_analysis['anomaly_detection']
-                
-                # Fuel cost variance evidence
-                fuel_anomalies = anomalies.get('fuel_cost_anomalies', [])
-                if any(a.get('severity') == 'high' for a in fuel_anomalies):
-                    evidence['fuel_cost_variance'] = 'high_variance'
-                elif fuel_anomalies:
-                    evidence['fuel_cost_variance'] = 'moderate_variance'
-                else:
-                    evidence['fuel_cost_variance'] = 'aligned'
-                
-                # Plant efficiency evidence
-                efficiency_anomalies = anomalies.get('efficiency_anomalies', [])
-                if any(a.get('severity') == 'high' for a in efficiency_anomalies):
-                    evidence['plant_efficiency'] = 'significantly_impaired'
-                elif efficiency_anomalies:
-                    evidence['plant_efficiency'] = 'suboptimal'
-                else:
-                    evidence['plant_efficiency'] = 'optimal'
-            
-            # Extract market condition evidence
-            load_factor = market_data.get('load_factor', 'normal_demand')
-            evidence['load_factor'] = load_factor
-            
-            market_tightness = market_data.get('market_tightness', 'balanced')
-            evidence['market_tightness'] = market_tightness
-            
-            transmission_constraints = market_data.get('transmission_constraints', 'unconstrained')
-            evidence['transmission_constraint'] = transmission_constraints
-            
-            # Set default values for missing evidence
-            all_nodes = self.nodes.get_evidence_nodes()
-            for node_name in all_nodes:
-                if node_name not in evidence:
-                    node_states = self.nodes.get_node_states(node_name)
-                    if node_states:
-                        evidence[node_name] = node_states[0]  # Use first state as default
-            
-        except Exception as e:
-            logger.warning(f"Error extracting evidence: {str(e)}")
+        # Prepare data in the standard format
+        ew_data = {
+            'plant_data': {},  # Will be populated from context
+            'market_data': market_data,
+            'cost_analysis': cost_analysis,
+            'counterfactual_results': counterfactual_results,
+            'operational_data': {},  # Could be extracted from analysis
+            'bid_analysis': {},  # Could be extracted from analysis
+            'withdrawal_data': {},  # Could be extracted from analysis
+            'coordination_data': {},  # Could be extracted from analysis
+            'pricing_data': {},  # Could be extracted from analysis
+            'fuel_prices': {},  # Could be extracted from context
+        }
+        
+        # Use standard evidence mapper
+        evidence = map_economic_withholding_evidence(ew_data)
+        
+        # For backward compatibility, ensure all evidence nodes have values
+        all_nodes = self.nodes.get_evidence_nodes()
+        for node_name in all_nodes:
+            if node_name not in evidence:
+                evidence[node_name] = 0  # Default to first state (index 0)
         
         return evidence
 
@@ -498,10 +501,13 @@ class EconomicWithholdingModel:
             Risk scores from Bayesian inference
         """
         try:
+            # Convert numeric evidence back to string states for pgmpy
+            string_evidence = self._convert_numeric_to_string_evidence(evidence)
+
             # Query the outcome node
             query_result = self.inference_engine.query(
                 variables=['economic_withholding_risk'],
-                evidence=evidence
+                evidence=string_evidence
             )
             
             # Extract probabilities
@@ -581,6 +587,111 @@ class EconomicWithholdingModel:
                 'risk_probabilities': {'no_withholding': 0.8, 'potential_withholding': 0.15, 'clear_withholding': 0.05},
                 'max_risk_state': 'no_withholding',
                 'confidence': 0.8,
+                'error': str(e)
+            }
+
+    def analyze_with_standard_evidence(self, processed_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Analyze economic withholding using standard evidence mapping pattern.
+        This method integrates with the unified evidence mapper.
+        
+        Args:
+            processed_data: Processed data in standard format from DataProcessor
+            
+        Returns:
+            Analysis results including risk assessment
+        """
+        try:
+            # Import the standard evidence mapper
+            from ....core.evidence_mapper import map_economic_withholding_evidence
+            
+            # Extract specific data for economic withholding analysis
+            ew_data = processed_data.get('economic_withholding', {})
+            
+            # If no economic withholding specific data, extract from general data
+            if not ew_data:
+                ew_data = {
+                    'plant_data': processed_data.get('plant_data', {}),
+                    'market_data': processed_data.get('market_data', {}),
+                    'cost_analysis': processed_data.get('cost_analysis', {}),
+                    'counterfactual_results': processed_data.get('counterfactual_results', {}),
+                    'operational_data': processed_data.get('operational_data', {}),
+                    'bid_analysis': processed_data.get('bid_analysis', {}),
+                    'withdrawal_data': processed_data.get('withdrawal_data', {}),
+                    'coordination_data': processed_data.get('coordination_data', {}),
+                    'pricing_data': processed_data.get('pricing_data', {}),
+                    'fuel_prices': processed_data.get('fuel_prices', {}),
+                }
+            
+            # Use standard evidence mapper to get numeric evidence
+            numeric_evidence = map_economic_withholding_evidence(ew_data)
+            
+            # Convert numeric evidence to string states for internal use
+            string_evidence = self._convert_numeric_to_string_evidence(numeric_evidence)
+            
+            # Perform Bayesian inference with string evidence
+            if self.model and self.inference_engine:
+                # Query the outcome node
+                query_result = self.inference_engine.query(
+                    variables=['economic_withholding_risk'],
+                    evidence=string_evidence
+                )
+                
+                # Extract probabilities
+                risk_probs = query_result['economic_withholding_risk'].values
+                risk_states = ['no_withholding', 'potential_withholding', 'clear_withholding']
+                
+                risk_scores = {}
+                for i, state in enumerate(risk_states):
+                    risk_scores[state] = float(risk_probs[i])
+            else:
+                # Fallback calculation based on numeric evidence
+                high_risk_count = sum(1 for v in numeric_evidence.values() if v == 2)
+                medium_risk_count = sum(1 for v in numeric_evidence.values() if v == 1)
+                
+                if high_risk_count >= 3:
+                    risk_scores = {
+                        'no_withholding': 0.1,
+                        'potential_withholding': 0.2,
+                        'clear_withholding': 0.7,
+                    }
+                elif high_risk_count >= 1 or medium_risk_count >= 3:
+                    risk_scores = {
+                        'no_withholding': 0.5,
+                        'potential_withholding': 0.4,
+                        'clear_withholding': 0.1,
+                    }
+                else:
+                    risk_scores = {
+                        'no_withholding': 0.9,
+                        'potential_withholding': 0.08,
+                        'clear_withholding': 0.02,
+                    }
+            
+            # Return results in standard format
+            return {
+                'risk_score': risk_scores.get('clear_withholding', 0.0),
+                'overall_score': risk_scores.get('clear_withholding', 0.0),
+                'risk_probabilities': [
+                    risk_scores.get('no_withholding', 0.95),
+                    risk_scores.get('potential_withholding', 0.04),
+                    risk_scores.get('clear_withholding', 0.01)
+                ],
+                'esi_score': 0.8,  # Could calculate actual ESI
+                'evidence_used': numeric_evidence,
+                'model_type': 'economic_withholding',
+                'confidence': max(risk_scores.values())
+            }
+            
+        except Exception as e:
+            logger.error(f"Error in analyze_with_standard_evidence: {str(e)}")
+            return {
+                'risk_score': 0.0,
+                'overall_score': 0.0,
+                'risk_probabilities': [0.95, 0.04, 0.01],
+                'esi_score': 0.0,
+                'evidence_used': {},
+                'model_type': 'economic_withholding',
                 'error': str(e)
             }
 

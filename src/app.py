@@ -80,10 +80,20 @@ def analyze_trading_data():
             )
         spoofing_score = bayesian_engine.analyze_spoofing(processed_data)
 
+        # Check if economic withholding data is present and analyze if so
+        economic_withholding_score = None
+        if any(key in processed_data for key in ['plant_data', 'fuel_prices', 'offers']):
+            economic_withholding_score = bayesian_engine.analyze_economic_withholding(processed_data)
+
         # Generate overall risk assessment
-        overall_risk = risk_calculator.calculate_overall_risk(
-            insider_dealing_score, spoofing_score, processed_data
-        )
+        if economic_withholding_score:
+            overall_risk = risk_calculator.calculate_overall_risk(
+                insider_dealing_score, spoofing_score, processed_data, economic_withholding_score
+            )
+        else:
+            overall_risk = risk_calculator.calculate_overall_risk(
+                insider_dealing_score, spoofing_score, processed_data
+            )
 
         # Generate alerts if thresholds exceeded
         alerts = alert_generator.generate_alerts(
@@ -129,14 +139,21 @@ def analyze_trading_data():
                         f"Error generating regulatory rationale for alert {alert['id']}: {str(e)}"
                     )
 
+        # Build risk scores dictionary
+        risk_scores_dict = {
+            "insider_dealing": insider_dealing_score,
+            "spoofing": spoofing_score,
+            "overall_risk": overall_risk,
+        }
+        
+        # Add economic withholding if analyzed
+        if economic_withholding_score:
+            risk_scores_dict["economic_withholding"] = economic_withholding_score
+        
         response = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "analysis_id": f"analysis_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}",
-            "risk_scores": {
-                "insider_dealing": insider_dealing_score,
-                "spoofing": spoofing_score,
-                "overall_risk": overall_risk,
-            },
+            "risk_scores": risk_scores_dict,
             "alerts": alerts,
             "regulatory_rationales": (
                 regulatory_rationales if include_regulatory_rationale else []
