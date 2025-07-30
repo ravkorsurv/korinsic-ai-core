@@ -310,6 +310,38 @@ class WithholdingLatentIntentNode(LatentIntentNode):
         states = ["no_withholding_intent", "potential_withholding", "clear_withholding_intent"]
         super().__init__(name, description=description, fallback_prior=fallback_prior)
 
+    @staticmethod
+    def _normalize_evidence_value(value: Union[int, float], evidence_name: str) -> float:
+        """
+        Normalize evidence values to 0-1 scale for consistent intent strength calculation.
+        
+        Normalization ensures different evidence types with varying scales (percentages, ratios, scores)
+        can be fairly weighted in the final withholding intent calculation. This is critical for
+        accurate economic withholding detection as it prevents high-magnitude values from
+        dominating the risk assessment.
+        
+        Args:
+            value: Raw evidence value to normalize
+            evidence_name: Name of the evidence type for scale determination
+            
+        Returns:
+            Normalized value between 0.0 and 1.0
+        """
+        # Define normalization ranges for different evidence types
+        normalization_ranges = {
+            "marginal_cost_deviation": 100.0,  # Percentage deviation
+            "fuel_cost_variance": 50.0,        # Price variance percentage
+            "plant_efficiency": 1.0,           # Already normalized 0-1
+            "market_tightness": 1.0,           # Already normalized 0-1
+            "load_factor": 1.0,                # Already normalized 0-1
+            "bid_shape_anomaly": 10.0,         # Anomaly score
+            "capacity_utilization": 1.0,       # Already normalized 0-1
+            "profit_motivation": 1.0,          # Already normalized 0-1
+        }
+        
+        max_range = normalization_ranges.get(evidence_name, 100.0)
+        return min(max(value / max_range, 0.0), 1.0)
+
     def get_intent_strength(self, evidence_values: Dict[str, Any]) -> float:
         """
         Calculate withholding intent strength based on energy market evidence.
@@ -334,28 +366,11 @@ class WithholdingLatentIntentNode(LatentIntentNode):
             "profit_motivation": 0.05,            # Reused existing node
         }
 
-        def normalize_value(value: Union[int, float], evidence_name: str) -> float:
-            """Normalize evidence values to 0-1 scale based on expected ranges."""
-            # Define normalization ranges for different evidence types
-            normalization_ranges = {
-                "marginal_cost_deviation": 100.0,  # Percentage deviation
-                "fuel_cost_variance": 50.0,        # Price variance percentage
-                "plant_efficiency": 1.0,           # Already normalized 0-1
-                "market_tightness": 1.0,           # Already normalized 0-1
-                "load_factor": 1.0,                # Already normalized 0-1
-                "bid_shape_anomaly": 10.0,         # Anomaly score
-                "capacity_utilization": 1.0,       # Already normalized 0-1
-                "profit_motivation": 1.0,          # Already normalized 0-1
-            }
-            
-            max_range = normalization_ranges.get(evidence_name, 100.0)
-            return min(max(value / max_range, 0.0), 1.0)
-
         for evidence_name, weight in weights.items():
             if evidence_name in evidence_values:
                 evidence_value = evidence_values[evidence_name]
                 if isinstance(evidence_value, (int, float)):
-                    normalized_value = normalize_value(evidence_value, evidence_name)
+                    normalized_value = self._normalize_evidence_value(evidence_value, evidence_name)
                     strength += weight * normalized_value
 
         return min(strength, 1.0)

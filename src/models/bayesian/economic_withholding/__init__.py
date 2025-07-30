@@ -25,50 +25,34 @@ Version: 1.0.0
 """
 
 # Import modules with granular error handling
+import logging
+logger = logging.getLogger(__name__)
+
+# Define modules with their criticality
+MODULES_TO_IMPORT = {
+    'config': {'module': 'EconomicWithholdingConfig', 'critical': True},
+    'model': {'module': 'EconomicWithholdingModel', 'critical': True},
+    'nodes': {'module': 'EconomicWithholdingNodes', 'critical': False},
+    'scenario_engine': {'module': 'ScenarioSimulationEngine', 'critical': False},
+    'cost_curve_analyzer': {'module': 'CostCurveAnalyzer', 'critical': False},
+    'arera_compliance': {'module': 'ARERAComplianceEngine', 'critical': False},
+}
+
 modules = {}
 import_errors = []
+critical_failures = []
 
-try:
-    from .config import EconomicWithholdingConfig
-    modules['config'] = EconomicWithholdingConfig
-except ImportError as e:
-    modules['config'] = None
-    import_errors.append(f"config: {str(e)}")
-
-try:
-    from .model import EconomicWithholdingModel
-    modules['model'] = EconomicWithholdingModel
-except ImportError as e:
-    modules['model'] = None
-    import_errors.append(f"model: {str(e)}")
-
-try:
-    from .nodes import EconomicWithholdingNodes
-    modules['nodes'] = EconomicWithholdingNodes
-except ImportError as e:
-    modules['nodes'] = None
-    import_errors.append(f"nodes: {str(e)}")
-
-try:
-    from .scenario_engine import ScenarioSimulationEngine
-    modules['scenario_engine'] = ScenarioSimulationEngine
-except ImportError as e:
-    modules['scenario_engine'] = None
-    import_errors.append(f"scenario_engine: {str(e)}")
-
-try:
-    from .cost_curve_analyzer import CostCurveAnalyzer
-    modules['cost_curve_analyzer'] = CostCurveAnalyzer
-except ImportError as e:
-    modules['cost_curve_analyzer'] = None
-    import_errors.append(f"cost_curve_analyzer: {str(e)}")
-
-try:
-    from .arera_compliance import ARERAComplianceEngine
-    modules['arera_compliance'] = ARERAComplianceEngine
-except ImportError as e:
-    modules['arera_compliance'] = None
-    import_errors.append(f"arera_compliance: {str(e)}")
+for module_name, module_info in MODULES_TO_IMPORT.items():
+    try:
+        module = __import__(f'.{module_name}', fromlist=[module_info['module']], package=__name__)
+        modules[module_name] = getattr(module, module_info['module'])
+    except ImportError as e:
+        modules[module_name] = None
+        error_msg = f"{module_name}: {str(e)}"
+        import_errors.append(error_msg)
+        
+        if module_info['critical']:
+            critical_failures.append(error_msg)
 
 # Make successfully imported modules available
 EconomicWithholdingConfig = modules.get('config')
@@ -79,16 +63,12 @@ CostCurveAnalyzer = modules.get('cost_curve_analyzer')
 ARERAComplianceEngine = modules.get('arera_compliance')
 
 # Raise error only if critical modules failed to import
-critical_modules = ['config', 'model']
-critical_failures = [error for error in import_errors if any(critical in error for critical in critical_modules)]
-
 if critical_failures:
     raise ImportError(f"Failed to import critical economic withholding modules: {'; '.join(critical_failures)}")
 
-# Warn about non-critical import failures
+# Log non-critical import failures
 if import_errors and not critical_failures:
-    import warnings
-    warnings.warn(f"Some economic withholding modules could not be imported: {'; '.join(import_errors)}")
+    logger.warning(f"Some economic withholding modules could not be imported: {'; '.join(import_errors)}")
 
 __all__ = [
     "EconomicWithholdingModel", 

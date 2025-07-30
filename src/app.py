@@ -304,7 +304,10 @@ def analyze_economic_withholding():
         
         # Validate analysis results structure
         required_result_fields = ['risk_level', 'risk_score']
-        missing_result_fields = [field for field in required_result_fields if field not in analysis_results]
+        missing_result_fields = []
+        for field in required_result_fields:
+            if field not in analysis_results:
+                missing_result_fields.append(field)
         
         if missing_result_fields and "error" not in analysis_results:
             error_msg = f"Analysis results missing required fields: {', '.join(missing_result_fields)}"
@@ -329,8 +332,12 @@ def analyze_economic_withholding():
         
         # Process compliance report efficiently
         if compliance_report:
-            compliance_status = getattr(compliance_report, 'compliance_status', 'unknown')
-            violations = getattr(compliance_report, 'violations', [])
+            if isinstance(compliance_report, dict):
+                compliance_status = compliance_report.get('compliance_status', 'unknown')
+                violations = compliance_report.get('violations', [])
+            else:
+                compliance_status = getattr(compliance_report, 'compliance_status', 'unknown')
+                violations = getattr(compliance_report, 'violations', [])
             violations_count = len(violations)
         else:
             compliance_status = 'unknown'
@@ -387,12 +394,13 @@ def analyze_economic_withholding():
         
     except ValueError as e:
         logger.error(
-            f"Validation error in economic withholding analysis: {str(e)}. "
-            f"Invalid data: {data}"
+            f"Validation error in economic withholding analysis for plant {plant_data.get('unit_id', 'unknown')}: {str(e)}"
         )
         return jsonify({"error": f"Validation error: {str(e)}"}), 400
     except Exception as e:
-        logger.error(f"Error in economic withholding analysis: {str(e)}")
+        logger.error(
+            f"Error in economic withholding analysis for plant {plant_data.get('unit_id', 'unknown')}: {str(e)}"
+        )
         logger.error(f"Traceback: {traceback.format_exc()}")
         return jsonify({"error": "Internal server error"}), 500
 
