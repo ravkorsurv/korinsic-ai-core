@@ -1112,3 +1112,282 @@ class BayesianEngine:
                 ),
             },
         }
+
+    def calculate_economic_withholding_risk(
+        self, processed_data: Dict[str, Any], node_defs: Dict[str, Any] = None
+    ) -> Dict[str, Any]:
+        """
+        Calculate economic withholding risk score using specialized ARERA methodology.
+        
+        This method integrates counterfactual simulation, cost curve analysis,
+        and Bayesian inference to detect economic withholding in power markets.
+        
+        Args:
+            processed_data: Processed market and plant data
+            node_defs: Node definitions for fallback logic
+            
+        Returns:
+            Risk assessment results including ARERA compliance analysis
+        """
+        try:
+            # Import the economic withholding model
+            from ...models.bayesian.economic_withholding import EconomicWithholdingModel
+            
+            # Extract required data components
+            plant_data = processed_data.get('plant_data', {})
+            offers = processed_data.get('offers', [])
+            market_data = processed_data.get('market_data', {})
+            fuel_prices = processed_data.get('fuel_prices', {})
+            
+            # Validate required data
+            if not plant_data or not offers:
+                logger.warning("Insufficient data for economic withholding analysis")
+                return {
+                    'risk_level': 'unknown',
+                    'risk_score': 0.0,
+                    'error': 'Insufficient plant or offer data',
+                    'analysis_type': 'economic_withholding'
+                }
+            
+            # Initialize the economic withholding model
+            use_latent_intent = processed_data.get('use_latent_intent', False)
+            model_config = processed_data.get('model_config', {})
+            
+            ew_model = EconomicWithholdingModel(
+                use_latent_intent=use_latent_intent,
+                config=model_config
+            )
+            
+            # Perform comprehensive economic withholding analysis
+            logger.info("Starting economic withholding analysis...")
+            analysis_results = ew_model.analyze_economic_withholding(
+                plant_data=plant_data,
+                offers=offers,
+                market_data=market_data,
+                fuel_prices=fuel_prices
+            )
+            
+            # Extract key metrics for integration with existing risk framework
+            overall_assessment = analysis_results.get('overall_assessment', {})
+            bayesian_analysis = analysis_results.get('bayesian_analysis', {})
+            counterfactual_analysis = analysis_results.get('counterfactual_analysis', {})
+            compliance_report = analysis_results.get('arera_compliance_report')
+            
+            # Calculate unified risk score
+            overall_risk_score = overall_assessment.get('overall_risk_score', 0.0)
+            bayesian_confidence = bayesian_analysis.get('risk_scores', {}).get('confidence', 0.0)
+            
+            # Determine risk level
+            risk_level = overall_assessment.get('overall_risk_level', 'low')
+            
+            # Extract risk probabilities from Bayesian analysis
+            risk_probabilities = bayesian_analysis.get('risk_scores', {}).get('risk_probabilities', {
+                'no_withholding': 0.7,
+                'potential_withholding': 0.2,
+                'clear_withholding': 0.1
+            })
+            
+            # Calculate evidence sufficiency
+            esi_result = bayesian_analysis.get('evidence_sufficiency', {})
+            
+            # Compile risk factors for explainability
+            risk_factors = self._extract_economic_withholding_risk_factors(
+                counterfactual_analysis, bayesian_analysis, overall_assessment
+            )
+            
+            # Generate regulatory explainability
+            regulatory_rationale = self._generate_economic_withholding_rationale(
+                analysis_results, risk_level, overall_risk_score
+            )
+            
+            # Compile final risk assessment
+            risk_assessment = {
+                # Core risk metrics
+                'risk_level': risk_level,
+                'risk_score': overall_risk_score,
+                'confidence': bayesian_confidence,
+                'risk_probabilities': risk_probabilities,
+                
+                # Analysis components
+                'analysis_type': 'economic_withholding',
+                'methodology': 'arera_counterfactual_bayesian',
+                'counterfactual_analysis': counterfactual_analysis,
+                'bayesian_analysis': bayesian_analysis,
+                'compliance_report': compliance_report,
+                'overall_assessment': overall_assessment,
+                
+                # Evidence and explainability
+                'evidence_sufficiency': esi_result,
+                'risk_factors': risk_factors,
+                'regulatory_rationale': regulatory_rationale,
+                
+                # Metadata
+                'analysis_metadata': analysis_results.get('analysis_metadata', {}),
+                'input_summary': analysis_results.get('input_summary', {}),
+                
+                # Full analysis results for detailed review
+                'full_analysis_results': analysis_results
+            }
+            
+            logger.info(f"Economic withholding analysis completed - Risk Level: {risk_level}")
+            return risk_assessment
+            
+        except ImportError as e:
+            logger.error(f"Economic withholding model not available: {str(e)}")
+            return {
+                'risk_level': 'unknown',
+                'risk_score': 0.0,
+                'error': f'Economic withholding model not available: {str(e)}',
+                'analysis_type': 'economic_withholding'
+            }
+        except Exception as e:
+            logger.error(f"Error in economic withholding risk calculation: {str(e)}")
+            return {
+                'risk_level': 'unknown',
+                'risk_score': 0.0,
+                'error': str(e),
+                'analysis_type': 'economic_withholding'
+            }
+    
+    def _extract_economic_withholding_risk_factors(
+        self, 
+        counterfactual_analysis: Dict[str, Any],
+        bayesian_analysis: Dict[str, Any],
+        overall_assessment: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        """
+        Extract key risk factors for economic withholding explainability.
+        
+        Args:
+            counterfactual_analysis: Counterfactual simulation results
+            bayesian_analysis: Bayesian inference results
+            overall_assessment: Overall risk assessment
+            
+        Returns:
+            List of risk factor dictionaries
+        """
+        risk_factors = []
+        
+        try:
+            # Extract counterfactual risk factors
+            risk_indicators = counterfactual_analysis.get('risk_indicators', {})
+            if risk_indicators.get('overall_risk_score', 0) > 0.6:
+                risk_factors.append({
+                    'factor': 'Excessive Markup',
+                    'impact': 'high',
+                    'value': risk_indicators.get('markup_risk_score', 0),
+                    'description': 'Offers significantly exceed cost-based benchmarks',
+                    'source': 'counterfactual_analysis'
+                })
+            
+            # Extract statistical significance factors
+            stat_analysis = counterfactual_analysis.get('statistical_analysis', {})
+            hypothesis_tests = stat_analysis.get('hypothesis_test_results', {})
+            if hypothesis_tests.get('t_test_vs_zero', {}).get('significant_at_05', False):
+                risk_factors.append({
+                    'factor': 'Statistical Significance',
+                    'impact': 'high',
+                    'value': 1 - hypothesis_tests.get('t_test_vs_zero', {}).get('p_value', 1),
+                    'description': 'Markup patterns are statistically significant',
+                    'source': 'statistical_analysis'
+                })
+            
+            # Extract Bayesian evidence factors
+            evidence = bayesian_analysis.get('evidence', {})
+            for node_name, node_value in evidence.items():
+                if node_name in ['marginal_cost_deviation', 'fuel_cost_variance', 'plant_efficiency']:
+                    if node_value in ['excessive_markup', 'high_variance', 'significantly_impaired']:
+                        risk_factors.append({
+                            'factor': node_name.replace('_', ' ').title(),
+                            'impact': 'medium',
+                            'value': node_value,
+                            'description': f'{node_name} indicates potential withholding',
+                            'source': 'bayesian_evidence'
+                        })
+            
+            # Extract key findings
+            key_findings = overall_assessment.get('key_findings', [])
+            for finding in key_findings:
+                risk_factors.append({
+                    'factor': 'Regulatory Finding',
+                    'impact': 'high',
+                    'value': finding,
+                    'description': finding,
+                    'source': 'arera_compliance'
+                })
+                
+        except Exception as e:
+            logger.warning(f"Error extracting risk factors: {str(e)}")
+        
+        return risk_factors
+    
+    def _generate_economic_withholding_rationale(
+        self,
+        analysis_results: Dict[str, Any],
+        risk_level: str,
+        risk_score: float
+    ) -> Dict[str, Any]:
+        """
+        Generate regulatory rationale for economic withholding assessment.
+        
+        Args:
+            analysis_results: Complete analysis results
+            risk_level: Overall risk level
+            risk_score: Overall risk score
+            
+        Returns:
+            Regulatory rationale dictionary
+        """
+        try:
+            overall_assessment = analysis_results.get('overall_assessment', {})
+            compliance_report = analysis_results.get('arera_compliance_report')
+            
+            # Generate narrative based on risk level
+            if risk_level == 'high':
+                narrative = (
+                    "High risk of economic withholding detected. "
+                    "Plant offers significantly exceed cost-based benchmarks with statistical significance. "
+                    "ARERA compliance violations identified requiring immediate investigation."
+                )
+            elif risk_level == 'medium':
+                narrative = (
+                    "Moderate risk of economic withholding detected. "
+                    "Some offer patterns deviate from cost-based expectations. "
+                    "Further analysis recommended to confirm potential withholding behavior."
+                )
+            else:
+                narrative = (
+                    "Low risk of economic withholding detected. "
+                    "Plant offers generally align with cost-based expectations. "
+                    "Continue routine monitoring."
+                )
+            
+            # Extract compliance status
+            compliance_status = 'unknown'
+            violation_count = 0
+            if hasattr(compliance_report, 'compliance_status'):
+                compliance_status = compliance_report.compliance_status
+            if hasattr(compliance_report, 'violations'):
+                violation_count = len(compliance_report.violations)
+            
+            return {
+                'narrative': narrative,
+                'risk_level': risk_level,
+                'risk_score': risk_score,
+                'compliance_status': compliance_status,
+                'violation_count': violation_count,
+                'methodology': 'ARERA counterfactual simulation with Bayesian inference',
+                'regulatory_framework': 'ARERA Resolution 111/06 and subsequent amendments',
+                'recommendation': overall_assessment.get('recommendation', 'Continue monitoring'),
+                'next_steps': overall_assessment.get('next_steps', []),
+                'key_findings': overall_assessment.get('key_findings', [])
+            }
+            
+        except Exception as e:
+            logger.warning(f"Error generating regulatory rationale: {str(e)}")
+            return {
+                'narrative': f'Economic withholding analysis completed with {risk_level} risk level',
+                'risk_level': risk_level,
+                'risk_score': risk_score,
+                'error': str(e)
+            }

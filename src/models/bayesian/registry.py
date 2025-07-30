@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional, Type
 from .circular_trading import CircularTradingModel
 from .commodity_manipulation import CommodityManipulationModel
 from .cross_desk_collusion import CrossDeskCollusionModel
+from .economic_withholding import EconomicWithholdingModel
 from .insider_dealing import InsiderDealingModel
 from .latent_intent import LatentIntentModel
 from .market_cornering import MarketCorneringModel
@@ -39,6 +40,7 @@ class BayesianModelRegistry:
             "market_cornering": MarketCorneringModel,
             "cross_desk_collusion": CrossDeskCollusionModel,
             "wash_trade_detection": WashTradeDetectionModel,
+            "economic_withholding": EconomicWithholdingModel,
         }
 
         self.model_instances = {}

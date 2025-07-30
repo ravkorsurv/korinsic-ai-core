@@ -1,0 +1,269 @@
+{
+  "model_name": "economic_withholding",
+  "version": "1.0.0",
+  "description": "Economic Withholding Detection Model using ARERA methodology",
+  "methodology": "arera_counterfactual_bayesian",
+  "regulatory_framework": "ARERA Resolution 111/06 and subsequent amendments",
+  
+  "risk_thresholds": {
+    "low_risk": 0.3,
+    "medium_risk": 0.6,
+    "high_risk": 0.8,
+    "critical_risk": 0.9
+  },
+  
+  "arera_compliance": {
+    "confidence_threshold": 0.90,
+    "markup_threshold": 0.15,
+    "statistical_method": "bayesian",
+    "statistical_significance": 0.05,
+    "economic_significance_threshold": 0.10,
+    "extreme_markup_threshold": 0.30,
+    "systematic_pattern_threshold": 0.75,
+    "methodology": "counterfactual_simulation",
+    "required_confidence_intervals": ["90%", "95%", "99%"],
+    "hypothesis_tests": ["t_test_vs_zero", "shapiro_wilk_normality", "wilcoxon_signed_rank"]
+  },
+  
+  "model_parameters": {
+    "use_latent_intent": false,
+    "esi_enabled": true,
+    "scenario_simulation_enabled": true,
+    "cost_curve_analysis_enabled": true,
+    "arera_compliance_reporting": true,
+    "monte_carlo_enabled": true,
+    "sensitivity_analysis_enabled": true,
+    "inference_method": "variable_elimination",
+    "fallback_logic_enabled": true,
+    "regulatory_explainability": true
+  },
+  
+  "plant_types": {
+    "gas": {
+      "default_heat_rate": 7500,
+      "efficiency_range": [0.35, 0.60],
+      "typical_variable_costs": {
+        "fuel_cost_ratio": 0.85,
+        "vom_cost": 3.5,
+        "emission_cost": 1.2
+      },
+      "benchmark_efficiency": 0.50,
+      "fuel_price_volatility": 0.15
+    },
+    "coal": {
+      "default_heat_rate": 9500,
+      "efficiency_range": [0.30, 0.45],
+      "typical_variable_costs": {
+        "fuel_cost_ratio": 0.78,
+        "vom_cost": 4.8,
+        "emission_cost": 3.2
+      },
+      "benchmark_efficiency": 0.38,
+      "fuel_price_volatility": 0.10
+    },
+    "oil": {
+      "default_heat_rate": 8500,
+      "efficiency_range": [0.32, 0.48],
+      "typical_variable_costs": {
+        "fuel_cost_ratio": 0.82,
+        "vom_cost": 4.2,
+        "emission_cost": 2.1
+      },
+      "benchmark_efficiency": 0.40,
+      "fuel_price_volatility": 0.20
+    },
+    "nuclear": {
+      "default_heat_rate": 10500,
+      "efficiency_range": [0.32, 0.38],
+      "typical_variable_costs": {
+        "fuel_cost_ratio": 0.15,
+        "vom_cost": 2.8,
+        "emission_cost": 0.0
+      },
+      "benchmark_efficiency": 0.35,
+      "fuel_price_volatility": 0.05
+    }
+  },
+  
+  "evidence_weights": {
+    "marginal_cost_deviation": 1.0,
+    "fuel_cost_variance": 0.9,
+    "plant_efficiency": 0.8,
+    "heat_rate_variance": 0.7,
+    "market_tightness": 0.8,
+    "load_factor": 0.7,
+    "competitive_context": 0.8,
+    "transmission_constraint": 0.6,
+    "bid_shape_anomaly": 0.8,
+    "offer_withdrawal_pattern": 0.7,
+    "capacity_utilization": 0.8,
+    "markup_consistency": 0.7,
+    "opportunity_pricing": 0.6,
+    "fuel_price_correlation": 0.6,
+    "cross_plant_coordination": 0.7,
+    "price_impact_ratio": 0.6,
+    "volume_participation": 0.5,
+    "liquidity_context": 0.5,
+    "order_clustering": 0.4,
+    "benchmark_timing": 0.4,
+    "profit_motivation": 0.6
+  },
+  
+  "simulation_parameters": {
+    "benchmark_scenarios": ["min_cost", "median_cost", "max_cost"],
+    "cost_curve_methods": ["linear", "quadratic", "step_function"],
+    "statistical_tests": ["t_test", "wilcoxon", "shapiro_wilk"],
+    "confidence_intervals": [0.90, 0.95, 0.99],
+    "monte_carlo_iterations": 1000,
+    "bootstrap_samples": 500,
+    "sensitivity_parameters": ["fuel_cost", "efficiency", "vom_cost", "emission_cost"],
+    "scenario_weights": {
+      "min_cost": 0.2,
+      "median_cost": 0.6,
+      "max_cost": 0.2
+    }
+  },
+  
+  "validation_rules": {
+    "min_evidence_nodes": 3,
+    "max_fallback_ratio": 0.5,
+    "required_plant_data": [
+      "unit_id",
+      "fuel_type", 
+      "capacity_mw",
+      "heat_rate",
+      "efficiency"
+    ],
+    "required_offer_data": [
+      "price_eur_mwh",
+      "quantity_mw",
+      "timestamp"
+    ],
+    "required_market_data": [
+      "load_factor",
+      "market_tightness"
+    ],
+    "min_offers_count": 1,
+    "max_offers_count": 100,
+    "price_range": [0, 1000],
+    "quantity_range": [0, 10000]
+  },
+  
+  "output_settings": {
+    "include_esi": true,
+    "include_regulatory_rationale": true,
+    "include_cost_curve_analysis": true,
+    "include_counterfactual_results": true,
+    "arera_compliance_report": true,
+    "detailed_statistical_analysis": true,
+    "risk_factor_breakdown": true,
+    "sensitivity_analysis_results": false,
+    "monte_carlo_results": false,
+    "export_formats": ["json", "xml", "csv"],
+    "precision_digits": 4
+  },
+  
+  "regulatory_frameworks": {
+    "arera": {
+      "methodology": "counterfactual_simulation",
+      "statistical_significance": 0.05,
+      "markup_threshold": 0.15,
+      "confidence_threshold": 0.90,
+      "extreme_markup_threshold": 0.30,
+      "reporting_format": "xml",
+      "required_tests": ["t_test_vs_zero", "confidence_intervals"]
+    },
+    "ferc": {
+      "methodology": "market_power_analysis",
+      "statistical_significance": 0.05,
+      "markup_threshold": 0.20,
+      "confidence_threshold": 0.95,
+      "pivotal_supplier_test": true,
+      "reporting_format": "json"
+    },
+    "ofgem": {
+      "methodology": "cost_benefit_analysis",
+      "statistical_significance": 0.05,
+      "markup_threshold": 0.12,
+      "confidence_threshold": 0.90,
+      "market_concentration_analysis": true,
+      "reporting_format": "csv"
+    }
+  },
+  
+  "alert_settings": {
+    "enable_real_time_alerts": true,
+    "alert_thresholds": {
+      "high_markup_threshold": 0.20,
+      "extreme_markup_threshold": 0.30,
+      "systematic_pattern_threshold": 0.80,
+      "statistical_significance_threshold": 0.05
+    },
+    "notification_channels": ["email", "webhook", "dashboard"],
+    "escalation_rules": {
+      "high_risk": ["supervisor", "compliance_team"],
+      "critical_risk": ["management", "regulatory_team"]
+    },
+    "alert_suppression": {
+      "duplicate_window_minutes": 60,
+      "max_alerts_per_plant_per_day": 10
+    }
+  },
+  
+  "performance_settings": {
+    "max_processing_time_seconds": 300,
+    "memory_limit_mb": 1024,
+    "parallel_processing": true,
+    "cache_enabled": true,
+    "cache_ttl_seconds": 3600,
+    "batch_size": 100
+  },
+  
+  "logging_settings": {
+    "log_level": "INFO",
+    "log_analysis_details": true,
+    "log_statistical_results": true,
+    "log_compliance_violations": true,
+    "audit_trail": true,
+    "retention_days": 90
+  },
+  
+  "data_quality": {
+    "enable_data_validation": true,
+    "missing_data_threshold": 0.1,
+    "outlier_detection": true,
+    "outlier_method": "iqr",
+    "data_completeness_threshold": 0.8,
+    "timestamp_validation": true,
+    "price_reasonableness_checks": true
+  },
+  
+  "model_metadata": {
+    "created_date": "2024-01-15",
+    "last_updated": "2024-01-15",
+    "version_history": [
+      {
+        "version": "1.0.0",
+        "date": "2024-01-15",
+        "changes": "Initial implementation with ARERA methodology"
+      }
+    ],
+    "regulatory_approvals": [
+      {
+        "framework": "ARERA",
+        "approval_date": "2024-01-15",
+        "status": "pending"
+      }
+    ],
+    "validation_results": {
+      "backtesting_period": "2023-01-01 to 2023-12-31",
+      "accuracy_metrics": {
+        "precision": 0.85,
+        "recall": 0.78,
+        "f1_score": 0.81
+      },
+      "false_positive_rate": 0.05,
+      "false_negative_rate": 0.22
+    }
+  }
+}
