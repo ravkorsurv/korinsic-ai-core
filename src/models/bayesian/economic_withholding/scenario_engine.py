@@ -114,7 +114,7 @@ class ScenarioSimulationEngine:
             
         except Exception as e:
             logger.error(f"Error generating benchmark offers: {str(e)}")
-            return []
+            return {'error': str(e), 'benchmark_offers': []}
 
     def _calculate_marginal_cost(
         self, 
@@ -296,8 +296,9 @@ class ScenarioSimulationEngine:
                 markup_ratio = (actual_price - benchmark_price) / benchmark_price
                 markup_absolute = actual_price - benchmark_price
             else:
-                markup_ratio = 0.0
-                markup_absolute = 0.0
+                # Flag potential issue when benchmark price is 0 but actual price is significant
+                markup_ratio = float('inf') if actual_price > 0 else 0.0
+                markup_absolute = actual_price  # Full price difference when benchmark is 0
             
             deviation = {
                 'actual_price': actual_price,
@@ -414,13 +415,19 @@ class ScenarioSimulationEngine:
                 
                 # Calculate confidence intervals
                 for confidence in self.confidence_intervals:
-                    alpha = 1 - confidence
-                    ci = stats.t.interval(
-                        confidence, 
-                        len(all_markups) - 1,
-                        loc=np.mean(all_markups),
-                        scale=stats.sem(all_markups)
-                    )
+                    MIN_SAMPLE_SIZE = 30  # Minimum sample size for t-distribution validity
+                    
+                    if len(all_markups) >= MIN_SAMPLE_SIZE:
+                        alpha = 1 - confidence
+                        ci = stats.t.interval(
+                            confidence, 
+                            len(all_markups) - 1,
+                            loc=np.mean(all_markups),
+                            scale=stats.sem(all_markups)
+                        )
+                    else:
+                        logger.warning(f'Sample size {len(all_markups)} is too small for reliable t-distribution inference')
+                        ci = (float('nan'), float('nan'))  # Mark as invalid for small samples
                     analysis['confidence_intervals'][f'{int(confidence*100)}%'] = {
                         'lower': ci[0],
                         'upper': ci[1],

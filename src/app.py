@@ -302,6 +302,18 @@ def analyze_economic_withholding():
         # Perform economic withholding analysis using Bayesian engine
         analysis_results = bayesian_engine.calculate_economic_withholding_risk(processed_data)
         
+        # Validate analysis results structure
+        required_result_fields = ['risk_level', 'risk_score']
+        missing_result_fields = [field for field in required_result_fields if field not in analysis_results]
+        
+        if missing_result_fields and "error" not in analysis_results:
+            error_msg = f"Analysis results missing required fields: {', '.join(missing_result_fields)}"
+            logger.error(error_msg)
+            return jsonify({
+                "error": "Invalid analysis results",
+                "details": error_msg
+            }), 500
+        
         # Check for analysis errors
         if "error" in analysis_results:
             logger.error(f"Economic withholding analysis failed: {analysis_results['error']}")
@@ -314,6 +326,15 @@ def analyze_economic_withholding():
         risk_level = analysis_results.get("risk_level", "unknown")
         risk_score = analysis_results.get("risk_score", 0.0)
         compliance_report = analysis_results.get("compliance_report")
+        
+        # Process compliance report efficiently
+        if compliance_report:
+            compliance_status = getattr(compliance_report, 'compliance_status', 'unknown')
+            violations = getattr(compliance_report, 'violations', [])
+            violations_count = len(violations)
+        else:
+            compliance_status = 'unknown'
+            violations_count = 0
         
         # Generate alerts if high risk detected
         alerts = []
@@ -348,8 +369,8 @@ def analyze_economic_withholding():
                 "risk_probabilities": analysis_results.get("risk_probabilities", {})
             },
             "counterfactual_analysis": analysis_results.get("counterfactual_analysis", {}),
-            "compliance_status": getattr(compliance_report, 'compliance_status', 'unknown') if compliance_report else 'unknown',
-            "violations_count": len(getattr(compliance_report, 'violations', [])) if compliance_report else 0,
+            "compliance_status": compliance_status,
+            "violations_count": violations_count,
             "regulatory_rationale": analysis_results.get("regulatory_rationale", {}),
             "alerts": alerts,
             "evidence_sufficiency": analysis_results.get("evidence_sufficiency", {}),
@@ -365,7 +386,10 @@ def analyze_economic_withholding():
         return jsonify(response)
         
     except ValueError as e:
-        logger.error(f"Validation error in economic withholding analysis: {str(e)}")
+        logger.error(
+            f"Validation error in economic withholding analysis: {str(e)}. "
+            f"Invalid data: {data}"
+        )
         return jsonify({"error": f"Validation error: {str(e)}"}), 400
     except Exception as e:
         logger.error(f"Error in economic withholding analysis: {str(e)}")

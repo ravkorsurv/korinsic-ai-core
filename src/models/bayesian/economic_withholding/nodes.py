@@ -5,7 +5,7 @@ This module contains node definitions and helpers specific to the
 economic withholding detection model for power markets.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from ....core.node_library import (
     BayesianNode,
@@ -321,7 +321,7 @@ class WithholdingLatentIntentNode(LatentIntentNode):
             Intent strength score between 0.0 and 1.0
         """
         strength = 0.0
-        
+
         # Energy market specific weights based on ARERA methodology
         weights = {
             "marginal_cost_deviation": 0.25,      # Highest weight - core indicator
@@ -333,13 +333,31 @@ class WithholdingLatentIntentNode(LatentIntentNode):
             "capacity_utilization": 0.10,         # Physical withholding
             "profit_motivation": 0.05,            # Reused existing node
         }
-        
+
+        def normalize_value(value: Union[int, float], evidence_name: str) -> float:
+            """Normalize evidence values to 0-1 scale based on expected ranges."""
+            # Define normalization ranges for different evidence types
+            normalization_ranges = {
+                "marginal_cost_deviation": 100.0,  # Percentage deviation
+                "fuel_cost_variance": 50.0,        # Price variance percentage
+                "plant_efficiency": 1.0,           # Already normalized 0-1
+                "market_tightness": 1.0,           # Already normalized 0-1
+                "load_factor": 1.0,                # Already normalized 0-1
+                "bid_shape_anomaly": 10.0,         # Anomaly score
+                "capacity_utilization": 1.0,       # Already normalized 0-1
+                "profit_motivation": 1.0,          # Already normalized 0-1
+            }
+            
+            max_range = normalization_ranges.get(evidence_name, 100.0)
+            return min(max(value / max_range, 0.0), 1.0)
+
         for evidence_name, weight in weights.items():
             if evidence_name in evidence_values:
                 evidence_value = evidence_values[evidence_name]
                 if isinstance(evidence_value, (int, float)):
-                    strength += weight * evidence_value
-        
+                    normalized_value = normalize_value(evidence_value, evidence_name)
+                    strength += weight * normalized_value
+
         return min(strength, 1.0)
 
 
