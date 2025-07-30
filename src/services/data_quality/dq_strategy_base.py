@@ -38,7 +38,11 @@ class DQSIOutput:
     dqsi_kde_weights: Dict[str, int]  # KDE risk weights
     dqsi_confidence_note: str
     kde_results: List[KDEResult] = field(default_factory=list)
-    timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
+    timestamp: str = field(init=False)
+    
+    def __post_init__(self):
+        """Set timestamp to avoid timestamp drift"""
+        self.timestamp = datetime.now().isoformat()
 
 
 @dataclass
