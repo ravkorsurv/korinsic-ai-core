@@ -31,6 +31,7 @@ from .entity_resolution import EntityResolutionService
 from .person_evidence_aggregator import PersonEvidenceAggregator
 from .person_centric_nodes import PersonRiskNode
 from .cross_typology_engine import CrossTypologyEngine
+from .regulatory_explainability import RegulatoryExplainabilityEngine
 
 logger = logging.getLogger(__name__)
 
@@ -44,11 +45,16 @@ class PersonCentricAlertGenerator:
         self,
         entity_resolution_service: EntityResolutionService,
         evidence_aggregator: PersonEvidenceAggregator,
-        cross_typology_engine: CrossTypologyEngine
+        cross_typology_engine: CrossTypologyEngine,
+        config: Optional[Dict[str, Any]] = None
     ):
         self.entity_resolution = entity_resolution_service
         self.evidence_aggregator = evidence_aggregator
         self.cross_typology_engine = cross_typology_engine
+        self.config = config or {}
+        
+        # Initialize enhanced explainability engine
+        self.explainability_engine = RegulatoryExplainabilityEngine(self.config)
         
         # Alert configuration
         self.alert_thresholds = {
@@ -193,6 +199,112 @@ class PersonCentricAlertGenerator:
         except Exception as e:
             logger.error(f"Error generating person alert for {person_id}: {str(e)}")
             return None
+    
+    def generate_enhanced_explanation(
+        self,
+        alert: PersonCentricAlert,
+        person_profile: PersonRiskProfile,
+        evidence_data: Dict[str, Any],
+        cross_typology_signals: List[CrossTypologySignal]
+    ) -> Dict[str, Any]:
+        """
+        Generate comprehensive regulatory explanation for the alert
+        """
+        try:
+            logger.info(f"Generating enhanced explanation for alert {alert.alert_id}")
+            
+            # Generate comprehensive regulatory explanation
+            regulatory_explanation = self.explainability_engine.generate_comprehensive_explanation(
+                alert=alert,
+                person_profile=person_profile,
+                evidence_data=evidence_data,
+                cross_typology_signals=cross_typology_signals
+            )
+            
+            # Convert to audit-ready format
+            audit_report = regulatory_explanation.to_audit_report()
+            
+            # Add additional metadata
+            enhanced_explanation = {
+                "alert_id": alert.alert_id,
+                "person_id": alert.person_id,
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "explanation_version": "2.0",
+                "regulatory_explanation": regulatory_explanation,
+                "audit_report": audit_report,
+                "explainability_metadata": {
+                    "total_evidence_items": sum(
+                        len(account_evidence.evidence_items) 
+                        for account_evidence in regulatory_explanation.account_evidence.values()
+                    ),
+                    "cross_account_patterns": len(regulatory_explanation.cross_account_patterns),
+                    "applicable_frameworks": list(regulatory_explanation.applicable_frameworks.keys()),
+                    "stor_eligible": regulatory_explanation.stor_assessment.get("eligible", False),
+                    "confidence_score": alert.confidence_score,
+                    "explanation_completeness": self._assess_explanation_completeness(regulatory_explanation)
+                }
+            }
+            
+            logger.info(f"Enhanced explanation generated successfully for alert {alert.alert_id}")
+            return enhanced_explanation
+            
+        except Exception as e:
+            logger.error(f"Error generating enhanced explanation for alert {alert.alert_id}: {str(e)}")
+            return {
+                "alert_id": alert.alert_id,
+                "error": f"Failed to generate enhanced explanation: {str(e)}",
+                "fallback_explanation": self._generate_fallback_explanation(alert, evidence_data)
+            }
+    
+    def _assess_explanation_completeness(self, regulatory_explanation) -> float:
+        """Assess the completeness of the regulatory explanation"""
+        completeness_factors = []
+        
+        # Evidence coverage
+        if regulatory_explanation.account_evidence:
+            completeness_factors.append(0.3)
+        
+        # Cross-account patterns identified
+        if regulatory_explanation.cross_account_patterns:
+            completeness_factors.append(0.2)
+        
+        # Temporal analysis available
+        if regulatory_explanation.temporal_analysis and not regulatory_explanation.temporal_analysis.get("error"):
+            completeness_factors.append(0.2)
+        
+        # Regulatory frameworks mapped
+        if regulatory_explanation.applicable_frameworks:
+            completeness_factors.append(0.15)
+        
+        # STOR assessment completed
+        if regulatory_explanation.stor_assessment:
+            completeness_factors.append(0.1)
+        
+        # Model interpretability provided
+        if regulatory_explanation.model_interpretability:
+            completeness_factors.append(0.05)
+        
+        return sum(completeness_factors)
+    
+    def _generate_fallback_explanation(self, alert: PersonCentricAlert, evidence_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate a basic fallback explanation when comprehensive explanation fails"""
+        return {
+            "type": "fallback_explanation",
+            "alert_summary": {
+                "person_id": alert.person_id,
+                "person_name": alert.person_name,
+                "risk_typology": alert.risk_typology.value,
+                "probability_score": alert.probability_score,
+                "severity": alert.severity.value,
+                "involved_accounts": alert.involved_accounts
+            },
+            "basic_rationale": f"Person {alert.person_name} flagged for {alert.risk_typology.value} with {alert.probability_score:.1%} probability based on cross-account analysis.",
+            "evidence_summary": {
+                "accounts_analyzed": len(alert.involved_accounts),
+                "evidence_sources": list(evidence_data.keys()) if evidence_data else [],
+                "recommendation": "Manual review required due to explanation generation failure"
+            }
+        }
     
     def _calculate_base_risk_probability(
         self,

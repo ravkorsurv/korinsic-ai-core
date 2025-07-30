@@ -1,441 +1,439 @@
 """
-Comprehensive test configuration and fixtures for Korinsic Surveillance Platform.
+Pytest Configuration and Shared Fixtures
 
-This module provides shared fixtures, utilities, and test configuration across
-all test types (unit, integration, e2e, performance).
+This module provides shared test fixtures, configuration, and utilities
+for the person-centric surveillance test suite.
 """
 
 import pytest
-import sys
-import os
 import json
 import tempfile
-import shutil
-from pathlib import Path
-from datetime import datetime, timedelta
-from typing import Dict, Any, List, Optional
-from unittest.mock import Mock, MagicMock
+import os
+from datetime import datetime, timezone, timedelta
+from typing import Dict, List, Any, Optional
+from unittest.mock import Mock, patch
 
-# Add src directory to Python path for imports
-src_path = Path(__file__).parent.parent / "src"
-sys.path.insert(0, str(src_path))
+# Import test data factory
+from tests.test_person_centric_surveillance import TestDataFactory
 
-# Import core modules for fixtures
-try:
-    from utils.config import Config
-    from utils.logger import setup_logger
-    from core.data_processor import DataProcessor
-    from core.bayesian_engine import BayesianEngine
-    from core.alert_generator import AlertGenerator
-    from core.risk_calculator import RiskCalculator
-except ImportError as e:
-    # Allow fixtures to be loaded even if dependencies are missing
-    print(f"Warning: Some imports failed in conftest.py: {e}")
 
-import pytest
-from tests.e2e.test_e2e_enhanced import E2ETestFramework
-
-@pytest.fixture(scope="function")
-def framework():
-    return E2ETestFramework()
-
-# Test configuration
 @pytest.fixture(scope="session")
 def test_config():
-    """Session-wide test configuration."""
-    return {
-        "test_data_dir": Path(__file__).parent / "fixtures",
-        "log_level": "CRITICAL",  # Minimize logging during tests
-        "timeout": 30,
-        "max_retries": 3,
-        "test_environment": "testing"
-    }
+    """Provide test configuration for all tests"""
+    return TestDataFactory.create_test_config()
+
 
 @pytest.fixture(scope="session")
-def app_config():
-    """Application configuration for testing."""
-    return Config(environment='testing')
+def temp_config_file(test_config):
+    """Create a temporary configuration file for testing"""
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        json.dump(test_config, f, indent=2)
+        config_file_path = f.name
+    
+    yield config_file_path
+    
+    # Cleanup
+    if os.path.exists(config_file_path):
+        os.unlink(config_file_path)
 
-@pytest.fixture(scope="session")
-def test_logger(app_config):
-    """Test logger with minimal output."""
-    return setup_logger('test-logger', config=app_config.get_logging_config())
 
-@pytest.fixture(scope="function")
-def temp_dir():
-    """Temporary directory for test files."""
-    temp_dir = tempfile.mkdtemp(prefix="kor_ai_test_")
-    yield Path(temp_dir)
-    shutil.rmtree(temp_dir)
-
-@pytest.fixture(scope="function")
-def mock_data_processor():
-    """Mock data processor for unit tests."""
-    mock = Mock(spec=DataProcessor)
-    mock.process.return_value = {
-        "trades": [],
-        "orders": [],
-        "trader_info": {},
-        "material_events": [],
-        "market_data": {},
-        "timeframe": "intraday",
-        "instruments": []
-    }
-    return mock
-
-@pytest.fixture(scope="function")
-def mock_bayesian_engine():
-    """Mock Bayesian engine for unit tests."""
-    mock = Mock(spec=BayesianEngine)
-    mock.analyze_insider_dealing.return_value = {
-        "overall_score": 0.5,
-        "risk_level": "MEDIUM",
-        "evidence_factors": {},
-        "model_type": "standard"
-    }
-    mock.analyze_spoofing.return_value = {
-        "overall_score": 0.3,
-        "risk_level": "LOW",
-        "evidence_factors": {},
-        "model_type": "standard"
-    }
-    return mock
-
-@pytest.fixture(scope="function")
-def mock_alert_generator():
-    """Mock alert generator for unit tests."""
-    mock = Mock(spec=AlertGenerator)
-    mock.generate_alerts.return_value = []
-    return mock
-
-# Sample data fixtures
-@pytest.fixture(scope="session")
-def sample_trader_info():
-    """Sample trader information."""
-    return {
-        "id": "trader_001",
-        "name": "John Doe",
-        "role": "senior_trader",
-        "access_level": "medium",
-        "department": "equity_trading",
-        "hire_date": "2020-01-15",
-        "clearance_level": "standard"
-    }
-
-@pytest.fixture(scope="session")
-def sample_executive_trader():
-    """Sample executive trader with high access."""
-    return {
-        "id": "exec_001",
-        "name": "Jane Smith",
-        "role": "executive",
-        "access_level": "high",
-        "department": "management",
-        "hire_date": "2015-03-01",
-        "clearance_level": "executive"
-    }
-
-@pytest.fixture(scope="session")
+@pytest.fixture
 def sample_trade_data():
-    """Sample trade data for testing."""
-    return {
-        "trades": [
-            {
-                "id": "trade_001",
-                "timestamp": "2024-01-15T10:30:00Z",
-                "instrument": "ENERGY_CORP",
-                "volume": 100000,
-                "price": 50.25,
-                "side": "buy",
-                "trader_id": "trader_001",
-                "execution_venue": "NYSE",
-                "order_type": "market"
-            },
-            {
-                "id": "trade_002",
-                "timestamp": "2024-01-15T11:45:00Z",
-                "instrument": "ENERGY_CORP",
-                "volume": 75000,
-                "price": 50.45,
-                "side": "sell",
-                "trader_id": "trader_001",
-                "execution_venue": "NYSE",
-                "order_type": "limit"
-            }
-        ]
-    }
+    """Provide sample trade data for testing"""
+    return [
+        TestDataFactory.create_sample_trade_data(
+            trader_id=f"TRADER00{i}",
+            timestamp=datetime.now(timezone.utc) - timedelta(hours=i),
+            quantity=1000 * (i + 1),
+            price=100 + i * 2
+        )
+        for i in range(5)
+    ]
 
-@pytest.fixture(scope="session")
-def sample_order_data():
-    """Sample order data for testing."""
-    return {
-        "orders": [
-            {
-                "id": "order_001",
-                "timestamp": "2024-01-15T10:25:00Z",
-                "instrument": "ENERGY_CORP",
-                "volume": 100000,
-                "price": 50.20,
-                "side": "buy",
-                "status": "filled",
-                "trader_id": "trader_001",
-                "order_type": "market"
-            },
-            {
-                "id": "order_002",
-                "timestamp": "2024-01-15T10:26:00Z",
-                "instrument": "ENERGY_CORP",
-                "volume": 50000,
-                "price": 50.50,
-                "side": "buy",
-                "status": "cancelled",
-                "trader_id": "trader_001",
-                "order_type": "limit"
-            }
-        ]
-    }
 
-@pytest.fixture(scope="session")
-def sample_material_events():
-    """Sample material events for testing."""
+@pytest.fixture
+def sample_person_profile():
+    """Provide sample person profile for testing"""
+    return TestDataFactory.create_sample_person_profile()
+
+
+@pytest.fixture
+def sample_communication_data():
+    """Provide sample communication data for testing"""
     return [
         {
-            "id": "event_001",
-            "timestamp": "2024-01-16T09:00:00Z",
-            "type": "earnings_announcement",
-            "description": "Q4 earnings announcement",
-            "instruments_affected": ["ENERGY_CORP"],
-            "expected_impact": 0.08,
-            "materiality_score": 0.9,
-            "public_release": "2024-01-16T08:30:00Z"
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "trader_id": "TRADER001",
+            "type": "email",
+            "content_sensitivity": 0.7,
+            "external_communication": False
         },
         {
-            "id": "event_002",
-            "timestamp": "2024-01-14T16:00:00Z",
-            "type": "merger_announcement",
-            "description": "Strategic acquisition announcement",
-            "instruments_affected": ["ENERGY_CORP"],
-            "expected_impact": 0.15,
-            "materiality_score": 0.95,
-            "public_release": "2024-01-14T16:00:00Z"
+            "timestamp": (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat(),
+            "trader_id": "TRADER002",
+            "type": "phone",
+            "content_sensitivity": 0.9,
+            "external_communication": True
         }
     ]
 
-@pytest.fixture(scope="session")
-def sample_market_data():
-    """Sample market data for testing."""
-    return {
-        "volatility": 0.025,
-        "liquidity": 0.8,
-        "price_movement": 0.05,
-        "volume": 1500000,
-        "bid_ask_spread": 0.02,
-        "market_cap": 50000000000,
-        "average_volume": 1200000
-    }
 
-@pytest.fixture(scope="session")
-def sample_news_data():
-    """Sample news data for testing."""
+@pytest.fixture
+def sample_hr_data():
+    """Provide sample HR data for testing"""
+    return [
+        {
+            "employee_id": "EMP001",
+            "full_name": "John Doe",
+            "email": "john.doe@company.com",
+            "desk": "EQUITY_DESK",
+            "trading_accounts": ["TRADER001", "TRADER002"],
+            "access_level": "STANDARD"
+        },
+        {
+            "employee_id": "EMP002",
+            "full_name": "Jane Smith",
+            "email": "jane.smith@company.com",
+            "desk": "DERIVATIVES_DESK",
+            "trading_accounts": ["TRADER003"],
+            "access_level": "CONFIDENTIAL"
+        }
+    ]
+
+
+@pytest.fixture
+def mock_surveillance_engine():
+    """Provide a mock surveillance engine for testing"""
+    engine = Mock()
+    engine.process_surveillance_data.return_value = {
+        "alerts": [],
+        "person_profiles": [],
+        "processing_metrics": {
+            "total_trades_processed": 0,
+            "total_persons_identified": 0,
+            "processing_time_seconds": 1.5
+        }
+    }
+    return engine
+
+
+@pytest.fixture
+def mock_entity_resolution_service():
+    """Provide a mock entity resolution service for testing"""
+    service = Mock()
+    service.resolve_trading_data_person_id.return_value = ("PERSON001", 0.95)
+    service.add_hr_data.return_value = "PERSON001"
+    return service
+
+
+@pytest.fixture
+def mock_evidence_aggregator():
+    """Provide a mock evidence aggregator for testing"""
+    aggregator = Mock()
+    aggregator.aggregate_person_evidence.return_value = {
+        "trading_evidence": {"strength": 0.7},
+        "communication_evidence": {"strength": 0.6},
+        "cross_account_patterns": {"correlation": 0.8}
+    }
+    return aggregator
+
+
+@pytest.fixture
+def mock_cross_typology_engine():
+    """Provide a mock cross-typology engine for testing"""
+    engine = Mock()
+    engine.analyze_cross_typology_signals.return_value = [
+        TestDataFactory.create_sample_cross_typology_signal()
+    ]
+    engine.calculate_escalation_factors.return_value = {
+        "escalation_score": 0.75,
+        "risk_clustering": 0.8
+    }
+    return engine
+
+
+@pytest.fixture
+def high_risk_scenario_data():
+    """Provide high-risk scenario data for testing STOR and regulatory compliance"""
     return {
-        "news_events": [
+        "trade_data": [
+            TestDataFactory.create_sample_trade_data(
+                trader_id="HIGHRISK001",
+                timestamp=datetime.now(timezone.utc) - timedelta(minutes=i*10),
+                instrument="CONFIDENTIAL_STOCK",
+                quantity=50000,  # Large quantities
+                price=100 + i * 5  # Significant price movements
+            )
+            for i in range(8)
+        ],
+        "communication_data": [
             {
-                "id": "news_001",
-                "timestamp": "2024-01-15T08:00:00Z",
-                "headline": "Energy Corp Reports Strong Q4 Results",
-                "sentiment": 0.8,
-                "market_impact": 0.06,
-                "relevance_score": 0.9,
-                "source": "Reuters",
-                "instruments_affected": ["ENERGY_CORP"]
+                "timestamp": (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat(),
+                "trader_id": "HIGHRISK001",
+                "type": "phone",
+                "content_sensitivity": 0.95,
+                "external_communication": True,
+                "pre_trade_timing": True,
+                "suspicious_keywords": ["insider information", "confidential"]
+            }
+        ],
+        "hr_data": [
+            {
+                "employee_id": "EMP_HIGHRISK",
+                "full_name": "High Risk Trader",
+                "email": "highrisk@company.com",
+                "desk": "PROPRIETARY_TRADING",
+                "trading_accounts": ["HIGHRISK001"],
+                "access_level": "CONFIDENTIAL",
+                "compliance_flags": ["INSIDER_ACCESS"]
             }
         ]
     }
 
-@pytest.fixture(scope="function")
-def complete_analysis_data(sample_trade_data, sample_order_data, sample_trader_info, 
-                          sample_material_events, sample_market_data):
-    """Complete dataset for analysis testing."""
-    return {
-        **sample_trade_data,
-        **sample_order_data,
-        "trader_info": sample_trader_info,
-        "material_events": sample_material_events,
-        "market_data": sample_market_data,
-        "timeframe": "intraday",
-        "instruments": ["ENERGY_CORP"]
-    }
 
-@pytest.fixture(scope="function")
-def high_risk_scenario(sample_executive_trader):
-    """High-risk scenario data for testing alerts."""
+@pytest.fixture
+def low_risk_scenario_data():
+    """Provide low-risk scenario data for testing"""
     return {
-        "trades": [
+        "trade_data": [
+            TestDataFactory.create_sample_trade_data(
+                trader_id="LOWRISK001",
+                timestamp=datetime.now(timezone.utc) - timedelta(hours=i),
+                quantity=1000,  # Normal quantities
+                price=100  # Stable price
+            )
+            for i in range(3)
+        ],
+        "communication_data": [
             {
-                "id": "high_risk_trade_001",
-                "timestamp": "2024-01-15T09:45:00Z",
-                "instrument": "TECH_CORP",
-                "volume": 500000,  # Very high volume
-                "price": 75.50,
-                "side": "buy",
-                "trader_id": "exec_001",
-                "execution_venue": "NASDAQ",
-                "order_type": "market"
+                "timestamp": (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat(),
+                "trader_id": "LOWRISK001",
+                "type": "email",
+                "content_sensitivity": 0.2,
+                "external_communication": False
             }
         ],
-        "trader_info": sample_executive_trader,
-        "material_events": [
+        "hr_data": [
             {
-                "id": "high_impact_event",
-                "timestamp": "2024-01-15T10:00:00Z",  # 15 minutes after trade
-                "type": "earnings_announcement",
-                "description": "Record-breaking quarterly results",
-                "instruments_affected": ["TECH_CORP"],
-                "expected_impact": 0.20,
-                "materiality_score": 1.0,
-                "public_release": "2024-01-15T10:00:00Z"
+                "employee_id": "EMP_LOWRISK",
+                "full_name": "Low Risk Trader",
+                "email": "lowrisk@company.com",
+                "desk": "MARKET_MAKING",
+                "trading_accounts": ["LOWRISK001"],
+                "access_level": "STANDARD"
             }
-        ],
-        "market_data": {
-            "volatility": 0.08,
-            "price_movement": 0.18,
-            "volume": 2000000
-        }
+        ]
     }
 
-@pytest.fixture(scope="function")
-def spoofing_scenario():
-    """Spoofing scenario data for testing."""
-    return {
-        "orders": [
-            {
-                "id": "spoof_order_001",
-                "timestamp": "2024-01-15T10:00:00Z",
-                "instrument": "COMMODITY_A",
-                "volume": 100000,
-                "price": 45.00,
-                "side": "buy",
-                "status": "cancelled",
-                "trader_id": "trader_002",
-                "order_type": "limit"
-            },
-            {
-                "id": "spoof_order_002",
-                "timestamp": "2024-01-15T10:00:30Z",
-                "instrument": "COMMODITY_A",
-                "volume": 150000,
-                "price": 45.10,
-                "side": "buy",
-                "status": "cancelled",
-                "trader_id": "trader_002",
-                "order_type": "limit"
-            },
-            {
-                "id": "real_order_001",
-                "timestamp": "2024-01-15T10:01:00Z",
-                "instrument": "COMMODITY_A",
-                "volume": 10000,
-                "price": 44.90,
-                "side": "sell",
-                "status": "filled",
-                "trader_id": "trader_002",
-                "order_type": "market"
-            }
-        ],
-        "market_data": {
-            "volatility": 0.03,
-            "price_movement": 0.02,
-            "volume": 800000
-        },
-        "trader_info": {"id": "trader_002", "role": "trader", "access_level": "standard"}
-    }
 
-# Test utilities fixtures
-@pytest.fixture(scope="function")
-def api_test_client():
-    """Flask test client for API testing."""
-    try:
-        from app import app
-        app.config['TESTING'] = True
-        with app.test_client() as client:
-            yield client
-    except ImportError:
-        # Return a mock client if Flask app can't be imported
-        mock_client = Mock()
-        mock_client.post.return_value = Mock(status_code=200, json=lambda: {})
-        yield mock_client
-
-@pytest.fixture(scope="function")
-def database_session():
-    """Mock database session for testing."""
-    session = Mock()
-    session.query.return_value = session
-    session.filter.return_value = session
-    session.all.return_value = []
-    session.first.return_value = None
-    session.commit.return_value = None
-    session.rollback.return_value = None
-    yield session
-
-# Performance testing fixtures
-@pytest.fixture(scope="function")
-def large_dataset():
-    """Large dataset for performance testing."""
-    base_time = datetime(2024, 1, 1, 9, 0, 0)
-    
-    trades = []
-    for i in range(1000):  # 1000 trades
-        trades.append({
-            "id": f"perf_trade_{i:04d}",
-            "timestamp": (base_time + timedelta(minutes=i)).isoformat() + "Z",
-            "instrument": f"STOCK_{i % 50}",  # 50 different instruments
-            "volume": 1000 + (i % 100000),
-            "price": 50.0 + (i % 100) * 0.1,
-            "side": "buy" if i % 2 == 0 else "sell",
-            "trader_id": f"trader_{i % 20:03d}",  # 20 different traders
-            "execution_venue": "NYSE" if i % 2 == 0 else "NASDAQ",
-            "order_type": "market" if i % 3 == 0 else "limit"
-        })
+@pytest.fixture
+def cross_account_scenario_data():
+    """Provide cross-account coordination scenario data for testing"""
+    base_time = datetime.now(timezone.utc)
     
     return {
-        "trades": trades,
-        "trader_info": {"id": "trader_001", "role": "trader", "access_level": "medium"},
-        "market_data": {"volatility": 0.02, "volume": 5000000},
-        "timeframe": "daily"
+        "trade_data": [
+            # Account 1 trades
+            TestDataFactory.create_sample_trade_data(
+                trader_id="COORD001",
+                timestamp=base_time - timedelta(minutes=i*5),
+                quantity=5000,
+                price=100 + i
+            )
+            for i in range(5)
+        ] + [
+            # Account 2 trades (coordinated timing)
+            TestDataFactory.create_sample_trade_data(
+                trader_id="COORD002",
+                timestamp=base_time - timedelta(minutes=i*5 + 2),  # 2 minutes after account 1
+                quantity=4000,
+                price=100 + i
+            )
+            for i in range(5)
+        ],
+        "communication_data": [
+            {
+                "timestamp": (base_time - timedelta(minutes=30)).isoformat(),
+                "trader_id": "COORD001",
+                "type": "phone",
+                "content_sensitivity": 0.8,
+                "external_communication": False,
+                "internal_recipient": "COORD002"
+            }
+        ],
+        "hr_data": [
+            {
+                "employee_id": "EMP_COORD",
+                "full_name": "Coordinated Trader",
+                "email": "coord@company.com",
+                "desk": "ARBITRAGE_DESK",
+                "trading_accounts": ["COORD001", "COORD002"],
+                "access_level": "STANDARD"
+            }
+        ]
     }
 
-# Test markers for organization
+
+@pytest.fixture
+def performance_test_data():
+    """Provide large dataset for performance testing"""
+    num_trades = 1000
+    num_traders = 50
+    
+    return {
+        "trade_data": [
+            TestDataFactory.create_sample_trade_data(
+                trader_id=f"PERF_TRADER{i % num_traders:03d}",
+                timestamp=datetime.now(timezone.utc) - timedelta(minutes=i),
+                quantity=1000 + (i % 5000),
+                price=100 + (i % 50)
+            )
+            for i in range(num_trades)
+        ],
+        "communication_data": [
+            {
+                "timestamp": (datetime.now(timezone.utc) - timedelta(hours=i)).isoformat(),
+                "trader_id": f"PERF_TRADER{i:03d}",
+                "type": "email",
+                "content_sensitivity": 0.3 + (i % 5) * 0.1,
+                "external_communication": i % 10 == 0
+            }
+            for i in range(num_traders)
+        ]
+    }
+
+
+# Test utilities
+class TestUtils:
+    """Utility functions for testing"""
+    
+    @staticmethod
+    def assert_valid_probability(value: float, field_name: str = "probability"):
+        """Assert that a value is a valid probability (0.0 to 1.0)"""
+        assert isinstance(value, (int, float)), f"{field_name} should be numeric"
+        assert 0.0 <= value <= 1.0, f"{field_name} should be between 0.0 and 1.0, got {value}"
+    
+    @staticmethod
+    def assert_valid_timestamp(timestamp: Any, field_name: str = "timestamp"):
+        """Assert that a timestamp is valid"""
+        if isinstance(timestamp, str):
+            # Try to parse ISO format
+            try:
+                datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+            except ValueError:
+                pytest.fail(f"{field_name} should be valid ISO format timestamp")
+        elif isinstance(timestamp, datetime):
+            # Already a datetime object
+            pass
+        else:
+            pytest.fail(f"{field_name} should be datetime or ISO string")
+    
+    @staticmethod
+    def assert_alert_structure(alert: Dict[str, Any]):
+        """Assert that an alert has the required structure"""
+        required_fields = [
+            "alert_id", "person_id", "person_name", "risk_typology",
+            "probability_score", "confidence_score", "severity",
+            "involved_accounts", "timestamp"
+        ]
+        
+        for field in required_fields:
+            assert field in alert, f"Alert should have {field} field"
+        
+        TestUtils.assert_valid_probability(alert["probability_score"], "probability_score")
+        TestUtils.assert_valid_probability(alert["confidence_score"], "confidence_score")
+        TestUtils.assert_valid_timestamp(alert["timestamp"], "timestamp")
+        
+        assert isinstance(alert["involved_accounts"], list), "involved_accounts should be a list"
+        assert len(alert["involved_accounts"]) > 0, "involved_accounts should not be empty"
+    
+    @staticmethod
+    def assert_person_profile_structure(profile: Dict[str, Any]):
+        """Assert that a person profile has the required structure"""
+        required_fields = [
+            "person_id", "person_name", "linked_accounts", "identity_confidence"
+        ]
+        
+        for field in required_fields:
+            assert field in profile, f"Person profile should have {field} field"
+        
+        TestUtils.assert_valid_probability(profile["identity_confidence"], "identity_confidence")
+        assert isinstance(profile["linked_accounts"], list), "linked_accounts should be a list"
+    
+    @staticmethod
+    def assert_processing_metrics_structure(metrics: Dict[str, Any]):
+        """Assert that processing metrics have the required structure"""
+        expected_fields = [
+            "total_trades_processed", "total_persons_identified", "processing_time_seconds"
+        ]
+        
+        for field in expected_fields:
+            if field in metrics:
+                assert isinstance(metrics[field], (int, float)), f"{field} should be numeric"
+                if "time" in field:
+                    assert metrics[field] >= 0, f"{field} should be non-negative"
+
+
+@pytest.fixture
+def test_utils():
+    """Provide test utilities"""
+    return TestUtils
+
+
+# Performance test configuration
+@pytest.fixture
+def performance_config():
+    """Configuration for performance tests"""
+    return {
+        "max_processing_time_seconds": 30,  # Maximum allowed processing time
+        "max_memory_mb": 500,  # Maximum memory usage in MB
+        "min_throughput_trades_per_second": 100,  # Minimum throughput requirement
+    }
+
+
+# Pytest configuration
 def pytest_configure(config):
-    """Configure pytest markers."""
-    config.addinivalue_line("markers", "unit: Unit tests")
-    config.addinivalue_line("markers", "integration: Integration tests") 
-    config.addinivalue_line("markers", "e2e: End-to-end tests")
-    config.addinivalue_line("markers", "performance: Performance tests")
-    config.addinivalue_line("markers", "slow: Slow running tests")
-    config.addinivalue_line("markers", "api: API tests requiring server")
-    config.addinivalue_line("markers", "mock: Tests using mocks")
+    """Configure pytest with custom markers"""
+    config.addinivalue_line(
+        "markers", "unit: mark test as a unit test"
+    )
+    config.addinivalue_line(
+        "markers", "integration: mark test as an integration test"
+    )
+    config.addinivalue_line(
+        "markers", "e2e: mark test as an end-to-end test"
+    )
+    config.addinivalue_line(
+        "markers", "performance: mark test as a performance test"
+    )
+    config.addinivalue_line(
+        "markers", "regulatory: mark test as a regulatory compliance test"
+    )
+    config.addinivalue_line(
+        "markers", "slow: mark test as slow running"
+    )
 
-# Test collection customization
+
 def pytest_collection_modifyitems(config, items):
-    """Modify test collection to add markers based on file location."""
+    """Modify test collection to add markers based on test names"""
     for item in items:
-        # Add markers based on test file location
-        if "unit" in str(item.fspath):
-            item.add_marker(pytest.mark.unit)
-        elif "integration" in str(item.fspath):
-            item.add_marker(pytest.mark.integration)
-        elif "e2e" in str(item.fspath):
-            item.add_marker(pytest.mark.e2e)
-        elif "performance" in str(item.fspath):
-            item.add_marker(pytest.mark.performance)
+        # Add markers based on test file names
+        if "test_person_centric_surveillance" in str(item.fspath):
+            if "TestEntityResolution" in str(item.cls):
+                item.add_marker(pytest.mark.unit)
+            elif "TestIntegrationScenarios" in str(item.cls):
+                item.add_marker(pytest.mark.integration)
+            elif "TestEndToEndScenarios" in str(item.cls):
+                item.add_marker(pytest.mark.e2e)
+            elif "TestPerformanceAndStress" in str(item.cls):
+                item.add_marker(pytest.mark.performance)
+                item.add_marker(pytest.mark.slow)
+        
+        elif "test_regulatory_compliance" in str(item.fspath):
+            item.add_marker(pytest.mark.regulatory)
+            if "TestSTORCompliance" in str(item.cls):
+                item.add_marker(pytest.mark.integration)
+        
+        # Mark slow tests
+        if any(keyword in item.name.lower() for keyword in ["large_dataset", "performance", "stress"]):
             item.add_marker(pytest.mark.slow)
-
-# Cleanup fixtures
-@pytest.fixture(scope="function", autouse=True)
-def cleanup_environment():
-    """Clean up environment variables after each test."""
-    original_env = dict(os.environ)
-    yield
-    # Restore original environment
-    os.environ.clear()
-    os.environ.update(original_env)
