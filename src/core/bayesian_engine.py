@@ -384,6 +384,47 @@ class BayesianEngine:
                 "error": str(e),
             }
 
+    def analyze_economic_withholding(self, evidence: Dict[str, Any]) -> Dict[str, Any]:
+        """Analyze economic withholding patterns using Bayesian inference"""
+        try:
+            # Import the economic withholding model
+            from ..models.bayesian.economic_withholding import EconomicWithholdingModel
+            
+            # Initialize model if needed
+            if not hasattr(self, 'economic_withholding_model') or self.economic_withholding_model is None:
+                self.economic_withholding_model = EconomicWithholdingModel(
+                    use_latent_intent=False,
+                    config={}
+                )
+            
+            # Use the standard evidence analysis method
+            result = self.economic_withholding_model.analyze_with_standard_evidence(evidence)
+            
+            return result
+            
+        except ImportError as e:
+            logger.error(f"Economic withholding model not available: {str(e)}")
+            return {
+                "risk_score": 0.0,
+                "overall_score": 0.0,
+                "risk_probabilities": [0.95, 0.04, 0.01],
+                "esi_score": 0.0,
+                "evidence_used": {},
+                "model_type": "economic_withholding",
+                "error": f"Model not available: {str(e)}",
+            }
+        except Exception as e:
+            logger.error(f"Error in economic withholding analysis: {str(e)}")
+            return {
+                "risk_score": 0.0,
+                "overall_score": 0.0,
+                "risk_probabilities": [0.95, 0.04, 0.01],
+                "esi_score": 0.0,
+                "evidence_used": evidence,
+                "model_type": "economic_withholding",
+                "error": str(e),
+            }
+
     def _calculate_risk_score(self, probabilities: np.ndarray) -> float:
         """Calculate risk score from probability distribution"""
         # Weighted average: Low=0, Medium=0.5, High=1
@@ -396,7 +437,8 @@ class BayesianEngine:
             "models_loaded": self.models_loaded,
             "insider_dealing_model": self.insider_dealing_model is not None,
             "spoofing_model": self.spoofing_model is not None,
-            "available_models": ["insider_dealing", "spoofing"],
+            "economic_withholding_model": hasattr(self, 'economic_withholding_model') and self.economic_withholding_model is not None,
+            "available_models": ["insider_dealing", "spoofing", "economic_withholding"],
         }
 
     def get_models_info(self):

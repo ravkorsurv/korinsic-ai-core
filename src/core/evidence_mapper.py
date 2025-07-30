@@ -586,6 +586,11 @@ def map_evidence(raw_data: Dict[str, Any]) -> Dict[str, int]:
         wash_trade_evidence = map_wash_trade_evidence(raw_data["wash_trade"])
         evidence.update(wash_trade_evidence)
 
+    # Add economic withholding evidence mapping
+    if "economic_withholding" in raw_data:
+        ew_evidence = map_economic_withholding_evidence(raw_data["economic_withholding"])
+        evidence.update(ew_evidence)
+
     return evidence
 
 
@@ -614,4 +619,332 @@ def map_wash_trade_evidence(wash_trade_data: Dict[str, Any]) -> Dict[str, int]:
         "implied_liquidity_conflict": map_implied_liquidity_conflict(
             venue_data, trade_data
         ),
+    }
+
+
+# NEW: Economic Withholding Evidence Mappers
+
+def map_fuel_cost_variance(plant_data: Dict[str, Any], cost_analysis: Dict[str, Any]) -> int:
+    """
+    Map fuel cost variance evidence from plant and cost analysis data.
+    Returns 0 for 'aligned', 1 for 'moderate_variance', 2 for 'high_variance'.
+    """
+    if not cost_analysis:
+        return 0  # Default to aligned
+    
+    anomalies = cost_analysis.get('anomaly_detection', {})
+    fuel_anomalies = anomalies.get('fuel_cost_anomalies', [])
+    
+    if any(a.get('severity') == 'high' for a in fuel_anomalies):
+        return 2  # high_variance
+    elif fuel_anomalies:
+        return 1  # moderate_variance
+    return 0  # aligned
+
+
+def map_plant_efficiency(plant_data: Dict[str, Any], cost_analysis: Dict[str, Any]) -> int:
+    """
+    Map plant efficiency evidence.
+    Returns 0 for 'optimal', 1 for 'suboptimal', 2 for 'significantly_impaired'.
+    """
+    if not cost_analysis:
+        return 0  # Default to optimal
+    
+    anomalies = cost_analysis.get('anomaly_detection', {})
+    efficiency_anomalies = anomalies.get('efficiency_anomalies', [])
+    
+    if any(a.get('severity') == 'high' for a in efficiency_anomalies):
+        return 2  # significantly_impaired
+    elif efficiency_anomalies:
+        return 1  # suboptimal
+    return 0  # optimal
+
+
+def map_marginal_cost_deviation(counterfactual_results: Dict[str, Any]) -> int:
+    """
+    Map marginal cost deviation evidence.
+    Returns 0 for 'cost_reflective', 1 for 'moderate_markup', 2 for 'excessive_markup'.
+    """
+    if not counterfactual_results or 'comparisons' not in counterfactual_results:
+        return 0  # Default to cost_reflective
+    
+    comparisons = counterfactual_results['comparisons']
+    if not comparisons:
+        return 0
+    
+    avg_markup = max(comp.get('average_markup', 0) for comp in comparisons)
+    
+    if avg_markup > 0.20:
+        return 2  # excessive_markup
+    elif avg_markup > 0.10:
+        return 1  # moderate_markup
+    return 0  # cost_reflective
+
+
+def map_heat_rate_variance(plant_data: Dict[str, Any], operational_data: Dict[str, Any]) -> int:
+    """
+    Map heat rate variance evidence.
+    Returns 0 for 'consistent', 1 for 'moderate_variance', 2 for 'significant_variance'.
+    """
+    # Extract heat rate variance from operational data if available
+    variance = operational_data.get('heat_rate_variance', 0) if operational_data else 0
+    
+    if variance > 0.15:  # More than 15% variance
+        return 2  # significant_variance
+    elif variance > 0.05:  # More than 5% variance
+        return 1  # moderate_variance
+    return 0  # consistent
+
+
+def map_load_factor(market_data: Dict[str, Any]) -> int:
+    """
+    Map system load factor evidence.
+    Returns 0 for 'low_demand', 1 for 'normal_demand', 2 for 'peak_demand'.
+    """
+    load_factor = market_data.get('load_factor', 'normal_demand')
+    
+    # Handle both string and numeric load factor
+    if isinstance(load_factor, str):
+        if load_factor == 'peak_demand':
+            return 2
+        elif load_factor == 'normal_demand':
+            return 1
+        else:  # low_demand
+            return 0
+    else:
+        # Numeric load factor (percentage)
+        if load_factor > 0.85:
+            return 2  # peak_demand
+        elif load_factor > 0.5:
+            return 1  # normal_demand
+        else:
+            return 0  # low_demand
+
+
+def map_market_tightness(market_data: Dict[str, Any]) -> int:
+    """
+    Map market tightness evidence.
+    Returns 0 for 'surplus', 1 for 'balanced', 2 for 'tight'.
+    """
+    tightness = market_data.get('market_tightness', 'balanced')
+    
+    if isinstance(tightness, str):
+        if tightness == 'tight':
+            return 2
+        elif tightness == 'balanced':
+            return 1
+        else:  # surplus
+            return 0
+    else:
+        # Numeric reserve margin
+        if tightness < 0.1:  # Less than 10% reserve
+            return 2  # tight
+        elif tightness < 0.2:  # Less than 20% reserve
+            return 1  # balanced
+        else:
+            return 0  # surplus
+
+
+def map_competitive_context(market_data: Dict[str, Any]) -> int:
+    """
+    Map competitive context evidence.
+    Returns 0 for 'competitive', 1 for 'concentrated', 2 for 'monopolistic'.
+    """
+    # Could use HHI or market concentration metrics
+    hhi = market_data.get('hhi', 0)
+    
+    if hhi > 2500:
+        return 2  # monopolistic
+    elif hhi > 1500:
+        return 1  # concentrated
+    return 0  # competitive
+
+
+def map_transmission_constraint(market_data: Dict[str, Any]) -> int:
+    """
+    Map transmission constraint evidence.
+    Returns 0 for 'unconstrained', 1 for 'moderate_constraints', 2 for 'severe_constraints'.
+    """
+    constraints = market_data.get('transmission_constraints', 'unconstrained')
+    
+    if isinstance(constraints, str):
+        if constraints == 'severe_constraints':
+            return 2
+        elif constraints == 'moderate_constraints':
+            return 1
+        else:
+            return 0
+    else:
+        # Numeric congestion level
+        if constraints > 0.7:
+            return 2  # severe_constraints
+        elif constraints > 0.3:
+            return 1  # moderate_constraints
+        else:
+            return 0  # unconstrained
+
+
+def map_bid_shape_anomaly(bid_analysis: Dict[str, Any]) -> int:
+    """
+    Map bid shape anomaly evidence.
+    Returns 0 for 'normal_curve', 1 for 'stepped_curve', 2 for 'manipulative_curve'.
+    """
+    if not bid_analysis:
+        return 0
+    
+    anomaly_score = bid_analysis.get('anomaly_score', 0)
+    curve_type = bid_analysis.get('curve_type', 'normal')
+    
+    if anomaly_score > 0.8 or curve_type == 'manipulative':
+        return 2  # manipulative_curve
+    elif anomaly_score > 0.5 or curve_type == 'stepped':
+        return 1  # stepped_curve
+    return 0  # normal_curve
+
+
+def map_offer_withdrawal_pattern(withdrawal_data: Dict[str, Any]) -> int:
+    """
+    Map offer withdrawal pattern evidence.
+    Returns 0 for 'normal_availability', 1 for 'selective_withdrawal', 2 for 'systematic_withholding'.
+    """
+    if not withdrawal_data:
+        return 0
+    
+    withdrawal_rate = withdrawal_data.get('withdrawal_rate', 0)
+    pattern_score = withdrawal_data.get('pattern_score', 0)
+    
+    if withdrawal_rate > 0.3 or pattern_score > 0.8:
+        return 2  # systematic_withholding
+    elif withdrawal_rate > 0.15 or pattern_score > 0.5:
+        return 1  # selective_withdrawal
+    return 0  # normal_availability
+
+
+def map_cross_plant_coordination(coordination_data: Dict[str, Any]) -> int:
+    """
+    Map cross-plant coordination evidence.
+    Returns 0 for 'independent_operation', 1 for 'coordinated_operation', 2 for 'systematic_coordination'.
+    """
+    if not coordination_data:
+        return 0
+    
+    correlation_score = coordination_data.get('correlation_score', 0)
+    coordination_events = coordination_data.get('coordination_events', 0)
+    
+    if correlation_score > 0.8 or coordination_events > 5:
+        return 2  # systematic_coordination
+    elif correlation_score > 0.5 or coordination_events > 2:
+        return 1  # coordinated_operation
+    return 0  # independent_operation
+
+
+def map_capacity_utilization(plant_data: Dict[str, Any], operational_data: Dict[str, Any]) -> int:
+    """
+    Map capacity utilization evidence.
+    Returns 0 for 'full_utilization', 1 for 'partial_utilization', 2 for 'artificial_limitation'.
+    """
+    if not operational_data:
+        return 0
+    
+    utilization_rate = operational_data.get('utilization_rate', 1.0)
+    artificial_limit_detected = operational_data.get('artificial_limit_detected', False)
+    
+    if artificial_limit_detected or utilization_rate < 0.5:
+        return 2  # artificial_limitation
+    elif utilization_rate < 0.8:
+        return 1  # partial_utilization
+    return 0  # full_utilization
+
+
+def map_markup_consistency(pricing_data: Dict[str, Any]) -> int:
+    """
+    Map markup consistency evidence.
+    Returns 0 for 'consistent_markup', 1 for 'variable_markup', 2 for 'strategic_markup'.
+    """
+    if not pricing_data:
+        return 0
+    
+    markup_variance = pricing_data.get('markup_variance', 0)
+    strategic_pattern = pricing_data.get('strategic_pattern_detected', False)
+    
+    if strategic_pattern or markup_variance > 0.5:
+        return 2  # strategic_markup
+    elif markup_variance > 0.2:
+        return 1  # variable_markup
+    return 0  # consistent_markup
+
+
+def map_opportunity_pricing(pricing_data: Dict[str, Any], market_data: Dict[str, Any]) -> int:
+    """
+    Map opportunity pricing evidence.
+    Returns 0 for 'cost_based', 1 for 'opportunistic', 2 for 'exploitative'.
+    """
+    if not pricing_data:
+        return 0
+    
+    price_spike_ratio = pricing_data.get('price_spike_ratio', 1.0)
+    scarcity_pricing = pricing_data.get('scarcity_pricing_detected', False)
+    
+    if scarcity_pricing and price_spike_ratio > 3.0:
+        return 2  # exploitative
+    elif price_spike_ratio > 1.5:
+        return 1  # opportunistic
+    return 0  # cost_based
+
+
+def map_fuel_price_correlation(pricing_data: Dict[str, Any], fuel_prices: Dict[str, float]) -> int:
+    """
+    Map fuel price correlation evidence.
+    Returns 0 for 'strong_correlation', 1 for 'weak_correlation', 2 for 'no_correlation'.
+    """
+    if not pricing_data:
+        return 0  # Default to strong correlation
+    
+    correlation_coefficient = pricing_data.get('fuel_price_correlation', 1.0)
+    
+    if abs(correlation_coefficient) < 0.3:
+        return 2  # no_correlation
+    elif abs(correlation_coefficient) < 0.7:
+        return 1  # weak_correlation
+    return 0  # strong_correlation
+
+
+def map_economic_withholding_evidence(ew_data: Dict[str, Any]) -> Dict[str, int]:
+    """
+    Map economic withholding specific evidence from raw data.
+    Returns a dict: {node_name: state_index} for economic withholding nodes.
+    """
+    plant_data = ew_data.get('plant_data', {})
+    market_data = ew_data.get('market_data', {})
+    cost_analysis = ew_data.get('cost_analysis', {})
+    counterfactual_results = ew_data.get('counterfactual_results', {})
+    operational_data = ew_data.get('operational_data', {})
+    bid_analysis = ew_data.get('bid_analysis', {})
+    withdrawal_data = ew_data.get('withdrawal_data', {})
+    coordination_data = ew_data.get('coordination_data', {})
+    pricing_data = ew_data.get('pricing_data', {})
+    fuel_prices = ew_data.get('fuel_prices', {})
+    
+    return {
+        "fuel_cost_variance": map_fuel_cost_variance(plant_data, cost_analysis),
+        "plant_efficiency": map_plant_efficiency(plant_data, cost_analysis),
+        "marginal_cost_deviation": map_marginal_cost_deviation(counterfactual_results),
+        "heat_rate_variance": map_heat_rate_variance(plant_data, operational_data),
+        "load_factor": map_load_factor(market_data),
+        "market_tightness": map_market_tightness(market_data),
+        "competitive_context": map_competitive_context(market_data),
+        "transmission_constraint": map_transmission_constraint(market_data),
+        "bid_shape_anomaly": map_bid_shape_anomaly(bid_analysis),
+        "offer_withdrawal_pattern": map_offer_withdrawal_pattern(withdrawal_data),
+        "cross_plant_coordination": map_cross_plant_coordination(coordination_data),
+        "capacity_utilization": map_capacity_utilization(plant_data, operational_data),
+        "markup_consistency": map_markup_consistency(pricing_data),
+        "opportunity_pricing": map_opportunity_pricing(pricing_data, market_data),
+        "fuel_price_correlation": map_fuel_price_correlation(pricing_data, fuel_prices),
+        # Note: Reused nodes from other models (already mapped)
+        "price_impact_ratio": map_price_impact_ratio(market_data, {}, {}),
+        "volume_participation": map_volume_participation(ew_data.get('trade', {}), market_data),
+        "liquidity_context": map_liquidity_context(market_data, ew_data.get('venue', {})),
+        "order_clustering": map_order_clustering(ew_data.get('trade', {}), market_data),
+        "benchmark_timing": map_benchmark_timing(ew_data.get('trade', {}), market_data),
     }
