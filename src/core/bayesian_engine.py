@@ -353,26 +353,59 @@ class BayesianEngine:
     def analyze_spoofing(self, evidence: Dict[str, Any]) -> Dict[str, Any]:
         """Analyze spoofing patterns using Bayesian inference"""
         try:
-            # Apply fallback evidence if needed
-            evidence = apply_fallback_evidence(evidence, self.spoofing_node_defs)
+            # Option 1: Use the new spoofing model with standard evidence mapper
+            use_new_model = True  # Can be configured
+            
+            if use_new_model:
+                # Import the spoofing model
+                from ..models.bayesian.spoofing import SpoofingModel
+                
+                # Initialize model if needed
+                if not hasattr(self, 'spoofing_model_v2') or self.spoofing_model_v2 is None:
+                    self.spoofing_model_v2 = SpoofingModel()
+                
+                # Map evidence to numeric format
+                from .evidence_mapper import map_spoofing_evidence
+                
+                # Prepare data for evidence mapping
+                spoofing_data = evidence.get('spoofing', evidence)
+                numeric_evidence = map_spoofing_evidence(spoofing_data)
+                
+                # Use standard evidence format
+                result = self.spoofing_model_v2.calculate_risk(numeric_evidence)
+                
+                # Ensure consistent format
+                return {
+                    "risk_score": result.get("risk_score", 0.0),
+                    "overall_score": result.get("overall_score", 0.0),
+                    "risk_probabilities": result.get("risk_probabilities", [0.5, 0.3, 0.2]),
+                    "esi_score": result.get("esi_score", 0.5),
+                    "evidence_used": numeric_evidence,
+                    "model_type": "spoofing",
+                    "confidence": result.get("confidence", 0.0)
+                }
+            else:
+                # Legacy implementation
+                # Apply fallback evidence if needed
+                evidence = apply_fallback_evidence(evidence, self.spoofing_node_defs)
 
-            # Perform inference
-            query = self.spoofing_inference.query(variables=["Risk"], evidence=evidence)
-            risk_probabilities = query.values
+                # Perform inference
+                query = self.spoofing_inference.query(variables=["Risk"], evidence=evidence)
+                risk_probabilities = query.values
 
-            # Calculate risk score
-            risk_score = self._calculate_risk_score(risk_probabilities)
+                # Calculate risk score
+                risk_score = self._calculate_risk_score(risk_probabilities)
 
-            # Calculate ESI
-            esi_score = self.esi_calculator.calculate_esi(evidence, "spoofing")
+                # Calculate ESI
+                esi_score = self.esi_calculator.calculate_esi(evidence, "spoofing")
 
-            return {
-                "risk_score": risk_score,
-                "risk_probabilities": risk_probabilities.tolist(),
-                "esi_score": esi_score,
-                "evidence_used": evidence,
-                "model_type": "spoofing",
-            }
+                return {
+                    "risk_score": risk_score,
+                    "risk_probabilities": risk_probabilities.tolist(),
+                    "esi_score": esi_score,
+                    "evidence_used": evidence,
+                    "model_type": "spoofing",
+                }
         except Exception as e:
             logger.error(f"Error in spoofing analysis: {str(e)}")
             return {
@@ -425,6 +458,178 @@ class BayesianEngine:
                 "error": str(e),
             }
 
+    def analyze_market_cornering(self, evidence: Dict[str, Any]) -> Dict[str, Any]:
+        """Analyze market cornering patterns using Bayesian inference"""
+        try:
+            # Import the market cornering model
+            from ..models.bayesian.market_cornering import MarketCorneringModel
+            
+            # Initialize model if needed
+            if not hasattr(self, 'market_cornering_model') or self.market_cornering_model is None:
+                self.market_cornering_model = MarketCorneringModel()
+            
+            # Map evidence to numeric format
+            from .evidence_mapper import map_market_cornering_evidence
+            
+            # Prepare data for evidence mapping
+            cornering_data = evidence.get('market_cornering', evidence)
+            numeric_evidence = map_market_cornering_evidence(cornering_data)
+            
+            # Use standard evidence format
+            result = self.market_cornering_model.calculate_risk(numeric_evidence)
+            
+            # Ensure consistent format
+            return {
+                "risk_score": result.get("risk_score", 0.0),
+                "overall_score": result.get("overall_score", 0.0),
+                "risk_probabilities": result.get("risk_probabilities", [0.9, 0.08, 0.02]),
+                "esi_score": result.get("esi_score", 0.0),
+                "evidence_used": numeric_evidence,
+                "model_type": "market_cornering",
+                "confidence": result.get("confidence", 0.0)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error in market cornering analysis: {str(e)}")
+            return {
+                "risk_score": 0.0,
+                "overall_score": 0.0,
+                "risk_probabilities": [0.9, 0.08, 0.02],
+                "esi_score": 0.0,
+                "evidence_used": evidence,
+                "model_type": "market_cornering",
+                "error": str(e),
+            }
+
+    def analyze_circular_trading(self, evidence: Dict[str, Any]) -> Dict[str, Any]:
+        """Analyze circular trading patterns using Bayesian inference"""
+        try:
+            # Import the circular trading model
+            from ..models.bayesian.circular_trading import CircularTradingModel
+            
+            # Initialize model if needed
+            if not hasattr(self, 'circular_trading_model') or self.circular_trading_model is None:
+                self.circular_trading_model = CircularTradingModel()
+            
+            # Map evidence to numeric format
+            from .evidence_mapper import map_circular_trading_evidence
+            
+            # Prepare data for evidence mapping
+            circular_data = evidence.get('circular_trading', evidence)
+            numeric_evidence = map_circular_trading_evidence(circular_data)
+            
+            # Use standard evidence format
+            result = self.circular_trading_model.calculate_risk(numeric_evidence)
+            
+            # Ensure consistent format
+            return {
+                "risk_score": result.get("risk_score", 0.0),
+                "overall_score": result.get("overall_score", 0.0),
+                "risk_probabilities": result.get("risk_probabilities", [0.99, 0.01]),
+                "esi_score": result.get("esi_score", 0.0),
+                "evidence_used": numeric_evidence,
+                "model_type": "circular_trading",
+                "confidence": result.get("confidence", 0.0)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error in circular trading analysis: {str(e)}")
+            return {
+                "risk_score": 0.0,
+                "overall_score": 0.0,
+                "risk_probabilities": [0.99, 0.01],
+                "esi_score": 0.0,
+                "evidence_used": evidence,
+                "model_type": "circular_trading",
+                "error": str(e),
+            }
+
+    def analyze_cross_desk_collusion(self, evidence: Dict[str, Any]) -> Dict[str, Any]:
+        """Analyze cross-desk collusion patterns using Bayesian inference"""
+        try:
+            # Import the cross-desk collusion model
+            from ..models.bayesian.cross_desk_collusion import CrossDeskCollusionModel
+            
+            # Initialize model if needed
+            if not hasattr(self, 'cross_desk_collusion_model') or self.cross_desk_collusion_model is None:
+                self.cross_desk_collusion_model = CrossDeskCollusionModel()
+            
+            # Map evidence to numeric format
+            from .evidence_mapper import map_cross_desk_collusion_evidence
+            
+            # Prepare data for evidence mapping
+            collusion_data = evidence.get('cross_desk_collusion', evidence)
+            numeric_evidence = map_cross_desk_collusion_evidence(collusion_data)
+            
+            # Use standard evidence format
+            result = self.cross_desk_collusion_model.calculate_risk(numeric_evidence)
+            
+            # Ensure consistent format
+            return {
+                "risk_score": result.get("risk_score", 0.0),
+                "overall_score": result.get("overall_score", 0.0),
+                "risk_probabilities": result.get("risk_probabilities", [0.95, 0.05]),
+                "esi_score": result.get("esi_score", 0.0),
+                "evidence_used": numeric_evidence,
+                "model_type": "cross_desk_collusion",
+                "confidence": result.get("confidence", 0.0)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error in cross-desk collusion analysis: {str(e)}")
+            return {
+                "risk_score": 0.0,
+                "overall_score": 0.0,
+                "risk_probabilities": [0.95, 0.05],
+                "esi_score": 0.0,
+                "evidence_used": evidence,
+                "model_type": "cross_desk_collusion",
+                "error": str(e),
+            }
+
+    def analyze_commodity_manipulation(self, evidence: Dict[str, Any]) -> Dict[str, Any]:
+        """Analyze commodity manipulation patterns using Bayesian inference"""
+        try:
+            # Import the commodity manipulation model
+            from ..models.bayesian.commodity_manipulation import CommodityManipulationModel
+            
+            # Initialize model if needed
+            if not hasattr(self, 'commodity_manipulation_model') or self.commodity_manipulation_model is None:
+                self.commodity_manipulation_model = CommodityManipulationModel()
+            
+            # Map evidence to numeric format
+            from .evidence_mapper import map_commodity_manipulation_evidence
+            
+            # Prepare data for evidence mapping
+            commodity_data = evidence.get('commodity_manipulation', evidence)
+            numeric_evidence = map_commodity_manipulation_evidence(commodity_data)
+            
+            # Use standard evidence format
+            result = self.commodity_manipulation_model.calculate_risk(numeric_evidence)
+            
+            # Ensure consistent format
+            return {
+                "risk_score": result.get("risk_score", 0.0),
+                "overall_score": result.get("overall_score", 0.0),
+                "risk_probabilities": result.get("risk_probabilities", [0.99, 0.01]),
+                "esi_score": result.get("esi_score", 0.0),
+                "evidence_used": numeric_evidence,
+                "model_type": "commodity_manipulation",
+                "confidence": result.get("confidence", 0.0)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error in commodity manipulation analysis: {str(e)}")
+            return {
+                "risk_score": 0.0,
+                "overall_score": 0.0,
+                "risk_probabilities": [0.99, 0.01],
+                "esi_score": 0.0,
+                "evidence_used": evidence,
+                "model_type": "commodity_manipulation",
+                "error": str(e),
+            }
+
     def _calculate_risk_score(self, probabilities: np.ndarray) -> float:
         """Calculate risk score from probability distribution"""
         # Weighted average: Low=0, Medium=0.5, High=1
@@ -438,7 +643,19 @@ class BayesianEngine:
             "insider_dealing_model": self.insider_dealing_model is not None,
             "spoofing_model": self.spoofing_model is not None,
             "economic_withholding_model": hasattr(self, 'economic_withholding_model') and self.economic_withholding_model is not None,
-            "available_models": ["insider_dealing", "spoofing", "economic_withholding"],
+            "market_cornering_model": hasattr(self, 'market_cornering_model') and self.market_cornering_model is not None,
+            "circular_trading_model": hasattr(self, 'circular_trading_model') and self.circular_trading_model is not None,
+            "cross_desk_collusion_model": hasattr(self, 'cross_desk_collusion_model') and self.cross_desk_collusion_model is not None,
+            "commodity_manipulation_model": hasattr(self, 'commodity_manipulation_model') and self.commodity_manipulation_model is not None,
+            "available_models": [
+                "insider_dealing", 
+                "spoofing", 
+                "economic_withholding",
+                "market_cornering",
+                "circular_trading",
+                "cross_desk_collusion",
+                "commodity_manipulation"
+            ],
         }
 
     def get_models_info(self):
