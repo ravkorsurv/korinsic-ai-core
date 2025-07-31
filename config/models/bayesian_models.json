@@ -216,6 +216,23 @@
       "low_risk": 0.3,
       "medium_risk": 0.6,
       "high_risk": 0.8
+    },
+    "regulatory_explainability": {
+      "enabled": true,
+      "frameworks": [
+        "MAR_ARTICLE_8",
+        "MAR_ARTICLE_12", 
+        "STOR_REQUIREMENTS",
+        "MIFID_II_ARTICLE_17"
+      ],
+      "evidence_retention_days": 2555,
+      "minimum_evidence_strength": 0.1,
+      "minimum_reliability_score": 0.5,
+      "auto_generate_stor_reports": true,
+      "include_cross_account_analysis": true,
+      "enable_temporal_clustering": true,
+      "regulatory_narrative_language": "en",
+      "audit_trail_enabled": true
     }
   }
 }

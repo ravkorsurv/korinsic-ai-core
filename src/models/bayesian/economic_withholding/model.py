@@ -21,6 +21,14 @@ except ImportError:
 
 from ..shared.esi import EvidenceSufficiencyIndex
 from ..shared.fallback_logic import FallbackLogic
+
+# Add regulatory explainability import
+from ....core.regulatory_explainability import (
+    RegulatoryExplainabilityEngine,
+    EvidenceItem,
+    EvidenceType,
+    RegulatoryFramework
+)
 from .config import EconomicWithholdingConfig
 from .nodes import EconomicWithholdingNodes
 from .scenario_engine import ScenarioSimulationEngine
@@ -56,6 +64,9 @@ class EconomicWithholdingModel:
         self.nodes = EconomicWithholdingNodes()
         self.fallback_logic = FallbackLogic()
         self.esi_calculator = EvidenceSufficiencyIndex()
+
+        # Initialize regulatory explainability engine
+        self.explainability_engine = RegulatoryExplainabilityEngine(config or {})
         
         # Initialize specialized engines
         self.scenario_engine = ScenarioSimulationEngine(
@@ -905,3 +916,80 @@ def create_economic_withholding_model(
         Configured EconomicWithholdingModel instance
     """
     return EconomicWithholdingModel(use_latent_intent, config)
+
+    def generate_regulatory_explanation(
+        self, 
+        evidence: Dict[str, Any], 
+        inference_result: Dict[str, float],
+        account_id: str,
+        timestamp: str
+    ) -> List[EvidenceItem]:
+        """
+        Generate regulatory explainability evidence for economic withholding detection.
+        
+        Args:
+            evidence: Input evidence dictionary
+            inference_result: Model inference results
+            account_id: Account identifier
+            timestamp: Evidence timestamp
+            
+        Returns:
+            List of evidence items for regulatory explanation
+        """
+        evidence_items = []
+        
+        # Generate evidence items based on model-specific patterns
+        for evidence_key, evidence_value in evidence.items():
+            if isinstance(evidence_value, (int, float)) and evidence_value > 0.1:
+                # Determine evidence type based on key
+                evidence_type = EvidenceType.TRADING_PATTERN
+                if 'communication' in evidence_key.lower():
+                    evidence_type = EvidenceType.COMMUNICATION
+                elif 'timing' in evidence_key.lower() or 'temporal' in evidence_key.lower():
+                    evidence_type = EvidenceType.TIMING_ANOMALY
+                elif 'cross' in evidence_key.lower() or 'correlation' in evidence_key.lower():
+                    evidence_type = EvidenceType.CROSS_ACCOUNT_CORRELATION
+                
+                evidence_items.append(EvidenceItem(
+                    evidence_type=evidence_type,
+                    account_id=account_id,
+                    timestamp=datetime.fromisoformat(timestamp),
+                    description=f"Economic Withholding indicator: {evidence_key} = {evidence_value:.2f}",
+                    strength=min(float(evidence_value), 1.0),
+                    reliability=0.85,
+                    regulatory_relevance={
+                        RegulatoryFramework.STOR_REQUIREMENTS: 0.9,
+                        RegulatoryFramework.STOR_REQUIREMENTS: 0.8
+                    },
+                    raw_data={
+                        'model_type': 'economic_withholding',
+                        'evidence_node': evidence_key,
+                        'score': evidence_value,
+                        'inference_result': inference_result
+                    }
+                ))
+        
+        return evidence_items
+    
+    def get_regulatory_framework_mapping(self) -> Dict[RegulatoryFramework, Dict[str, Any]]:
+        """
+        Get regulatory framework mapping for economic withholding detection.
+        
+        Returns:
+            Dictionary mapping regulatory frameworks to their requirements
+        """
+        return {
+            RegulatoryFramework.STOR_REQUIREMENTS: {
+                "description": "Economic Withholding detection and analysis",
+                "key_indicators": ['Capacity withholding patterns', 'Economic withholding strategies', 'Market power abuse'],
+                "evidence_threshold": 0.7,
+                "reporting_requirements": "Detailed pattern analysis required"
+            },
+            RegulatoryFramework.STOR_REQUIREMENTS: {
+                "description": "Suspicious transaction reporting for economic withholding behavior",
+                "key_indicators": ['Capacity withholding patterns', 'Economic withholding strategies'],
+                "evidence_threshold": 0.6,
+                "reporting_requirements": "Transaction-level details required"
+            }
+        }
+
