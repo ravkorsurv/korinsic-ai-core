@@ -7,6 +7,7 @@ the Bayesian network for detecting spoofing and layering behavior.
 
 import logging
 from typing import Any, Dict, List, Optional
+from datetime import datetime
 
 from pgmpy.inference import VariableElimination
 from pgmpy.models import DiscreteBayesianNetwork
@@ -15,6 +16,14 @@ from ..shared.esi import EvidenceSufficiencyIndex
 from ..shared.fallback_logic import FallbackLogic
 from .config import SpoofingConfig
 from .nodes import SpoofingNodes
+
+# Add regulatory explainability import
+from ....core.regulatory_explainability import (
+    RegulatoryExplainabilityEngine,
+    EvidenceItem,
+    EvidenceType,
+    RegulatoryFramework
+)
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +51,9 @@ class SpoofingModel:
         self.nodes = SpoofingNodes()
         self.fallback_logic = FallbackLogic()
         self.esi_calculator = EvidenceSufficiencyIndex()
+        
+        # Initialize regulatory explainability engine
+        self.explainability_engine = RegulatoryExplainabilityEngine(config or {})
 
         # Build the Bayesian network
         self.model = self._build_model()
@@ -524,3 +536,120 @@ class SpoofingModel:
         return self.fallback_logic.validate_evidence_completeness(
             evidence, required_nodes
         )
+    
+    def generate_regulatory_explanation(
+        self, 
+        evidence: Dict[str, Any], 
+        inference_result: Dict[str, float],
+        account_id: str,
+        timestamp: str
+    ) -> List[EvidenceItem]:
+        """
+        Generate regulatory explainability evidence for spoofing detection.
+        
+        Args:
+            evidence: Input evidence dictionary
+            inference_result: Model inference results
+            account_id: Account identifier
+            timestamp: Evidence timestamp
+            
+        Returns:
+            List of evidence items for regulatory explanation
+        """
+        evidence_items = []
+        
+        # Trading pattern evidence
+        if 'order_pattern_anomaly' in evidence:
+            evidence_items.append(EvidenceItem(
+                evidence_type=EvidenceType.TRADING_PATTERN,
+                account_id=account_id,
+                timestamp=datetime.fromisoformat(timestamp),
+                description=f"Spoofing pattern detected: Order pattern anomaly score {evidence['order_pattern_anomaly']:.2f}",
+                strength=evidence['order_pattern_anomaly'],
+                reliability=0.85,
+                regulatory_relevance={
+                    RegulatoryFramework.MAR_ARTICLE_12: 0.9,
+                    RegulatoryFramework.STOR_REQUIREMENTS: 0.8
+                },
+                raw_data={
+                    'model_type': 'spoofing_detection',
+                    'evidence_node': 'order_pattern_anomaly',
+                    'score': evidence['order_pattern_anomaly'],
+                    'inference_result': inference_result
+                }
+            ))
+        
+        # Timing anomaly evidence
+        if 'temporal_clustering' in evidence:
+            evidence_items.append(EvidenceItem(
+                evidence_type=EvidenceType.TIMING_ANOMALY,
+                account_id=account_id,
+                timestamp=datetime.fromisoformat(timestamp),
+                description=f"Temporal clustering in spoofing behavior: {evidence['temporal_clustering']:.2f}",
+                strength=evidence['temporal_clustering'],
+                reliability=0.80,
+                regulatory_relevance={
+                    RegulatoryFramework.MAR_ARTICLE_12: 0.8,
+                    RegulatoryFramework.STOR_REQUIREMENTS: 0.7
+                },
+                raw_data={
+                    'model_type': 'spoofing_detection',
+                    'evidence_node': 'temporal_clustering',
+                    'score': evidence['temporal_clustering'],
+                    'inference_result': inference_result
+                }
+            ))
+        
+        # Market impact evidence
+        if 'market_impact' in evidence:
+            evidence_items.append(EvidenceItem(
+                evidence_type=EvidenceType.TRADING_PATTERN,
+                account_id=account_id,
+                timestamp=datetime.fromisoformat(timestamp),
+                description=f"Market impact from spoofing activity: {evidence['market_impact']:.2f}",
+                strength=evidence['market_impact'],
+                reliability=0.90,
+                regulatory_relevance={
+                    RegulatoryFramework.MAR_ARTICLE_12: 0.95,
+                    RegulatoryFramework.STOR_REQUIREMENTS: 0.85
+                },
+                raw_data={
+                    'model_type': 'spoofing_detection',
+                    'evidence_node': 'market_impact',
+                    'score': evidence['market_impact'],
+                    'inference_result': inference_result
+                }
+            ))
+        
+        return evidence_items
+    
+    def get_regulatory_framework_mapping(self) -> Dict[RegulatoryFramework, Dict[str, Any]]:
+        """
+        Get regulatory framework mapping for spoofing detection.
+        
+        Returns:
+            Dictionary mapping regulatory frameworks to their requirements
+        """
+        return {
+            RegulatoryFramework.MAR_ARTICLE_12: {
+                "description": "Market manipulation through spoofing and layering",
+                "key_indicators": [
+                    "Order pattern anomalies",
+                    "Market impact assessment", 
+                    "Temporal clustering of orders",
+                    "Intent to mislead other market participants"
+                ],
+                "evidence_threshold": 0.7,
+                "reporting_requirements": "Detailed pattern analysis required"
+            },
+            RegulatoryFramework.STOR_REQUIREMENTS: {
+                "description": "Suspicious order reporting for spoofing behavior",
+                "key_indicators": [
+                    "Systematic order placement and cancellation",
+                    "Price manipulation intent",
+                    "Market distortion effects"
+                ],
+                "evidence_threshold": 0.6,
+                "reporting_requirements": "Order-level transaction details"
+            }
+        }
