@@ -7,22 +7,40 @@ a comprehensive evidence chain for a person-centric insider dealing alert.
 
 Scenario: John Smith (PersonID: person_12345678) suspected of insider dealing
 across multiple linked accounts before a major earnings announcement.
+
+SECURITY NOTE: This example uses secure data handling with proper authorization
+and sanitization for sensitive regulatory evidence.
 """
 
+import sys
+from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Dict, List, Any
 import json
 
-# Mock imports (in real system these would be actual imports)
-class EvidenceType:
-    TRADING_PATTERN = "trading_pattern"
-    TIMING_ANOMALY = "timing_anomaly"
-    COMMUNICATION = "communication"
-    CROSS_ACCOUNT_CORRELATION = "cross_account_correlation"
+# Add src to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
 
-class RegulatoryFramework:
-    MAR_ARTICLE_8 = "mar_article_8"
-    STOR_REQUIREMENTS = "stor_requirements"
+try:
+    from src.core.evidence.evidence_types import EvidenceType, RegulatoryFramework
+    from src.core.security.data_sanitizer import secure_print_evidence
+    from src.core.reporting.narrative_generator import NarrativeGenerator, OptimizedOutputFormatter
+    REAL_IMPORTS = True
+except ImportError:
+    # Fallback to mock classes for standalone execution
+    from enum import Enum
+    
+    class EvidenceType(Enum):
+        TRADING_PATTERN = "trading_pattern"
+        TIMING_ANOMALY = "timing_anomaly"
+        COMMUNICATION = "communication"
+        CROSS_ACCOUNT_CORRELATION = "cross_account_correlation"
+
+    class RegulatoryFramework(Enum):
+        MAR_ARTICLE_8 = "mar_article_8"
+        STOR_REQUIREMENTS = "stor_requirements"
+    
+    REAL_IMPORTS = False
 
 def create_evidence_chain_example():
     """
@@ -49,14 +67,14 @@ def create_evidence_chain_example():
     evidence_chain = [
         {
             "sequence_id": 1,
-            "evidence_type": "communication",
+            "evidence_type": EvidenceType.COMMUNICATION.value if REAL_IMPORTS else "communication",
             "timestamp": (base_time - timedelta(hours=2)).isoformat(),
             "account_id": "ACC_JS_001",
             "evidence_category": "communication_pattern",
             "strength": 0.85,
             "reliability": 0.90,
             "description": "Unusual communication pattern detected: 15 internal calls to IR department 2 hours before trading activity",
-            "regulatory_frameworks": ["mar_article_8"],
+            "regulatory_frameworks": [RegulatoryFramework.MAR_ARTICLE_8.value if REAL_IMPORTS else "mar_article_8"],
             "raw_data": {
                 "communication_type": "internal_calls",
                 "call_count": 15,
@@ -65,7 +83,7 @@ def create_evidence_chain_example():
                 "timing_before_trades": "2 hours",
                 "participants": ["john.smith@techcorp.com", "ir.team@techcorp.com"]
             },
-            "cross_references": ["evidence_2", "evidence_4"]
+            "cross_references": [1, 3] if REAL_IMPORTS else ["evidence_2", "evidence_4"]  # Use indices for O(1) lookup
         },
         {
             "sequence_id": 2,
@@ -360,28 +378,67 @@ def demonstrate_evidence_chain_structure():
     print(f"Time Span: {summary['evidence_time_span_hours']} hours")
     print(f"Financial Exposure: ${summary['total_financial_exposure']:,}")
     
-    print("\n🔗 EVIDENCE CHAIN STRUCTURE:")
-    print("-" * 35)
-    
-    for evidence in evidence_data["evidence_chain"]:
-        print(f"\n[{evidence['sequence_id']}] {evidence['evidence_type'].upper()}")
-        print(f"    Time: {evidence['timestamp']}")
-        print(f"    Account: {evidence['account_id']}")
-        print(f"    Strength: {evidence['strength']:.2f} | Reliability: {evidence['reliability']:.2f}")
-        print(f"    Description: {evidence['description']}")
-        print(f"    Frameworks: {', '.join(evidence['regulatory_frameworks'])}")
-        if evidence['cross_references']:
-            print(f"    Cross-refs: {', '.join(evidence['cross_references'])}")
+    # Use optimized output formatting for better performance
+    if REAL_IMPORTS:
+        formatted_output = OptimizedOutputFormatter.format_evidence_chain_output(evidence_data)
+        print(formatted_output)
+    else:
+        # Fallback to original formatting
+        print("\n🔗 EVIDENCE CHAIN STRUCTURE:")
+        print("-" * 35)
+        
+        for evidence in evidence_data["evidence_chain"]:
+            print(f"\n[{evidence['sequence_id']}] {evidence['evidence_type'].upper()}")
+            print(f"    Time: {evidence['timestamp']}")
+            print(f"    Account: {evidence['account_id']}")
+            print(f"    Strength: {evidence['strength']:.2f} | Reliability: {evidence['reliability']:.2f}")
+            print(f"    Description: {evidence['description']}")
+            print(f"    Frameworks: {', '.join(evidence['regulatory_frameworks'])}")
+            if evidence['cross_references']:
+                print(f"    Cross-refs: {', '.join(map(str, evidence['cross_references']))}")
     
     print("\n📋 REGULATORY NARRATIVE:")
     print("-" * 30)
-    narrative = generate_regulatory_narrative(evidence_data)
-    print(narrative)
     
-    print("\n💾 JSON EXPORT EXAMPLE:")
-    print("-" * 25)
-    print("# This is how the evidence chain would be exported for regulatory filing:")
-    print(json.dumps(evidence_data["evidence_chain"][0], indent=2))
+    # Use modular narrative generation if available
+    if REAL_IMPORTS:
+        try:
+            generator = NarrativeGenerator()
+            narrative = generator.generate_regulatory_narrative(evidence_data)
+            print(narrative)
+        except Exception as e:
+            print(f"⚠️  Advanced narrative generation failed: {e}")
+            print("Falling back to basic narrative...")
+            narrative = generate_regulatory_narrative(evidence_data)
+            print(narrative)
+    else:
+        narrative = generate_regulatory_narrative(evidence_data)
+        print(narrative)
+    
+    print("\n💾 SECURE JSON EXPORT EXAMPLE:")
+    print("-" * 35)
+    print("# This is how the evidence chain would be securely exported for regulatory filing:")
+    
+    # Use secure printing with proper authorization
+    if REAL_IMPORTS:
+        # Demonstrate different access levels
+        print("\n🔒 PUBLIC ACCESS LEVEL:")
+        secure_print_evidence(
+            {"evidence_chain": [evidence_data["evidence_chain"][0]]}, 
+            user_id="public_user", 
+            permission="view_evidence_summary"
+        )
+        
+        print("\n🔓 COMPLIANCE ACCESS LEVEL:")
+        secure_print_evidence(
+            {"evidence_chain": [evidence_data["evidence_chain"][0]]}, 
+            user_id="compliance_user", 
+            permission="view_evidence_details"
+        )
+    else:
+        # Fallback for environments without security modules
+        print("⚠️  Security modules not available - using basic output:")
+        print(json.dumps(evidence_data["evidence_chain"][0], indent=2))
     
     print("\n✅ EVIDENCE CHAIN COMPLETE")
     print("This example shows how your regulatory explainability system creates")

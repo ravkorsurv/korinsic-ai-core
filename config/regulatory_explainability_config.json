@@ -1,0 +1,276 @@
+{
+  "regulatory_explainability": {
+    "enabled": true,
+    "version": "2.0.0",
+    "last_updated": "2025-01-15",
+    
+    "security": {
+      "data_sanitization": {
+        "enabled": true,
+        "default_access_level": "public",
+        "internal_domains": ["techcorp.com", "company.internal"],
+        "mask_financial_amounts": true,
+        "mask_account_ids": true,
+        "preserve_structure": true
+      },
+      "authorization": {
+        "enabled": true,
+        "session_timeout_minutes": 60,
+        "audit_all_access": true
+      }
+    },
+    
+    "frameworks": {
+      "MAR_ARTICLE_8": {
+        "enabled": true,
+        "name": "Market Abuse Regulation Article 8 - Insider Dealing",
+        "threshold": 0.7,
+        "auto_stor_filing": true,
+        "evidence_retention_days": 2555,
+        "minimum_evidence_strength": 0.7,
+        "minimum_reliability_score": 0.8
+      },
+      "MAR_ARTICLE_12": {
+        "enabled": true,
+        "name": "Market Abuse Regulation Article 12 - Market Manipulation",
+        "threshold": 0.7,
+        "auto_stor_filing": true,
+        "evidence_retention_days": 2555,
+        "minimum_evidence_strength": 0.7,
+        "minimum_reliability_score": 0.8
+      },
+      "STOR_REQUIREMENTS": {
+        "enabled": true,
+        "name": "Suspicious Transaction and Order Reporting",
+        "threshold": 0.6,
+        "auto_filing": true,
+        "evidence_retention_days": 2555,
+        "minimum_evidence_strength": 0.6,
+        "minimum_reliability_score": 0.7
+      },
+      "MIFID_II_ARTICLE_17": {
+        "enabled": true,
+        "name": "MiFID II Article 17 - Communication Recording",
+        "threshold": 0.7,
+        "auto_stor_filing": false,
+        "evidence_retention_days": 1825,
+        "minimum_evidence_strength": 0.7,
+        "minimum_reliability_score": 0.8
+      },
+      "ESMA_GUIDELINES": {
+        "enabled": true,
+        "name": "ESMA Technical Standards",
+        "threshold": 0.6,
+        "auto_stor_filing": false,
+        "evidence_retention_days": 1825,
+        "minimum_evidence_strength": 0.6,
+        "minimum_reliability_score": 0.7
+      }
+    },
+    
+    "evidence_scoring": {
+      "strength_thresholds": {
+        "minimum": 0.1,
+        "weak": 0.3,
+        "moderate": 0.5,
+        "strong": 0.7,
+        "very_strong": 0.85,
+        "critical": 0.95
+      },
+      "reliability_thresholds": {
+        "minimum": 0.1,
+        "low": 0.4,
+        "moderate": 0.6,
+        "high": 0.8,
+        "very_high": 0.9
+      },
+      "cross_reference_thresholds": {
+        "weak": 0.3,
+        "moderate": 0.6,
+        "strong": 0.8
+      }
+    },
+    
+    "model_specific_scoring": {
+      "spoofing": {
+        "base_reliability": 0.85,
+        "timing_weight": 0.9,
+        "pattern_weight": 0.8,
+        "framework_mappings": {
+          "MAR_ARTICLE_12": 0.9,
+          "STOR_REQUIREMENTS": 0.8
+        }
+      },
+      "insider_dealing": {
+        "base_reliability": 0.85,
+        "timing_weight": 0.95,
+        "communication_weight": 0.9,
+        "framework_mappings": {
+          "MAR_ARTICLE_8": 0.9,
+          "STOR_REQUIREMENTS": 0.85
+        }
+      },
+      "market_cornering": {
+        "base_reliability": 0.82,
+        "volume_weight": 0.9,
+        "price_impact_weight": 0.85,
+        "framework_mappings": {
+          "MAR_ARTICLE_12": 0.85,
+          "STOR_REQUIREMENTS": 0.8
+        }
+      },
+      "wash_trade_detection": {
+        "base_reliability": 0.88,
+        "pattern_weight": 0.92,
+        "timing_weight": 0.85,
+        "framework_mappings": {
+          "MAR_ARTICLE_12": 0.9,
+          "STOR_REQUIREMENTS": 0.88
+        }
+      },
+      "circular_trading": {
+        "base_reliability": 0.83,
+        "pattern_weight": 0.9,
+        "coordination_weight": 0.87,
+        "framework_mappings": {
+          "MAR_ARTICLE_12": 0.85,
+          "STOR_REQUIREMENTS": 0.82
+        }
+      },
+      "cross_desk_collusion": {
+        "base_reliability": 0.86,
+        "communication_weight": 0.92,
+        "timing_weight": 0.88,
+        "framework_mappings": {
+          "MAR_ARTICLE_8": 0.85,
+          "MAR_ARTICLE_12": 0.87,
+          "STOR_REQUIREMENTS": 0.83
+        }
+      },
+      "commodity_manipulation": {
+        "base_reliability": 0.84,
+        "price_impact_weight": 0.9,
+        "volume_weight": 0.85,
+        "framework_mappings": {
+          "MAR_ARTICLE_12": 0.88,
+          "STOR_REQUIREMENTS": 0.82
+        }
+      },
+      "economic_withholding": {
+        "base_reliability": 0.81,
+        "pattern_weight": 0.85,
+        "impact_weight": 0.88,
+        "framework_mappings": {
+          "MAR_ARTICLE_12": 0.83,
+          "STOR_REQUIREMENTS": 0.79
+        }
+      }
+    },
+    
+    "performance": {
+      "max_evidence_items_per_chain": 50,
+      "max_cross_references_per_item": 10,
+      "evidence_generation_timeout_seconds": 30,
+      "narrative_generation_timeout_seconds": 60,
+      "parallel_processing": {
+        "enabled": true,
+        "max_workers": 4,
+        "chunk_size": 10
+      },
+      "caching": {
+        "enabled": true,
+        "cache_duration_minutes": 30,
+        "max_cache_size_mb": 100
+      }
+    },
+    
+    "reporting": {
+      "auto_generate_stor_reports": true,
+      "include_cross_account_analysis": true,
+      "enable_temporal_clustering": true,
+      "regulatory_narrative_language": "en",
+      "audit_trail_enabled": true,
+      "export_formats": ["json", "xml", "pdf"],
+      "template_version": "2.0",
+      
+      "narrative_templates": {
+        "header_template": "templates/regulatory_header.txt",
+        "executive_summary_template": "templates/executive_summary.txt",
+        "evidence_analysis_template": "templates/evidence_analysis.txt",
+        "conclusions_template": "templates/regulatory_conclusions.txt",
+        "audit_trail_template": "templates/audit_trail.txt"
+      }
+    },
+    
+    "validation": {
+      "enabled": true,
+      "strict_mode": false,
+      "validate_cross_references": true,
+      "validate_evidence_strength": true,
+      "validate_framework_compliance": true,
+      "performance_benchmarks": {
+        "max_evidence_generation_time_ms": 1000,
+        "max_narrative_generation_time_ms": 5000,
+        "max_memory_usage_mb": 500
+      }
+    },
+    
+    "logging": {
+      "level": "INFO",
+      "audit_level": "INFO",
+      "log_evidence_access": true,
+      "log_narrative_generation": true,
+      "log_framework_mappings": true,
+      "retention_days": 90,
+      "sensitive_data_logging": false
+    },
+    
+    "integration": {
+      "bayesian_models": {
+        "auto_detect": true,
+        "require_explainability_engine": true,
+        "require_evidence_generation": true,
+        "require_framework_mapping": true
+      },
+      "external_systems": {
+        "stor_filing_api": {
+          "enabled": true,
+          "endpoint": "https://api.stor.gov/v2/filings",
+          "timeout_seconds": 30,
+          "retry_attempts": 3
+        },
+        "audit_system": {
+          "enabled": true,
+          "endpoint": "https://audit.internal/api/v1/events",
+          "timeout_seconds": 10
+        }
+      }
+    },
+    
+    "compliance_matrix": {
+      "required_frameworks": ["MAR_ARTICLE_8", "MAR_ARTICLE_12", "STOR_REQUIREMENTS"],
+      "evidence_types": {
+        "trading_pattern": {
+          "required": true,
+          "minimum_strength": 0.5,
+          "frameworks": ["MAR_ARTICLE_8", "MAR_ARTICLE_12", "STOR_REQUIREMENTS"]
+        },
+        "timing_anomaly": {
+          "required": true,
+          "minimum_strength": 0.6,
+          "frameworks": ["MAR_ARTICLE_8", "STOR_REQUIREMENTS"]
+        },
+        "communication": {
+          "required": false,
+          "minimum_strength": 0.7,
+          "frameworks": ["MAR_ARTICLE_8", "MIFID_II_ARTICLE_17"]
+        },
+        "cross_account_correlation": {
+          "required": true,
+          "minimum_strength": 0.6,
+          "frameworks": ["MAR_ARTICLE_8", "MAR_ARTICLE_12", "STOR_REQUIREMENTS"]
+        }
+      }
+    }
+  }
+}
