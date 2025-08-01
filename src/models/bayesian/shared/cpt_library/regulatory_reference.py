@@ -1,11 +1,9 @@
 """
 Regulatory Reference System for CPT Library
-
 This module provides regulatory compliance and enforcement case references
 for all CPT definitions, ensuring traceability and regulatory justification
 for probability table settings.
 """
-
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -30,7 +28,7 @@ class RegulatoryFramework(Enum):
 class EnforcementLevel(Enum):
     """Level of enforcement action."""
     GUIDANCE = "regulatory_guidance"
-    WARNING = "regulatory_warning" 
+    WARNING = "regulatory_warning"
     FINE = "monetary_penalty"
     SUSPENSION = "trading_suspension"
     CRIMINAL = "criminal_prosecution"
@@ -40,7 +38,6 @@ class EnforcementLevel(Enum):
 class EnforcementCase:
     """
     Enforcement case reference for CPT calibration.
-    
     This provides the regulatory justification for specific
     probability settings based on real enforcement actions.
     """
@@ -49,75 +46,67 @@ class EnforcementCase:
     regulatory_authority: str
     framework: RegulatoryFramework
     enforcement_level: EnforcementLevel
-    
     # Case details
     violation_type: str
     case_summary: str
     enforcement_date: datetime
     penalty_amount: Optional[float] = None
-    
     # CPT relevance
     relevant_nodes: List[str] = field(default_factory=list)
     probability_justification: str = ""
     risk_threshold_impact: Dict[str, float] = field(default_factory=dict)
-    
     # Metadata
     case_url: Optional[str] = None
     case_reference: Optional[str] = None
     created_at: datetime = field(default_factory=datetime.now)
-    
+
     def __post_init__(self):
         """Validate enforcement case data."""
         if not self.case_id:
             self.case_id = f"ENF_{uuid4().hex[:8].upper()}"
 
 
-@dataclass 
+@dataclass
 class RegulatoryReference:
     """
     Regulatory reference for CPT definitions.
-    
     Links CPT probability settings to regulatory requirements
     and enforcement precedents.
     """
     reference_id: str
     framework: RegulatoryFramework
     article_section: str
-    
     # Regulatory details
     requirement_text: str
     interpretation_guidance: str
     compliance_threshold: Optional[float] = None
-    
     # Enforcement precedents
     enforcement_cases: List[EnforcementCase] = field(default_factory=list)
-    
     # CPT application
     applicable_typologies: List[str] = field(default_factory=list)
     node_mappings: Dict[str, str] = field(default_factory=dict)
     probability_rationale: str = ""
-    
     # Metadata
     created_at: datetime = field(default_factory=datetime.now)
     last_updated: datetime = field(default_factory=datetime.now)
     created_by: str = "system"
-    
+
     def __post_init__(self):
         """Validate regulatory reference data."""
         if not self.reference_id:
             self.reference_id = f"REG_{uuid4().hex[:8].upper()}"
-    
+
     def add_enforcement_case(self, case: EnforcementCase) -> None:
         """Add an enforcement case to this reference."""
         self.enforcement_cases.append(case)
         self.last_updated = datetime.now()
-    
+
     def get_risk_threshold(self, typology: str) -> Optional[float]:
         """Get risk threshold for specific typology."""
         if typology not in self.applicable_typologies:
             return None
         return self.compliance_threshold
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
@@ -158,17 +147,16 @@ class RegulatoryReference:
 class RegulatoryReferenceManager:
     """
     Manager for regulatory references and enforcement cases.
-    
     Provides centralized access to regulatory justifications
     for CPT probability settings.
     """
-    
+
     def __init__(self):
         """Initialize the regulatory reference manager."""
         self.references: Dict[str, RegulatoryReference] = {}
         self.enforcement_cases: Dict[str, EnforcementCase] = {}
         self._load_default_references()
-    
+
     def _load_default_references(self) -> None:
         """Load default regulatory references."""
         # MAR Article 8 - Insider Dealing
@@ -186,7 +174,6 @@ class RegulatoryReferenceManager:
             },
             probability_rationale="Probability thresholds based on FCA enforcement patterns and ESMA guidance"
         )
-        
         # Add sample enforcement case
         fca_case = EnforcementCase(
             case_id="ENF_FCA_2023_001",
@@ -203,13 +190,11 @@ class RegulatoryReferenceManager:
             risk_threshold_impact={"high_risk": 0.8, "medium_risk": 0.6},
             case_reference="FCA/2023/INS/001"
         )
-        
         mar_8_ref.add_enforcement_case(fca_case)
         self.add_reference(mar_8_ref)
-        
         # MAR Article 12 - Market Manipulation
         mar_12_ref = RegulatoryReference(
-            reference_id="REG_MAR12_001", 
+            reference_id="REG_MAR12_001",
             framework=RegulatoryFramework.MAR_ARTICLE_12,
             article_section="Article 12(1)(a)",
             requirement_text="Entering into a transaction which gives false or misleading signals...",
@@ -223,32 +208,30 @@ class RegulatoryReferenceManager:
             },
             probability_rationale="Thresholds calibrated based on ESMA spoofing cases and market manipulation precedents"
         )
-        
         self.add_reference(mar_12_ref)
-    
+
     def add_reference(self, reference: RegulatoryReference) -> None:
         """Add a regulatory reference."""
         self.references[reference.reference_id] = reference
-        
         # Index enforcement cases
         for case in reference.enforcement_cases:
             self.enforcement_cases[case.case_id] = case
-    
+
     def get_reference(self, reference_id: str) -> Optional[RegulatoryReference]:
         """Get regulatory reference by ID."""
         return self.references.get(reference_id)
-    
+
     def get_references_for_typology(self, typology: str) -> List[RegulatoryReference]:
         """Get all regulatory references applicable to a typology."""
         return [
             ref for ref in self.references.values()
             if typology in ref.applicable_typologies
         ]
-    
+
     def get_enforcement_case(self, case_id: str) -> Optional[EnforcementCase]:
         """Get enforcement case by ID."""
         return self.enforcement_cases.get(case_id)
-    
+
     def get_compliance_threshold(self, typology: str, framework: RegulatoryFramework) -> Optional[float]:
         """Get compliance threshold for typology and framework."""
         refs = self.get_references_for_typology(typology)
@@ -256,12 +239,12 @@ class RegulatoryReferenceManager:
             if ref.framework == framework:
                 return ref.compliance_threshold
         return None
-    
+
     def export_references(self) -> Dict[str, Any]:
         """Export all references for serialization."""
         return {
             "references": {
-                ref_id: ref.to_dict() 
+                ref_id: ref.to_dict()
                 for ref_id, ref in self.references.items()
             },
             "metadata": {

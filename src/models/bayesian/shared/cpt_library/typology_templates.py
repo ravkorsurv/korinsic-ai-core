@@ -1,10 +1,8 @@
 """
 Typology Template Manager for CPT Library
-
 This module provides template management for different risk typologies,
 enabling consistent CPT creation across models.
 """
-
 from typing import Dict, List, Optional, Any
 from .typed_cpt import CPTType
 
@@ -12,19 +10,17 @@ from .typed_cpt import CPTType
 class TypologyTemplateManager:
     """
     Manager for CPT templates by typology.
-    
     Provides standardized templates for creating CPTs
     across different risk typologies.
     """
-    
+
     def __init__(self):
         """Initialize template manager."""
         self.templates: Dict[str, Dict[str, Any]] = {}
         self._load_default_templates()
-    
+
     def _load_default_templates(self) -> None:
         """Load default typology templates."""
-        
         # Insider Dealing Templates
         self.templates["insider_dealing"] = {
             "MaterialInfo": {
@@ -52,7 +48,6 @@ class TypologyTemplateManager:
                 "threshold_justification": "Extreme activity requires investigation per STOR requirements"
             }
         }
-        
         # Spoofing Templates
         self.templates["spoofing"] = {
             "OrderPattern": {
@@ -80,7 +75,6 @@ class TypologyTemplateManager:
                 "threshold_justification": "Significant impact indicates successful market manipulation"
             }
         }
-        
         # Wash Trade Detection Templates
         self.templates["wash_trade_detection"] = {
             "SelfTrading": {
@@ -108,7 +102,6 @@ class TypologyTemplateManager:
                 "threshold_justification": "Artificial volume patterns indicate market manipulation"
             }
         }
-        
         # Cross-Typology Shared Templates
         self.templates["cross_typology"] = {
             "RegulatoryRisk": {
@@ -128,7 +121,6 @@ class TypologyTemplateManager:
                 "threshold_justification": "Severe impact indicates systemic market abuse"
             }
         }
-        
         # Economic Withholding Templates
         self.templates["economic_withholding"] = {
             "CapacityWithheld": {
@@ -148,7 +140,6 @@ class TypologyTemplateManager:
                 "threshold_justification": "Extreme inflation requires immediate intervention"
             }
         }
-        
         # Circular Trading Templates
         self.templates["circular_trading"] = {
             "CircularPattern": {
@@ -168,7 +159,6 @@ class TypologyTemplateManager:
                 "threshold_justification": "Direct evidence confirms market manipulation scheme"
             }
         }
-        
         # Commodity Manipulation Templates
         self.templates["commodity_manipulation"] = {
             "PhysicalPosition": {
@@ -188,7 +178,6 @@ class TypologyTemplateManager:
                 "threshold_justification": "Confirmed manipulation requires enforcement action"
             }
         }
-        
         # Cross-Desk Collusion Templates
         self.templates["cross_desk_collusion"] = {
             "InformationSharing": {
@@ -208,7 +197,6 @@ class TypologyTemplateManager:
                 "threshold_justification": "Synchronization indicates deliberate coordination"
             }
         }
-        
         # Market Cornering Templates
         self.templates["market_cornering"] = {
             "MarketControl": {
@@ -228,40 +216,37 @@ class TypologyTemplateManager:
                 "threshold_justification": "Artificial scarcity confirms cornering strategy"
             }
         }
-    
+
     def get_template(self, typology: str, node_name: str) -> Optional[Dict[str, Any]]:
         """
         Get template for specific typology and node.
-        
         Args:
             typology: Risk typology
             node_name: Node name
-            
         Returns:
             Template dictionary or None if not found
         """
         if typology in self.templates:
             return self.templates[typology].get(node_name)
         return None
-    
+
     def get_typology_templates(self, typology: str) -> Dict[str, Any]:
         """Get all templates for a typology."""
         return self.templates.get(typology, {})
-    
+
     def get_available_typologies(self) -> List[str]:
         """Get list of available typologies."""
         return list(self.templates.keys())
-    
+
     def get_available_nodes(self, typology: str) -> List[str]:
         """Get available nodes for a typology."""
         if typology in self.templates:
             return list(self.templates[typology].keys())
         return []
-    
+
     def add_template(self, typology: str, node_name: str, template: Dict[str, Any]) -> None:
         """
         Add a new template.
-        
         Args:
             typology: Risk typology
             node_name: Node name
@@ -269,9 +254,8 @@ class TypologyTemplateManager:
         """
         if typology not in self.templates:
             self.templates[typology] = {}
-        
         self.templates[typology][node_name] = template
-    
+
     def get_cross_typology_templates(self) -> Dict[str, Any]:
         """Get templates that can be shared across typologies."""
         return self.templates.get("cross_typology", {})
