@@ -12,12 +12,10 @@ from uuid import uuid4
 
 
 # Regulatory compliance threshold constants
-class ComplianceThresholds:
-    """Standard compliance thresholds for regulatory frameworks."""
-    MAR_ARTICLE_8_THRESHOLD = 0.7  # Insider dealing detection threshold
-    MAR_ARTICLE_12_THRESHOLD = 0.75  # Market manipulation detection threshold
-    HIGH_RISK_THRESHOLD = 0.8  # High risk probability threshold
-    MEDIUM_RISK_THRESHOLD = 0.6  # Medium risk probability threshold
+MAR_ARTICLE_8_THRESHOLD = 0.7  # Insider dealing detection threshold
+MAR_ARTICLE_12_THRESHOLD = 0.75  # Market manipulation detection threshold
+HIGH_RISK_THRESHOLD = 0.8  # High risk probability threshold
+MEDIUM_RISK_THRESHOLD = 0.6  # Medium risk probability threshold
 
 
 class RegulatoryFramework(Enum):
@@ -181,7 +179,7 @@ class RegulatoryReferenceManager:
             article_section="Article 8(1)",
             requirement_text="A person possesses inside information where they have access to information of a precise nature...",
             interpretation_guidance="Information access patterns and timing correlation are key indicators",
-            compliance_threshold=ComplianceThresholds.MAR_ARTICLE_8_THRESHOLD,
+            compliance_threshold=MAR_ARTICLE_8_THRESHOLD,
             applicable_typologies=["insider_dealing"],
             node_mappings={
                 "MaterialInfo": "Information access patterns",
@@ -201,8 +199,8 @@ class RegulatoryReferenceManager:
             enforcement_date=datetime(2023, 6, 15),
             penalty_amount=2500000.0,
             relevant_nodes=["MaterialInfo", "Timing", "TradingActivity"],
-            probability_justification=f"High probability threshold ({ComplianceThresholds.HIGH_RISK_THRESHOLD}) justified by clear information access and timing patterns",
-            risk_threshold_impact={"high_risk": ComplianceThresholds.HIGH_RISK_THRESHOLD, "medium_risk": ComplianceThresholds.MEDIUM_RISK_THRESHOLD},
+            probability_justification=f"High probability threshold ({HIGH_RISK_THRESHOLD}) justified by clear information access and timing patterns",
+            risk_threshold_impact={"high_risk": HIGH_RISK_THRESHOLD, "medium_risk": MEDIUM_RISK_THRESHOLD},
             case_reference="FCA/2023/INS/001"
         )
         mar_8_ref.add_enforcement_case(fca_case)
@@ -214,7 +212,7 @@ class RegulatoryReferenceManager:
             article_section="Article 12(1)(a)",
             requirement_text="Entering into a transaction which gives false or misleading signals...",
             interpretation_guidance="Focus on order patterns, cancellation rates, and price impact",
-            compliance_threshold=ComplianceThresholds.MAR_ARTICLE_12_THRESHOLD,
+            compliance_threshold=MAR_ARTICLE_12_THRESHOLD,
             applicable_typologies=["spoofing", "wash_trade_detection", "market_manipulation"],
             node_mappings={
                 "OrderPattern": "Order placement patterns",
@@ -256,6 +254,63 @@ class RegulatoryReferenceManager:
             if ref.framework == framework:
                 return ref.compliance_threshold
         return None
+
+    def load_references(self, refs_data: Dict[str, Any]) -> None:
+        """
+        Load regulatory references from serialized data.
+        
+        Args:
+            refs_data: Dictionary containing references data
+        """
+        references_dict = refs_data.get("references", {})
+        for ref_id, ref_data in references_dict.items():
+            try:
+                # Reconstruct RegulatoryReference
+                reference = RegulatoryReference(
+                    reference_id=ref_data["reference_id"],
+                    framework=RegulatoryFramework(ref_data["framework"]),
+                    article_section=ref_data["article_section"],
+                    requirement_text=ref_data["requirement_text"],
+                    interpretation_guidance=ref_data["interpretation_guidance"],
+                    compliance_threshold=ref_data.get("compliance_threshold"),
+                    applicable_typologies=ref_data.get("applicable_typologies", []),
+                    node_mappings=ref_data.get("node_mappings", {}),
+                    probability_rationale=ref_data.get("probability_rationale", "")
+                )
+                
+                # Handle timestamps
+                if ref_data.get("created_at"):
+                    reference.created_at = datetime.fromisoformat(ref_data["created_at"])
+                if ref_data.get("last_updated"):
+                    reference.last_updated = datetime.fromisoformat(ref_data["last_updated"])
+                
+                # Load enforcement cases
+                for case_data in ref_data.get("enforcement_cases", []):
+                    case = EnforcementCase(
+                        case_id=case_data["case_id"],
+                        case_name=case_data["case_name"],
+                        regulatory_authority=case_data["regulatory_authority"],
+                        framework=RegulatoryFramework(case_data["framework"]),
+                        enforcement_level=EnforcementLevel(case_data["enforcement_level"]),
+                        violation_type=case_data["violation_type"],
+                        case_summary=case_data["case_summary"],
+                        enforcement_date=datetime.fromisoformat(case_data["enforcement_date"]),
+                        penalty_amount=case_data.get("penalty_amount"),
+                        relevant_nodes=case_data.get("relevant_nodes", []),
+                        probability_justification=case_data.get("probability_justification", ""),
+                        risk_threshold_impact=case_data.get("risk_threshold_impact", {}),
+                        case_reference=case_data.get("case_reference", "")
+                    )
+                    reference.add_enforcement_case(case)
+                    self.enforcement_cases[case.case_id] = case
+                
+                self.references[ref_id] = reference
+                
+            except Exception as e:
+                # Log error but continue loading other references
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error loading regulatory reference {ref_id}: {str(e)}", exc_info=True)
 
     def export_references(self) -> Dict[str, Any]:
         """Export all references for serialization."""

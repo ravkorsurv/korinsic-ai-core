@@ -60,8 +60,8 @@ class CPTLibrary:
             refs_file = self.library_path / "regulatory_references.json"
             if refs_file.exists():
                 with open(refs_file, 'r') as f:
-                    json.load(f)
-                    # TODO: Load regulatory references
+                    refs_data = json.load(f)
+                    self.regulatory_manager.load_references(refs_data)
             self._rebuild_indexes()
         except Exception as e:
             logger.error(f"Error loading CPT library: {str(e)}", exc_info=True)
@@ -348,48 +348,75 @@ class CPTLibrary:
         """
         try:
             with open(output_file, 'w') as f:
-                # Start JSON structure
-                f.write('{\n')
-                
-                # Stream CPTs
-                f.write('  "cpts": {\n')
-                cpt_items = list(self.cpts.items())
-                for i, (cpt_id, cpt) in enumerate(cpt_items):
-                    f.write(f'    {json.dumps(cpt_id)}: ')
-                    json.dump(cpt.to_dict(), f, separators=(',', ':'))
-                    if i < len(cpt_items) - 1:
-                        f.write(',')
-                    f.write('\n')
-                f.write('  },\n')
-                
-                # Add regulatory references (smaller dataset)
-                f.write('  "regulatory_references": ')
-                json.dump(self.regulatory_manager.export_references(), f, separators=(',', ':'))
-                f.write(',\n')
-                
-                # Add version history (smaller dataset)
-                f.write('  "version_history": ')
-                json.dump(self.version_manager.export_history(), f, separators=(',', ':'))
-                f.write(',\n')
-                
-                # Add metadata
-                f.write('  "metadata": ')
-                metadata = {
-                    "total_cpts": len(self.cpts),
-                    "export_timestamp": datetime.now().isoformat(),
-                    "library_version": "1.0.0"
-                }
-                json.dump(metadata, f, separators=(',', ':'))
-                f.write('\n')
-                
-                # Close JSON structure
-                f.write('}\n')
-                
+                self._write_json_stream(f)
             logger.info(f"CPT Library streamed to {output_file}")
             
         except Exception as e:
             logger.error(f"Error streaming CPT library export: {str(e)}", exc_info=True)
             raise
+
+    def _write_json_stream(self, file_handle) -> None:
+        """
+        Write JSON structure using streaming approach with improved readability.
+        
+        Args:
+            file_handle: File handle to write to
+        """
+        # Build export structure using helper methods
+        export_structure = {
+            "cpts": self._stream_cpts_section,
+            "regulatory_references": lambda: self.regulatory_manager.export_references(),
+            "version_history": lambda: self.version_manager.export_history(),
+            "metadata": self._build_metadata
+        }
+        
+        # Write JSON structure
+        file_handle.write('{\n')
+        
+        sections = list(export_structure.items())
+        for i, (section_name, section_builder) in enumerate(sections):
+            file_handle.write(f'  {json.dumps(section_name)}: ')
+            
+            if section_name == "cpts":
+                # Special handling for large CPTs section
+                self._write_cpts_section(file_handle)
+            else:
+                # Regular JSON dump for smaller sections
+                json.dump(section_builder(), file_handle, separators=(',', ':'))
+            
+            # Add comma if not last section
+            if i < len(sections) - 1:
+                file_handle.write(',')
+            file_handle.write('\n')
+        
+        file_handle.write('}\n')
+
+    def _write_cpts_section(self, file_handle) -> None:
+        """Write CPTs section with streaming for memory efficiency."""
+        file_handle.write('{\n')
+        
+        cpt_items = list(self.cpts.items())
+        for i, (cpt_id, cpt) in enumerate(cpt_items):
+            file_handle.write(f'    {json.dumps(cpt_id)}: ')
+            json.dump(cpt.to_dict(), file_handle, separators=(',', ':'))
+            
+            if i < len(cpt_items) - 1:
+                file_handle.write(',')
+            file_handle.write('\n')
+        
+        file_handle.write('  }')
+
+    def _stream_cpts_section(self) -> Dict[str, Any]:
+        """Helper method for CPTs section (not used in streaming but kept for consistency)."""
+        return {cpt_id: cpt.to_dict() for cpt_id, cpt in self.cpts.items()}
+
+    def _build_metadata(self) -> Dict[str, Any]:
+        """Build metadata section."""
+        return {
+            "total_cpts": len(self.cpts),
+            "export_timestamp": datetime.now().isoformat(),
+            "library_version": "1.0.0"
+        }
 
     def save_library(self) -> None:
         """Save library to disk."""
