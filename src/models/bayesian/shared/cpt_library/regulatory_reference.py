@@ -11,6 +11,15 @@ from typing import Dict, List, Optional, Any
 from uuid import uuid4
 
 
+# Regulatory compliance threshold constants
+class ComplianceThresholds:
+    """Standard compliance thresholds for regulatory frameworks."""
+    MAR_ARTICLE_8_THRESHOLD = 0.7  # Insider dealing detection threshold
+    MAR_ARTICLE_12_THRESHOLD = 0.75  # Market manipulation detection threshold
+    HIGH_RISK_THRESHOLD = 0.8  # High risk probability threshold
+    MEDIUM_RISK_THRESHOLD = 0.6  # Medium risk probability threshold
+
+
 class RegulatoryFramework(Enum):
     """Supported regulatory frameworks."""
     MAR_ARTICLE_8 = "MAR Article 8 - Insider Dealing"
@@ -155,7 +164,13 @@ class RegulatoryReferenceManager:
         """Initialize the regulatory reference manager."""
         self.references: Dict[str, RegulatoryReference] = {}
         self.enforcement_cases: Dict[str, EnforcementCase] = {}
-        self._load_default_references()
+        self._default_references_loaded = False
+
+    def _ensure_default_references_loaded(self) -> None:
+        """Ensure default references are loaded (lazy loading)."""
+        if not self._default_references_loaded:
+            self._load_default_references()
+            self._default_references_loaded = True
 
     def _load_default_references(self) -> None:
         """Load default regulatory references."""
@@ -166,7 +181,7 @@ class RegulatoryReferenceManager:
             article_section="Article 8(1)",
             requirement_text="A person possesses inside information where they have access to information of a precise nature...",
             interpretation_guidance="Information access patterns and timing correlation are key indicators",
-            compliance_threshold=0.7,
+            compliance_threshold=ComplianceThresholds.MAR_ARTICLE_8_THRESHOLD,
             applicable_typologies=["insider_dealing"],
             node_mappings={
                 "MaterialInfo": "Information access patterns",
@@ -186,8 +201,8 @@ class RegulatoryReferenceManager:
             enforcement_date=datetime(2023, 6, 15),
             penalty_amount=2500000.0,
             relevant_nodes=["MaterialInfo", "Timing", "TradingActivity"],
-            probability_justification="High probability threshold (0.8) justified by clear information access and timing patterns",
-            risk_threshold_impact={"high_risk": 0.8, "medium_risk": 0.6},
+            probability_justification=f"High probability threshold ({ComplianceThresholds.HIGH_RISK_THRESHOLD}) justified by clear information access and timing patterns",
+            risk_threshold_impact={"high_risk": ComplianceThresholds.HIGH_RISK_THRESHOLD, "medium_risk": ComplianceThresholds.MEDIUM_RISK_THRESHOLD},
             case_reference="FCA/2023/INS/001"
         )
         mar_8_ref.add_enforcement_case(fca_case)
@@ -199,7 +214,7 @@ class RegulatoryReferenceManager:
             article_section="Article 12(1)(a)",
             requirement_text="Entering into a transaction which gives false or misleading signals...",
             interpretation_guidance="Focus on order patterns, cancellation rates, and price impact",
-            compliance_threshold=0.75,
+            compliance_threshold=ComplianceThresholds.MAR_ARTICLE_12_THRESHOLD,
             applicable_typologies=["spoofing", "wash_trade_detection", "market_manipulation"],
             node_mappings={
                 "OrderPattern": "Order placement patterns",
@@ -223,6 +238,7 @@ class RegulatoryReferenceManager:
 
     def get_references_for_typology(self, typology: str) -> List[RegulatoryReference]:
         """Get all regulatory references applicable to a typology."""
+        self._ensure_default_references_loaded()
         return [
             ref for ref in self.references.values()
             if typology in ref.applicable_typologies
@@ -230,6 +246,7 @@ class RegulatoryReferenceManager:
 
     def get_enforcement_case(self, case_id: str) -> Optional[EnforcementCase]:
         """Get enforcement case by ID."""
+        self._ensure_default_references_loaded()
         return self.enforcement_cases.get(case_id)
 
     def get_compliance_threshold(self, typology: str, framework: RegulatoryFramework) -> Optional[float]:
@@ -242,6 +259,7 @@ class RegulatoryReferenceManager:
 
     def export_references(self) -> Dict[str, Any]:
         """Export all references for serialization."""
+        self._ensure_default_references_loaded()
         return {
             "references": {
                 ref_id: ref.to_dict()

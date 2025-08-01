@@ -537,6 +537,9 @@ class TestCPTLibrary:
             
             self.library.add_cpt(cpt)
         
+        # Trigger lazy loading of default references by accessing them
+        self.library.regulatory_manager.get_references_for_typology("insider_dealing")
+        
         # Get statistics
         stats = self.library.get_library_stats()
         

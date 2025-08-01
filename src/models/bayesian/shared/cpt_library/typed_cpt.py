@@ -153,10 +153,19 @@ class TypedCPT:
         for i, row in enumerate(self.probability_table):
             if len(row) != expected_cols:
                 raise ValueError(f"Row {i} must have {expected_cols} columns")
-            # Check probabilities sum to 1 for each parent combination
-            if abs(sum(row) - expected_cols) > 0.01:  # Allow small floating point errors
-                # For conditional tables, each column should sum to 1 across states
-                pass  # More complex validation needed here
+            
+            # Check individual probabilities are valid
+            for j, prob in enumerate(row):
+                if not isinstance(prob, (int, float)):
+                    raise ValueError(f"Probability at row {i}, col {j} must be numeric")
+                if prob < 0.0 or prob > 1.0:
+                    raise ValueError(f"Probability at row {i}, col {j} must be between 0 and 1, got {prob}")
+        
+        # For conditional tables, validate that probabilities sum to 1 for each parent combination
+        for col in range(expected_cols):
+            col_sum = sum(row[col] for row in self.probability_table)
+            if abs(col_sum - 1.0) > 0.01:  # Allow small floating point errors
+                raise ValueError(f"Probabilities for condition {col} sum to {col_sum:.4f}, expected 1.0")
 
     def get_probability(self, node_state: str, evidence: Dict[str, str] = None) -> float:
         """

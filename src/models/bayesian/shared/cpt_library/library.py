@@ -64,7 +64,7 @@ class CPTLibrary:
                     # TODO: Load regulatory references
             self._rebuild_indexes()
         except Exception as e:
-            logger.error(f"Error loading CPT library: {str(e)}")
+            logger.error(f"Error loading CPT library: {str(e)}", exc_info=True)
 
     def _load_cpts_from_data(self, data: Dict[str, Any]) -> None:
         """Load CPTs from serialized data."""
@@ -112,7 +112,7 @@ class CPTLibrary:
                 )
                 self.cpts[cpt_id] = cpt
             except Exception as e:
-                logger.error(f"Error loading CPT {cpt_id}: {str(e)}")
+                logger.error(f"Error loading CPT {cpt_id}: {str(e)}", exc_info=True)
 
     def _rebuild_indexes(self) -> None:
         """Rebuild lookup indexes."""
@@ -288,7 +288,7 @@ class CPTLibrary:
             logger.info(f"CPT {cpt_id} validated by {validator}")
             return True
         except Exception as e:
-            logger.error(f"CPT {cpt_id} validation failed: {str(e)}")
+            logger.error(f"CPT {cpt_id} validation failed: {str(e)}", exc_info=True)
             return False
 
     def approve_cpt(self, cpt_id: str, approver: str) -> bool:
@@ -308,7 +308,7 @@ class CPTLibrary:
             logger.info(f"CPT {cpt_id} approved by {approver}")
             return True
         except Exception as e:
-            logger.error(f"CPT {cpt_id} approval failed: {str(e)}")
+            logger.error(f"CPT {cpt_id} approval failed: {str(e)}", exc_info=True)
             return False
 
     def get_shared_cpts(self, typology1: str, typology2: str) -> List[TypedCPT]:
@@ -339,16 +339,76 @@ class CPTLibrary:
             }
         }
 
+    def export_library_stream(self, output_file: Path) -> None:
+        """
+        Export library using streaming to handle large datasets efficiently.
+        
+        Args:
+            output_file: Path to output file
+        """
+        try:
+            with open(output_file, 'w') as f:
+                # Start JSON structure
+                f.write('{\n')
+                
+                # Stream CPTs
+                f.write('  "cpts": {\n')
+                cpt_items = list(self.cpts.items())
+                for i, (cpt_id, cpt) in enumerate(cpt_items):
+                    f.write(f'    {json.dumps(cpt_id)}: ')
+                    json.dump(cpt.to_dict(), f, separators=(',', ':'))
+                    if i < len(cpt_items) - 1:
+                        f.write(',')
+                    f.write('\n')
+                f.write('  },\n')
+                
+                # Add regulatory references (smaller dataset)
+                f.write('  "regulatory_references": ')
+                json.dump(self.regulatory_manager.export_references(), f, separators=(',', ':'))
+                f.write(',\n')
+                
+                # Add version history (smaller dataset)
+                f.write('  "version_history": ')
+                json.dump(self.version_manager.export_history(), f, separators=(',', ':'))
+                f.write(',\n')
+                
+                # Add metadata
+                f.write('  "metadata": ')
+                metadata = {
+                    "total_cpts": len(self.cpts),
+                    "export_timestamp": datetime.now().isoformat(),
+                    "library_version": "1.0.0"
+                }
+                json.dump(metadata, f, separators=(',', ':'))
+                f.write('\n')
+                
+                # Close JSON structure
+                f.write('}\n')
+                
+            logger.info(f"CPT Library streamed to {output_file}")
+            
+        except Exception as e:
+            logger.error(f"Error streaming CPT library export: {str(e)}", exc_info=True)
+            raise
+
     def save_library(self) -> None:
         """Save library to disk."""
         try:
             # Save CPTs
             cpts_file = self.library_path / "cpts.json"
-            with open(cpts_file, 'w') as f:
-                json.dump(self.export_library(), f, indent=2)
+            
+            # Use streaming export for large libraries (>100 CPTs)
+            if len(self.cpts) > 100:
+                logger.info(f"Using streaming export for large library ({len(self.cpts)} CPTs)")
+                self.export_library_stream(cpts_file)
+            else:
+                # Use regular export for smaller libraries (better formatting)
+                with open(cpts_file, 'w') as f:
+                    json.dump(self.export_library(), f, indent=2)
+                    
             logger.info(f"CPT Library saved to {self.library_path}")
         except Exception as e:
-            logger.error(f"Error saving CPT library: {str(e)}")
+            logger.error(f"Error saving CPT library: {str(e)}", exc_info=True)
 
     def get_library_stats(self) -> Dict[str, Any]:
         """Get library statistics."""
