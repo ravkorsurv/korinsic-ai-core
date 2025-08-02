@@ -8,7 +8,7 @@ risk profiles, alerts, evidence, and cross-typology signals.
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Dict, List, Optional, Any, TypedDict
+from typing import Dict, List, Optional, Any, TypedDict, Set
 from uuid import uuid4
 
 from .trading_data import RawTradeData, TradeDirection
@@ -188,13 +188,11 @@ class PersonCentricAlert:
     
     alert_id: str
     person_id: str
-    person_name: Optional[str] = None
-    
-    # Risk classification
     risk_typology: RiskTypology
     severity: AlertSeverity
     probability_score: float  # 0.0 to 1.0
     confidence_score: float  # 0.0 to 1.0
+    person_name: Optional[str] = None
     
     # Cross-account context
     involved_accounts: List[str] = field(default_factory=list)

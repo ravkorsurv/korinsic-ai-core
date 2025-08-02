@@ -184,7 +184,7 @@ class CrossTypologyEngine:
         signal_strength = source_risk * base_correlation * source_weight
         
         # Determine signal direction
-                    signal_direction = SignalDirection.POSITIVE if signal_strength > 0 else SignalDirection.NEUTRAL
+        signal_direction = SignalDirection.POSITIVE if signal_strength > 0 else SignalDirection.NEUTRAL
         
         # Calculate impact on target typology's prior
         impact_on_prior = signal_strength * 0.3  # Max 30% impact on prior

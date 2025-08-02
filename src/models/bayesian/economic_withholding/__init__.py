@@ -44,7 +44,8 @@ critical_failures = []
 
 for module_name, module_info in MODULES_TO_IMPORT.items():
     try:
-        module = __import__(f'.{module_name}', fromlist=[module_info['module']], package=__name__)
+        import importlib
+        module = importlib.import_module(f'.{module_name}', package=__name__)
         modules[module_name] = getattr(module, module_info['module'])
     except ImportError as e:
         modules[module_name] = None
