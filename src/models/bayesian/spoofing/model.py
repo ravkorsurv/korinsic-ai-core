@@ -14,6 +14,7 @@ from pgmpy.models import DiscreteBayesianNetwork
 
 from ..shared.esi import EvidenceSufficiencyIndex
 from ..shared.fallback_logic import FallbackLogic
+
 from .config import SpoofingConfig
 from .nodes import SpoofingNodes
 
@@ -59,7 +60,9 @@ class SpoofingModel:
         self.model = self._build_model()
         self.inference_engine = VariableElimination(self.model)
 
-        logger.info(f"Spoofing model initialized (latent_intent={use_latent_intent})")
+        logger.info(
+            f"Spoofing model initialized (latent_intent={use_latent_intent})"
+        )
 
     def _build_model(self) -> DiscreteBayesianNetwork:
         """
@@ -83,37 +86,32 @@ class SpoofingModel:
         # Create the network structure
         model = DiscreteBayesianNetwork()
 
-        # Add nodes
+        # Add nodes (evidence + outcome)
         nodes = [
+            # Evidence nodes
             "order_clustering",
-            "price_impact_ratio",
+            "price_impact_ratio", 
             "volume_participation",
             "order_behavior",
             "intent_to_execute",
             "order_cancellation",
+            # Outcome nodes
             "risk_factor",
             "spoofing",
         ]
 
         model.add_nodes_from(nodes)
 
-        # Add edges - evidence nodes to risk factor
-        evidence_nodes = [
-            "order_clustering",
-            "price_impact_ratio",
-            "volume_participation",
-            "order_behavior",
-            "intent_to_execute",
-            "order_cancellation",
-        ]
-
+        # Add edges - evidence nodes directly to risk factor
+        evidence_nodes = ["order_clustering", "price_impact_ratio", "volume_participation",
+                         "order_behavior", "intent_to_execute", "order_cancellation"]
         for evidence_node in evidence_nodes:
             model.add_edge(evidence_node, "risk_factor")
 
         # Add edge from risk factor to outcome
         model.add_edge("risk_factor", "spoofing")
 
-        # Add CPDs (placeholder - would need proper CPDs in production)
+        # Add CPDs
         self._add_cpds(model, use_latent_intent=False)
 
         return model
@@ -128,14 +126,16 @@ class SpoofingModel:
         # Create the network structure
         model = DiscreteBayesianNetwork()
 
-        # Add nodes
+        # Add nodes (evidence + latent + outcome)
         nodes = [
+            # Evidence nodes
             "order_clustering",
             "price_impact_ratio",
-            "volume_participation",
+            "volume_participation", 
             "order_behavior",
             "intent_to_execute",
             "order_cancellation",
+            # Latent and outcome nodes
             "spoofing_latent_intent",
             "risk_factor",
             "spoofing",
@@ -143,16 +143,9 @@ class SpoofingModel:
 
         model.add_nodes_from(nodes)
 
-        # Add edges - evidence nodes to latent intent
-        evidence_nodes = [
-            "order_clustering",
-            "price_impact_ratio",
-            "volume_participation",
-            "order_behavior",
-            "intent_to_execute",
-            "order_cancellation",
-        ]
-
+        # Add edges - evidence nodes directly to latent intent
+        evidence_nodes = ["order_clustering", "price_impact_ratio", "volume_participation",
+                         "order_behavior", "intent_to_execute", "order_cancellation"]
         for evidence_node in evidence_nodes:
             model.add_edge(evidence_node, "spoofing_latent_intent")
 
@@ -162,7 +155,7 @@ class SpoofingModel:
         # Add edge from risk factor to outcome
         model.add_edge("risk_factor", "spoofing")
 
-        # Add CPDs (placeholder - would need proper CPDs in production)
+        # Add CPDs
         self._add_cpds(model, use_latent_intent=True)
 
         return model
@@ -174,99 +167,118 @@ class SpoofingModel:
         Add Conditional Probability Distributions to the model.
 
         Args:
-            model: Bayesian network model
-            use_latent_intent: Whether to use latent intent structure
+            model: The Bayesian network model
+            use_latent_intent: Whether latent intent modeling is used
         """
-        # This is a placeholder implementation
-        # In production, you would add proper CPDs here
-        # For now, we'll use simple fallback priors
-
         import numpy as np
         from pgmpy.factors.discrete import TabularCPD
 
-        # Add CPDs for evidence nodes (using fallback priors)
-        evidence_nodes = [
-            "order_clustering",
-            "price_impact_ratio",
-            "volume_participation",
-            "order_behavior",
-            "intent_to_execute",
-            "order_cancellation",
+        # Evidence node CPDs (prior probabilities)
+        evidence_cpds = [
+            TabularCPD(
+                variable="order_clustering",
+                variable_card=3,
+                values=[[0.70], [0.25], [0.05]],
+            ),
+            TabularCPD(
+                variable="price_impact_ratio",
+                variable_card=3,
+                values=[[0.75], [0.20], [0.05]],
+            ),
+            TabularCPD(
+                variable="volume_participation",
+                variable_card=3,
+                values=[[0.72], [0.23], [0.05]],
+            ),
+            TabularCPD(
+                variable="order_behavior",
+                variable_card=3,
+                values=[[0.70], [0.25], [0.05]],
+            ),
+            TabularCPD(
+                variable="intent_to_execute",
+                variable_card=3,
+                values=[[0.80], [0.15], [0.05]],
+            ),
+            TabularCPD(
+                variable="order_cancellation",
+                variable_card=3,
+                values=[[0.75], [0.20], [0.05]],
+            ),
         ]
-
-        for node_name in evidence_nodes:
-            node = self.nodes.get_node(node_name)
-            if node:
-                cpd = TabularCPD(
-                    variable=node_name,
-                    variable_card=len(node.states),
-                    values=np.array([node.fallback_prior]).T,
-                )
-                model.add_cpds(cpd)
+        model.add_cpds(*evidence_cpds)
 
         if use_latent_intent:
-            # Latent intent CPD (corrected: 6 parents, 3 states each)
+            # Latent intent CPD (6 parents → 729 combinations)
+            # This will be large but demonstrates the original structure
+            num_combinations = 3 ** 6  # 729 combinations
+            latent_intent_values = np.zeros((3, num_combinations))
+            
+            # Simplified logic for demonstration - in practice this would be more sophisticated
+            for i in range(num_combinations):
+                # Default probabilities
+                latent_intent_values[0, i] = 0.85  # legitimate_trading
+                latent_intent_values[1, i] = 0.12  # suspicious_activity
+                latent_intent_values[2, i] = 0.03  # spoofing_behavior
+            
             spoofing_intent_cpd = TabularCPD(
                 variable="spoofing_latent_intent",
                 variable_card=3,
-                values=np.full((3, 729), 1 / 3),
-                evidence=[
-                    "order_clustering",
-                    "price_impact_ratio",
-                    "volume_participation",
-                    "order_behavior",
-                    "intent_to_execute",
-                    "order_cancellation",
-                ],
+                values=latent_intent_values,
+                evidence=["order_clustering", "price_impact_ratio", "volume_participation",
+                         "order_behavior", "intent_to_execute", "order_cancellation"],
                 evidence_card=[3, 3, 3, 3, 3, 3],
             )
             model.add_cpds(spoofing_intent_cpd)
+            
             # Risk factor CPD (depends on latent intent)
             risk_factor_cpd = TabularCPD(
                 variable="risk_factor",
                 variable_card=3,
-                values=np.array(
-                    [
-                        [0.90, 0.45, 0.10],  # Low risk
-                        [0.08, 0.35, 0.30],  # Medium risk
-                        [0.02, 0.20, 0.60],  # High risk
-                    ]
-                ),
+                values=np.array([
+                    [0.90, 0.45, 0.10],  # Low risk
+                    [0.08, 0.35, 0.30],  # Medium risk
+                    [0.02, 0.20, 0.60],  # High risk
+                ]),
                 evidence=["spoofing_latent_intent"],
                 evidence_card=[3],
             )
             model.add_cpds(risk_factor_cpd)
         else:
-            # Standard risk factor CPD (6 parents, 3 states each)
+            # Standard risk factor CPD (6 parents → 729 combinations)
+            num_combinations = 3 ** 6  # 729 combinations
+            risk_factor_values = np.zeros((3, num_combinations))
+            
+            # Simplified logic for demonstration
+            for i in range(num_combinations):
+                # Default probabilities
+                risk_factor_values[0, i] = 0.80  # Low risk
+                risk_factor_values[1, i] = 0.15  # Medium risk
+                risk_factor_values[2, i] = 0.05  # High risk
+            
             risk_factor_cpd = TabularCPD(
                 variable="risk_factor",
                 variable_card=3,
-                values=np.full((3, 729), 1 / 3),
-                evidence=[
-                    "order_clustering",
-                    "price_impact_ratio",
-                    "volume_participation",
-                    "order_behavior",
-                    "intent_to_execute",
-                    "order_cancellation",
-                ],
+                values=risk_factor_values,
+                evidence=["order_clustering", "price_impact_ratio", "volume_participation",
+                         "order_behavior", "intent_to_execute", "order_cancellation"],
                 evidence_card=[3, 3, 3, 3, 3, 3],
             )
             model.add_cpds(risk_factor_cpd)
-        # Outcome CPD (depends on risk_factor)
-        outcome_cpd = TabularCPD(
+
+        # Outcome CPD
+        spoofing_cpd = TabularCPD(
             variable="spoofing",
-            variable_card=2,
-            values=np.array(
-                [
-                    [0.97, 0.70, 0.20],  # No spoofing
-                    [0.03, 0.30, 0.80],  # Spoofing detected
-                ]
-            ),
+            variable_card=3,
+            values=np.array([
+                [0.95, 0.60, 0.10],  # No spoofing
+                [0.04, 0.30, 0.40],  # Possible spoofing
+                [0.01, 0.10, 0.50],  # Likely spoofing
+            ]),
             evidence=["risk_factor"],
             evidence_card=[3],
         )
-        model.add_cpds(outcome_cpd)
+        model.add_cpds(spoofing_cpd)
 
     def calculate_risk(self, evidence: Dict[str, Any]) -> Dict[str, Any]:
         """

@@ -13,14 +13,25 @@ from datetime import datetime
 try:
     from pgmpy.inference import VariableElimination
     from pgmpy.models import DiscreteBayesianNetwork
+    from pgmpy.factors.discrete import TabularCPD
     PGMPY_AVAILABLE = True
 except ImportError:
     PGMPY_AVAILABLE = False
     DiscreteBayesianNetwork = None
     VariableElimination = None
+    TabularCPD = None
 
 from ..shared.esi import EvidenceSufficiencyIndex
 from ..shared.fallback_logic import FallbackLogic
+
+# Add intermediate nodes import
+from ..shared.intermediate_nodes import (
+    CostAnalysisIntermediateNode,
+    MarketConditionsIntermediateNode, 
+    BehavioralPatternsIntermediateNode,
+    TechnicalFactorsIntermediateNode,
+    create_intermediate_cpt
+)
 
 # Add regulatory explainability import
 from ....core.regulatory_explainability import (
@@ -45,6 +56,8 @@ class EconomicWithholdingModel:
     This class provides a complete interface for economic withholding risk assessment,
     including counterfactual simulation, cost curve analysis, Bayesian inference,
     and ARERA compliance reporting.
+    
+    REFACTORED: Now uses intermediate nodes to reduce fan-in complexity from 19→4 parents.
     """
 
     def __init__(
@@ -79,6 +92,9 @@ class EconomicWithholdingModel:
             self.config.get_arera_config()
         )
 
+        # Initialize intermediate nodes for fan-in reduction
+        self.intermediate_nodes = self._initialize_intermediate_nodes()
+
         # Build the Bayesian network if pgmpy is available
         if PGMPY_AVAILABLE:
             self.model = self._build_model()
@@ -89,34 +105,40 @@ class EconomicWithholdingModel:
             self.inference_engine = None
 
         logger.info(
-            f"Economic withholding model initialized (latent_intent={use_latent_intent})"
+            f"Economic withholding model initialized (latent_intent={use_latent_intent}, "
+            f"intermediate_nodes={len(self.intermediate_nodes)})"
         )
+
+    def _initialize_intermediate_nodes(self) -> Dict[str, Any]:
+        """Initialize intermediate nodes for fan-in reduction."""
+        return {
+            "cost_analysis": CostAnalysisIntermediateNode(),
+            "market_conditions": MarketConditionsIntermediateNode(),
+            "behavioral_patterns": BehavioralPatternsIntermediateNode(),
+            "technical_factors": TechnicalFactorsIntermediateNode(),
+        }
 
     def _build_model(self) -> Optional[DiscreteBayesianNetwork]:
         """
         Build the Bayesian network model for economic withholding detection.
+        REFACTORED: Uses intermediate nodes to reduce complexity.
 
         Returns:
             Configured Bayesian network or None if pgmpy unavailable
         """
         if not PGMPY_AVAILABLE:
             return None
-            
+
         try:
-            # Create Bayesian Network
+            # Create the network structure with intermediate nodes
             model = DiscreteBayesianNetwork()
             
-            # Get node names based on model type
-            if self.use_latent_intent:
-                node_names = self.nodes.get_latent_intent_nodes()
-            else:
-                node_names = self.nodes.get_standard_nodes()
+            # Add all nodes (evidence + intermediate + outcome)
+            nodes = self._get_all_node_names()
+            model.add_nodes_from(nodes)
             
-            # Add nodes to the network
-            model.add_nodes_from(node_names)
-            
-            # Define network structure for economic withholding
-            edges = self._get_network_edges()
+            # Add edges with new hierarchical structure
+            edges = self._get_network_edges_with_intermediates()
             model.add_edges_from(edges)
             
             # Add CPDs (Conditional Probability Distributions)
@@ -124,94 +146,438 @@ class EconomicWithholdingModel:
             model.add_cpds(*cpds)
             
             # Validate the model
-            if model.check_model():
-                logger.info("Economic withholding Bayesian network built successfully")
-                return model
-            else:
-                logger.error("Bayesian network validation failed")
-                return None
+            if not model.check_model():
+                raise ValueError("Bayesian Network structure or CPDs are invalid")
                 
+            logger.info(
+                f"Economic withholding model built successfully with "
+                f"{len(nodes)} nodes and {len(edges)} edges (intermediate structure)"
+            )
+            return model
+            
         except Exception as e:
-            logger.error(f"Error building Bayesian network: {str(e)}")
-            return None
+            logger.error(f"Error building economic withholding model: {str(e)}")
+            raise
 
-    def _get_network_edges(self) -> List[tuple]:
+    def _get_network_edges_with_intermediates(self) -> List[tuple]:
         """
-        Define the network structure for economic withholding detection.
+        Get network edges using intermediate node structure.
+        REFACTORED: 19 direct connections → 4 intermediate → 1 final
         
         Returns:
-            List of edges (parent, child) for the Bayesian network
+            List of edges (parent, child) for the hierarchical Bayesian network
         """
         edges = []
         
-        # Core cost analysis influences risk
-        edges.extend([
-            ('marginal_cost_deviation', 'economic_withholding_risk'),
-            ('fuel_cost_variance', 'economic_withholding_risk'),
-            ('plant_efficiency', 'economic_withholding_risk'),
-            ('heat_rate_variance', 'economic_withholding_risk'),
-        ])
+        # Evidence nodes to intermediate nodes (grouped by business logic)
         
-        # Market conditions influence behavior
-        edges.extend([
-            ('load_factor', 'economic_withholding_risk'),
-            ('market_tightness', 'economic_withholding_risk'),
-            ('competitive_context', 'economic_withholding_risk'),
-            ('transmission_constraint', 'economic_withholding_risk'),
-        ])
+        # Cost analysis group (4 evidence → 1 intermediate)
+        cost_evidence = [
+            'marginal_cost_deviation', 'fuel_cost_variance', 
+            'plant_efficiency', 'heat_rate_variance'
+        ]
+        for evidence in cost_evidence:
+            edges.append((evidence, 'cost_analysis_intermediate'))
         
-        # Behavioral indicators
-        edges.extend([
-            ('bid_shape_anomaly', 'economic_withholding_risk'),
-            ('offer_withdrawal_pattern', 'economic_withholding_risk'),
-            ('capacity_utilization', 'economic_withholding_risk'),
-            ('markup_consistency', 'economic_withholding_risk'),
-            ('opportunity_pricing', 'economic_withholding_risk'),
-        ])
+        # Market conditions group (4 evidence → 1 intermediate)  
+        market_evidence = [
+            'load_factor', 'market_tightness', 
+            'competitive_context', 'transmission_constraint'
+        ]
+        for evidence in market_evidence:
+            edges.append((evidence, 'market_conditions_intermediate'))
         
-        # Technical analysis
-        edges.extend([
-            ('fuel_price_correlation', 'economic_withholding_risk'),
-            ('cross_plant_coordination', 'economic_withholding_risk'),
-        ])
+        # Behavioral patterns group (5 evidence → 1 intermediate)
+        behavioral_evidence = [
+            'bid_shape_anomaly', 'offer_withdrawal_pattern', 'capacity_utilization',
+            'markup_consistency', 'opportunity_pricing'
+        ]
+        for evidence in behavioral_evidence:
+            edges.append((evidence, 'behavioral_patterns_intermediate'))
         
-        # Reused nodes from existing library
-        edges.extend([
-            ('price_impact_ratio', 'economic_withholding_risk'),
-            ('volume_participation', 'economic_withholding_risk'),
-            ('liquidity_context', 'economic_withholding_risk'),
-            ('order_clustering', 'economic_withholding_risk'),
-            ('benchmark_timing', 'economic_withholding_risk'),
-            ('profit_motivation', 'economic_withholding_risk'),
-        ])
+        # Technical factors group (6 evidence → 1 intermediate)
+        technical_evidence = [
+            'fuel_price_correlation', 'cross_plant_coordination', 'price_impact_ratio',
+            'volume_participation', 'liquidity_context', 'order_clustering'
+        ]
+        for evidence in technical_evidence:
+            edges.append((evidence, 'technical_factors_intermediate'))
         
-        # Add latent intent connections if enabled
+        # Intermediate nodes to final risk assessment (4 intermediate → 1 final)
+        intermediate_nodes = [
+            'cost_analysis_intermediate',
+            'market_conditions_intermediate', 
+            'behavioral_patterns_intermediate',
+            'technical_factors_intermediate'
+        ]
+        
         if self.use_latent_intent:
-            # Evidence influences latent intent
-            edges.extend([
-                ('marginal_cost_deviation', 'withholding_latent_intent'),
-                ('fuel_cost_variance', 'withholding_latent_intent'),
-                ('plant_efficiency', 'withholding_latent_intent'),
-                ('market_tightness', 'withholding_latent_intent'),
-                ('bid_shape_anomaly', 'withholding_latent_intent'),
-                ('capacity_utilization', 'withholding_latent_intent'),
-            ])
-            # Latent intent influences risk
+            # Intermediate nodes influence latent intent
+            for intermediate in intermediate_nodes:
+                edges.append((intermediate, 'withholding_latent_intent'))
+            # Latent intent influences final risk
             edges.append(('withholding_latent_intent', 'economic_withholding_risk'))
+        else:
+            # Direct intermediate to risk connections
+            for intermediate in intermediate_nodes:
+                edges.append((intermediate, 'economic_withholding_risk'))
         
         return edges
+
+    def _get_all_node_names(self) -> List[str]:
+        """Get all node names including intermediate nodes."""
+        # Evidence nodes (19 total)
+        evidence_nodes = [
+            # Cost analysis evidence
+            'marginal_cost_deviation', 'fuel_cost_variance', 'plant_efficiency', 'heat_rate_variance',
+            # Market conditions evidence  
+            'load_factor', 'market_tightness', 'competitive_context', 'transmission_constraint',
+            # Behavioral patterns evidence
+            'bid_shape_anomaly', 'offer_withdrawal_pattern', 'capacity_utilization', 
+            'markup_consistency', 'opportunity_pricing',
+            # Technical factors evidence
+            'fuel_price_correlation', 'cross_plant_coordination', 'price_impact_ratio',
+            'volume_participation', 'liquidity_context', 'order_clustering'
+        ]
+        
+        # Intermediate nodes (4 total)
+        intermediate_nodes = [
+            'cost_analysis_intermediate',
+            'market_conditions_intermediate',
+            'behavioral_patterns_intermediate', 
+            'technical_factors_intermediate'
+        ]
+        
+        # Outcome nodes
+        outcome_nodes = ['economic_withholding_risk']
+        
+        # Optional latent intent node
+        if self.use_latent_intent:
+            outcome_nodes.append('withholding_latent_intent')
+        
+        return evidence_nodes + intermediate_nodes + outcome_nodes
 
     def _get_conditional_probability_distributions(self) -> List[Any]:
         """
         Create conditional probability distributions for the network.
+        REFACTORED: Uses intermediate nodes with manageable CPT sizes.
         
         Returns:
-            List of CPDs for the Bayesian network
+            List of TabularCPD objects for all nodes
         """
-        # This would create actual CPDs - for now return empty list
-        # In production, this would use the node definitions and expert knowledge
-        # to create proper probability distributions
-        return []
+        if not PGMPY_AVAILABLE:
+            return []
+            
+        cpds = []
+        
+        # Evidence node CPDs (prior probabilities - no parents)
+        evidence_priors = self._get_evidence_node_priors()
+        cpds.extend(evidence_priors)
+        
+        # Intermediate node CPDs (evidence → intermediate)
+        intermediate_cpds = self._get_intermediate_node_cpds()
+        cpds.extend(intermediate_cpds)
+        
+        # Final outcome CPDs (intermediate → outcome)
+        outcome_cpds = self._get_outcome_node_cpds()
+        cpds.extend(outcome_cpds)
+        
+        logger.info(f"Created {len(cpds)} CPDs for economic withholding model")
+        return cpds
+
+    def _get_evidence_node_priors(self) -> List[TabularCPD]:
+        """Create CPDs for evidence nodes (prior probabilities)."""
+        cpds = []
+        
+        # Marginal cost deviation (0 or 1)
+        marginal_cost_deviation_cpd = TabularCPD(
+            variable='marginal_cost_deviation',
+            variable_card=2,
+            values=[[0.9], [0.1]],
+            state_names={'marginal_cost_deviation': ['no_deviation', 'deviation']}
+        )
+        cpds.append(marginal_cost_deviation_cpd)
+
+        # Fuel cost variance (0 or 1)
+        fuel_cost_variance_cpd = TabularCPD(
+            variable='fuel_cost_variance',
+            variable_card=2,
+            values=[[0.9], [0.1]],
+            state_names={'fuel_cost_variance': ['no_variance', 'variance']}
+        )
+        cpds.append(fuel_cost_variance_cpd)
+
+        # Plant efficiency (0 or 1)
+        plant_efficiency_cpd = TabularCPD(
+            variable='plant_efficiency',
+            variable_card=2,
+            values=[[0.9], [0.1]],
+            state_names={'plant_efficiency': ['efficient', 'inefficient']}
+        )
+        cpds.append(plant_efficiency_cpd)
+
+        # Heat rate variance (0 or 1)
+        heat_rate_variance_cpd = TabularCPD(
+            variable='heat_rate_variance',
+            variable_card=2,
+            values=[[0.9], [0.1]],
+            state_names={'heat_rate_variance': ['no_variance', 'variance']}
+        )
+        cpds.append(heat_rate_variance_cpd)
+
+        # Load factor (0 or 1)
+        load_factor_cpd = TabularCPD(
+            variable='load_factor',
+            variable_card=2,
+            values=[[0.9], [0.1]],
+            state_names={'load_factor': ['low', 'high']}
+        )
+        cpds.append(load_factor_cpd)
+
+        # Market tightness (0 or 1)
+        market_tightness_cpd = TabularCPD(
+            variable='market_tightness',
+            variable_card=2,
+            values=[[0.9], [0.1]],
+            state_names={'market_tightness': ['tight', 'loose']}
+        )
+        cpds.append(market_tightness_cpd)
+
+        # Competitive context (0 or 1)
+        competitive_context_cpd = TabularCPD(
+            variable='competitive_context',
+            variable_card=2,
+            values=[[0.9], [0.1]],
+            state_names={'competitive_context': ['competitive', 'non_competitive']}
+        )
+        cpds.append(competitive_context_cpd)
+
+        # Transmission constraint (0 or 1)
+        transmission_constraint_cpd = TabularCPD(
+            variable='transmission_constraint',
+            variable_card=2,
+            values=[[0.9], [0.1]],
+            state_names={'transmission_constraint': ['no_constraint', 'constraint']}
+        )
+        cpds.append(transmission_constraint_cpd)
+
+        # Bid shape anomaly (0 or 1)
+        bid_shape_anomaly_cpd = TabularCPD(
+            variable='bid_shape_anomaly',
+            variable_card=2,
+            values=[[0.9], [0.1]],
+            state_names={'bid_shape_anomaly': ['normal', 'anomaly']}
+        )
+        cpds.append(bid_shape_anomaly_cpd)
+
+        # Offer withdrawal pattern (0 or 1)
+        offer_withdrawal_pattern_cpd = TabularCPD(
+            variable='offer_withdrawal_pattern',
+            variable_card=2,
+            values=[[0.9], [0.1]],
+            state_names={'offer_withdrawal_pattern': ['no_withdrawal', 'withdrawal']}
+        )
+        cpds.append(offer_withdrawal_pattern_cpd)
+
+        # Capacity utilization (0 or 1)
+        capacity_utilization_cpd = TabularCPD(
+            variable='capacity_utilization',
+            variable_card=2,
+            values=[[0.9], [0.1]],
+            state_names={'capacity_utilization': ['low', 'high']}
+        )
+        cpds.append(capacity_utilization_cpd)
+
+        # Markup consistency (0 or 1)
+        markup_consistency_cpd = TabularCPD(
+            variable='markup_consistency',
+            variable_card=2,
+            values=[[0.9], [0.1]],
+            state_names={'markup_consistency': ['consistent', 'inconsistent']}
+        )
+        cpds.append(markup_consistency_cpd)
+
+        # Opportunity pricing (0 or 1)
+        opportunity_pricing_cpd = TabularCPD(
+            variable='opportunity_pricing',
+            variable_card=2,
+            values=[[0.9], [0.1]],
+            state_names={'opportunity_pricing': ['no_opportunity', 'opportunity']}
+        )
+        cpds.append(opportunity_pricing_cpd)
+
+        # Fuel price correlation (0 or 1)
+        fuel_price_correlation_cpd = TabularCPD(
+            variable='fuel_price_correlation',
+            variable_card=2,
+            values=[[0.9], [0.1]],
+            state_names={'fuel_price_correlation': ['no_correlation', 'correlation']}
+        )
+        cpds.append(fuel_price_correlation_cpd)
+
+        # Cross plant coordination (0 or 1)
+        cross_plant_coordination_cpd = TabularCPD(
+            variable='cross_plant_coordination',
+            variable_card=2,
+            values=[[0.9], [0.1]],
+            state_names={'cross_plant_coordination': ['no_coordination', 'coordination']}
+        )
+        cpds.append(cross_plant_coordination_cpd)
+
+        # Price impact ratio (0 or 1)
+        price_impact_ratio_cpd = TabularCPD(
+            variable='price_impact_ratio',
+            variable_card=2,
+            values=[[0.9], [0.1]],
+            state_names={'price_impact_ratio': ['no_impact', 'impact']}
+        )
+        cpds.append(price_impact_ratio_cpd)
+
+        # Volume participation (0 or 1)
+        volume_participation_cpd = TabularCPD(
+            variable='volume_participation',
+            variable_card=2,
+            values=[[0.9], [0.1]],
+            state_names={'volume_participation': ['low', 'high']}
+        )
+        cpds.append(volume_participation_cpd)
+
+        # Liquidity context (0 or 1)
+        liquidity_context_cpd = TabularCPD(
+            variable='liquidity_context',
+            variable_card=2,
+            values=[[0.9], [0.1]],
+            state_names={'liquidity_context': ['low', 'high']}
+        )
+        cpds.append(liquidity_context_cpd)
+
+        # Order clustering (0 or 1)
+        order_clustering_cpd = TabularCPD(
+            variable='order_clustering',
+            variable_card=2,
+            values=[[0.9], [0.1]],
+            state_names={'order_clustering': ['no_clustering', 'clustering']}
+        )
+        cpds.append(order_clustering_cpd)
+
+        return cpds
+
+    def _get_intermediate_node_cpds(self) -> List[TabularCPD]:
+        """Create CPDs for intermediate nodes using noisy-OR logic."""
+        cpds = []
+        
+        # Cost analysis intermediate (4 parents → 81 combinations vs 1.16B)
+        cost_cpd = create_intermediate_cpt(
+            self.intermediate_nodes["cost_analysis"],
+            ['marginal_cost_deviation', 'fuel_cost_variance', 'plant_efficiency', 'heat_rate_variance'],
+            cpt_type="noisy_or"
+        )
+        cpds.append(cost_cpd)
+        
+        # Market conditions intermediate (4 parents → 81 combinations)
+        market_cpd = create_intermediate_cpt(
+            self.intermediate_nodes["market_conditions"],
+            ['load_factor', 'market_tightness', 'competitive_context', 'transmission_constraint'],
+            cpt_type="noisy_or"
+        )
+        cpds.append(market_cpd)
+        
+        # Behavioral patterns intermediate (5 parents → 243 combinations)
+        behavioral_cpd = create_intermediate_cpt(
+            self.intermediate_nodes["behavioral_patterns"],
+            ['bid_shape_anomaly', 'offer_withdrawal_pattern', 'capacity_utilization', 
+             'markup_consistency', 'opportunity_pricing'],
+            cpt_type="noisy_or"
+        )
+        cpds.append(behavioral_cpd)
+        
+        # Technical factors intermediate (6 parents → 729 combinations)
+        technical_cpd = create_intermediate_cpt(
+            self.intermediate_nodes["technical_factors"],
+            ['fuel_price_correlation', 'cross_plant_coordination', 'price_impact_ratio',
+             'volume_participation', 'liquidity_context', 'order_clustering'],
+            cpt_type="noisy_or"
+        )
+        cpds.append(technical_cpd)
+        
+        return cpds
+
+    def _get_outcome_node_cpds(self) -> List[TabularCPD]:
+        """Create CPDs for final outcome nodes (4 intermediate parents → manageable)."""
+        cpds = []
+        
+        intermediate_parents = [
+            'cost_analysis_intermediate',
+            'market_conditions_intermediate', 
+            'behavioral_patterns_intermediate',
+            'technical_factors_intermediate'
+        ]
+        
+        if self.use_latent_intent:
+            # Latent intent CPD (4 intermediate parents → 81 combinations)
+            latent_intent_values = self._create_expert_latent_intent_cpt()
+            latent_cpd = TabularCPD(
+                variable='withholding_latent_intent',
+                variable_card=3,
+                values=latent_intent_values,
+                evidence=intermediate_parents,
+                evidence_card=[3, 3, 3, 3]
+            )
+            cpds.append(latent_cpd)
+            
+            # Final risk CPD (1 latent intent parent → 3 combinations)
+            risk_values = self._create_final_risk_cpt_with_latent()
+            risk_cpd = TabularCPD(
+                variable='economic_withholding_risk',
+                variable_card=3,
+                values=risk_values,
+                evidence=['withholding_latent_intent'],
+                evidence_card=[3]
+            )
+            cpds.append(risk_cpd)
+        else:
+            # Direct final risk CPD (4 intermediate parents → 81 combinations)
+            risk_values = self._create_final_risk_cpt_direct()
+            risk_cpd = TabularCPD(
+                variable='economic_withholding_risk',
+                variable_card=3,
+                values=risk_values,
+                evidence=intermediate_parents,
+                evidence_card=[3, 3, 3, 3]
+            )
+            cpds.append(risk_cpd)
+        
+        return cpds
+
+    def _create_expert_latent_intent_cpt(self) -> List[List[float]]:
+        """Create a CPD for the latent intent node."""
+        # This is a simplified example. In a real model, this would be learned
+        # from expert knowledge or data. For now, a fixed mapping.
+        return [
+            [0.1, 0.2, 0.7], # No withholding
+            [0.3, 0.5, 0.2], # Potential withholding
+            [0.6, 0.2, 0.1]  # Clear withholding
+        ]
+
+    def _create_final_risk_cpt_with_latent(self) -> List[List[float]]:
+        """Create a CPD for the final risk node, considering latent intent."""
+        # This is a simplified example. In a real model, this would be learned
+        # from expert knowledge or data. For now, a fixed mapping.
+        return [
+            [0.1, 0.2, 0.7], # No withholding
+            [0.3, 0.5, 0.2], # Potential withholding
+            [0.6, 0.2, 0.1]  # Clear withholding
+        ]
+
+    def _create_final_risk_cpt_direct(self) -> List[List[float]]:
+        """Create a CPD for the final risk node, considering direct intermediate parents."""
+        # This is a simplified example. In a real model, this would be learned
+        # from expert knowledge or data. For now, a fixed mapping.
+        return [
+            [0.1, 0.2, 0.7], # No withholding
+            [0.3, 0.5, 0.2], # Potential withholding
+            [0.6, 0.2, 0.1]  # Clear withholding
+        ]
 
     def _get_state_index(self, node_name: str, state_value: str) -> int:
         """

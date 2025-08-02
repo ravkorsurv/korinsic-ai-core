@@ -17,6 +17,7 @@ class CPTType(Enum):
     RISK_FACTOR = "risk_factor"
     OUTCOME_NODE = "outcome_node"
     LATENT_INTENT = "latent_intent"
+    INTERMEDIATE_NODE = "intermediate_node"  # NEW: For fan-in reduction
     CROSS_TYPOLOGY = "cross_typology"
 
 

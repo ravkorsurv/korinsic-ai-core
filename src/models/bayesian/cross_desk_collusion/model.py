@@ -15,6 +15,13 @@ from pgmpy.models import DiscreteBayesianNetwork
 from ..shared.esi import EvidenceSufficiencyIndex
 from ..shared.fallback_logic import FallbackLogic
 
+# Add intermediate nodes import
+from ..shared.intermediate_nodes import (
+    MarketImpactIntermediateNode,
+    BehavioralIntentIntermediateNode,
+    create_intermediate_cpt
+)
+
 # Add regulatory explainability import
 from ....core.regulatory_explainability import (
     RegulatoryExplainabilityEngine,
@@ -34,6 +41,8 @@ class CrossDeskCollusionModel:
 
     This class provides a complete interface for cross-desk collusion risk assessment,
     including model building, inference, and evidence sufficiency analysis.
+    
+    REFACTORED: Now uses 2 intermediate nodes to reduce fan-in from 6→2 parents.
     """
 
     def __init__(
@@ -55,13 +64,32 @@ class CrossDeskCollusionModel:
         # Initialize regulatory explainability engine
         self.explainability_engine = RegulatoryExplainabilityEngine(config or {})
 
+        # Initialize intermediate nodes for fan-in reduction
+        self.intermediate_nodes = self._initialize_intermediate_nodes()
+
         # Build the Bayesian network
         self.model = self._build_model()
         self.inference_engine = VariableElimination(self.model)
 
         logger.info(
-            f"Cross-desk collusion model initialized (latent_intent={use_latent_intent})"
+            f"Cross-desk collusion model initialized (latent_intent={use_latent_intent}, "
+            f"intermediate_nodes={len(self.intermediate_nodes)})"
         )
+
+    def _initialize_intermediate_nodes(self) -> Dict[str, Any]:
+        """Initialize intermediate nodes for cross-desk collusion model fan-in reduction."""
+        return {
+            "coordination_patterns": MarketImpactIntermediateNode(
+                name="coordination_patterns_intermediate",
+                parent_nodes=["cross_venue_coordination", "access_pattern", "market_segmentation"],
+                description="Cross-desk coordination pattern indicators"
+            ),
+            "communication_intent": BehavioralIntentIntermediateNode(
+                name="communication_intent_intermediate", 
+                parent_nodes=["comms_metadata", "profit_motivation", "order_behavior"],
+                description="Communication and behavioral intent indicators"
+            )
+        }
 
     def _build_model(self) -> DiscreteBayesianNetwork:
         """
@@ -123,6 +151,7 @@ class CrossDeskCollusionModel:
     def _build_latent_intent_model(self) -> DiscreteBayesianNetwork:
         """
         Build the latent intent cross-desk collusion Bayesian network.
+        REFACTORED: Uses 2 intermediate nodes instead of 6 direct parents to latent intent.
 
         Returns:
             Latent intent Bayesian network
@@ -130,14 +159,19 @@ class CrossDeskCollusionModel:
         # Create the network structure
         model = DiscreteBayesianNetwork()
 
-        # Add nodes
+        # Add nodes (evidence + intermediate + latent + outcome)
         nodes = [
+            # Evidence nodes
             "comms_metadata",
             "profit_motivation",
             "order_behavior",
             "cross_venue_coordination",
             "access_pattern",
             "market_segmentation",
+            # Intermediate nodes
+            "coordination_patterns_intermediate",
+            "communication_intent_intermediate",
+            # Latent and outcome nodes
             "collusion_latent_intent",
             "risk_factor",
             "cross_desk_collusion",
@@ -145,18 +179,18 @@ class CrossDeskCollusionModel:
 
         model.add_nodes_from(nodes)
 
-        # Add edges - evidence nodes to latent intent
-        evidence_nodes = [
-            "comms_metadata",
-            "profit_motivation",
-            "order_behavior",
-            "cross_venue_coordination",
-            "access_pattern",
-            "market_segmentation",
-        ]
+        # Add edges - evidence nodes to intermediate nodes
+        coordination_evidence = ["cross_venue_coordination", "access_pattern", "market_segmentation"]
+        for evidence_node in coordination_evidence:
+            model.add_edge(evidence_node, "coordination_patterns_intermediate")
 
-        for evidence_node in evidence_nodes:
-            model.add_edge(evidence_node, "collusion_latent_intent")
+        communication_evidence = ["comms_metadata", "profit_motivation", "order_behavior"]
+        for evidence_node in communication_evidence:
+            model.add_edge(evidence_node, "communication_intent_intermediate")
+
+        # Add edges - intermediate nodes to latent intent (2 parents instead of 6)
+        model.add_edge("coordination_patterns_intermediate", "collusion_latent_intent")
+        model.add_edge("communication_intent_intermediate", "collusion_latent_intent")
 
         # Add edge from latent intent to risk factor
         model.add_edge("collusion_latent_intent", "risk_factor")
@@ -164,7 +198,7 @@ class CrossDeskCollusionModel:
         # Add edge from risk factor to outcome
         model.add_edge("risk_factor", "cross_desk_collusion")
 
-        # Add CPDs (placeholder - would need proper CPDs in production)
+        # Add CPDs
         self._add_cpds(model, use_latent_intent=True)
 
         return model
@@ -174,56 +208,51 @@ class CrossDeskCollusionModel:
     ):
         """
         Add Conditional Probability Distributions to the model.
-
-        Args:
-            model: Bayesian network model
-            use_latent_intent: Whether to use latent intent structure
+        REFACTORED: Uses intermediate nodes with noisy-OR CPTs.
         """
-        # This is a placeholder implementation
-        # In production, you would add proper CPDs here
-        # For now, we'll use simple fallback priors
-
         import numpy as np
         from pgmpy.factors.discrete import TabularCPD
 
-        # Add CPDs for evidence nodes (using fallback priors)
-        evidence_nodes = [
-            "comms_metadata",
-            "profit_motivation",
-            "order_behavior",
-            "cross_venue_coordination",
-            "access_pattern",
-            "market_segmentation",
+        # Evidence node CPDs (prior probabilities)
+        evidence_cpds = [
+            TabularCPD(variable="comms_metadata", variable_card=3, values=[[0.75], [0.20], [0.05]]),
+            TabularCPD(variable="profit_motivation", variable_card=3, values=[[0.70], [0.25], [0.05]]),
+            TabularCPD(variable="order_behavior", variable_card=3, values=[[0.70], [0.25], [0.05]]),
+            TabularCPD(variable="cross_venue_coordination", variable_card=3, values=[[0.80], [0.15], [0.05]]),
+            TabularCPD(variable="access_pattern", variable_card=3, values=[[0.75], [0.20], [0.05]]),
+            TabularCPD(variable="market_segmentation", variable_card=3, values=[[0.85], [0.12], [0.03]]),
         ]
+        model.add_cpds(*evidence_cpds)
 
-        for node_name in evidence_nodes:
-            node = self.nodes.get_node(node_name)
-            if node:
-                cpd = TabularCPD(
-                    variable=node_name,
-                    variable_card=len(node.states),
-                    values=np.array([node.fallback_prior]).T,
-                )
-                model.add_cpds(cpd)
+        # Intermediate node CPDs using noisy-OR
+        coordination_cpd = create_intermediate_cpt(
+            self.intermediate_nodes["coordination_patterns"],
+            ["cross_venue_coordination", "access_pattern", "market_segmentation"],
+            cpt_type="noisy_or"
+        )
+        model.add_cpds(coordination_cpd)
 
-        # Add CPDs for latent intent or risk factor
+        communication_cpd = create_intermediate_cpt(
+            self.intermediate_nodes["communication_intent"],
+            ["comms_metadata", "profit_motivation", "order_behavior"],
+            cpt_type="noisy_or"
+        )
+        model.add_cpds(communication_cpd)
+
         if use_latent_intent:
-            # Latent intent CPD (corrected: evidence matches parents)
+            # Latent intent CPD (2 intermediate parents → 9 combinations vs 729)
             collusion_intent_cpd = TabularCPD(
                 variable="collusion_latent_intent",
                 variable_card=3,
-                values=np.full(
-                    (3, 729), 1 / 3
-                ),  # 6 evidence nodes, 3^6=729 combinations
-                evidence=[
-                    "comms_metadata",
-                    "profit_motivation",
-                    "order_behavior",
-                    "cross_venue_coordination",
-                    "access_pattern",
-                    "market_segmentation",
-                ],
-                evidence_card=[3, 3, 3, 3, 3, 3],
+                values=np.array([
+                    # coordination_patterns: low, medium, high
+                    # communication_intent: benign, suspicious, malicious
+                    [0.95, 0.80, 0.50, 0.70, 0.40, 0.20, 0.30, 0.15, 0.05],  # no_collusion
+                    [0.04, 0.15, 0.35, 0.25, 0.40, 0.45, 0.40, 0.35, 0.25],  # potential_collusion
+                    [0.01, 0.05, 0.15, 0.05, 0.20, 0.35, 0.30, 0.50, 0.70],  # clear_collusion
+                ]),
+                evidence=["coordination_patterns_intermediate", "communication_intent_intermediate"],
+                evidence_card=[3, 3],
             )
             model.add_cpds(collusion_intent_cpd)
 
