@@ -15,11 +15,11 @@ from pgmpy.models import DiscreteBayesianNetwork
 from ..shared.esi import EvidenceSufficiencyIndex
 from ..shared.fallback_logic import FallbackLogic
 
-# Add intermediate nodes import
-from ..shared.intermediate_nodes import (
-    MarketImpactIntermediateNode,
-    BehavioralIntentIntermediateNode,
-    create_intermediate_cpt
+# Updated to use reusable intermediate nodes
+from ..shared.reusable_intermediate_nodes import (
+    MarketImpactNode,
+    BehavioralIntentNode,
+    ReusableNodeFactory
 )
 
 from .config import SpoofingConfig
@@ -43,7 +43,7 @@ class SpoofingModel:
     This class provides a complete interface for spoofing risk assessment,
     including model building, inference, and evidence sufficiency analysis.
     
-    REFACTORED: Now uses 2 intermediate nodes to reduce fan-in from 6→2 parents.
+    REFACTORED: Now uses reusable intermediate nodes to reduce fan-in from 6→2 parents.
     """
 
     def __init__(
@@ -65,8 +65,8 @@ class SpoofingModel:
         # Initialize regulatory explainability engine
         self.explainability_engine = RegulatoryExplainabilityEngine(config or {})
 
-        # Initialize intermediate nodes for fan-in reduction
-        self.intermediate_nodes = self._initialize_intermediate_nodes()
+        # Initialize reusable intermediate nodes for fan-in reduction
+        self.intermediate_nodes = self._initialize_reusable_intermediate_nodes()
 
         # Build the Bayesian network
         self.model = self._build_model()
@@ -74,28 +74,35 @@ class SpoofingModel:
 
         logger.info(
             f"Spoofing model initialized (latent_intent={use_latent_intent}, "
-            f"intermediate_nodes={len(self.intermediate_nodes)})"
+            f"reusable_intermediate_nodes={len(self.intermediate_nodes)})"
         )
 
-    def _initialize_intermediate_nodes(self) -> Dict[str, Any]:
-        """Initialize intermediate nodes for spoofing model fan-in reduction."""
+    def _initialize_reusable_intermediate_nodes(self) -> Dict[str, Any]:
+        """Initialize reusable intermediate nodes for spoofing model fan-in reduction."""
+        
+        # Create market impact node for spoofing-specific market effects
+        market_impact_node = ReusableNodeFactory.create_market_impact_node(
+            model_type="spoofing",
+            parent_nodes=["order_clustering", "price_impact_ratio", "volume_participation"],
+            name_suffix="_spoofing"
+        )
+        
+        # Create behavioral intent node for spoofing-specific behavioral patterns
+        behavioral_intent_node = ReusableNodeFactory.create_behavioral_intent_node(
+            model_type="spoofing", 
+            parent_nodes=["order_behavior", "intent_to_execute", "order_cancellation"],
+            name_suffix="_spoofing"
+        )
+        
         return {
-            "market_impact": MarketImpactIntermediateNode(
-                name="market_impact_intermediate",
-                parent_nodes=["order_clustering", "price_impact_ratio", "volume_participation"],
-                description="Market-level spoofing impact indicators"
-            ),
-            "behavioral_intent": BehavioralIntentIntermediateNode(
-                name="behavioral_intent_intermediate", 
-                parent_nodes=["order_behavior", "intent_to_execute", "order_cancellation"],
-                description="Trader behavioral intent indicators"
-            )
+            "market_impact": market_impact_node,
+            "behavioral_intent": behavioral_intent_node
         }
 
     def _build_model(self) -> DiscreteBayesianNetwork:
         """
         Build the Bayesian network model.
-        REFACTORED: Uses 2 intermediate nodes instead of 6 direct parents.
+        REFACTORED: Uses reusable intermediate nodes instead of 6 direct parents.
 
         Returns:
             Configured Bayesian network
@@ -108,7 +115,7 @@ class SpoofingModel:
     def _build_standard_model(self) -> DiscreteBayesianNetwork:
         """
         Build the standard spoofing Bayesian network.
-        REFACTORED: Uses intermediate nodes for better structure.
+        REFACTORED: Uses reusable intermediate nodes for better structure.
 
         Returns:
             Standard Bayesian network
@@ -116,7 +123,7 @@ class SpoofingModel:
         # Create the network structure
         model = DiscreteBayesianNetwork()
 
-        # Add nodes (evidence + intermediate + outcome)
+        # Add nodes (evidence + reusable intermediate + outcome)
         nodes = [
             # Evidence nodes
             "order_clustering",
@@ -125,9 +132,9 @@ class SpoofingModel:
             "order_behavior",
             "intent_to_execute",
             "order_cancellation",
-            # Intermediate nodes
-            "market_impact_intermediate",
-            "behavioral_intent_intermediate",
+            # Reusable intermediate nodes
+            "market_impact_spoofing",
+            "behavioral_intent_spoofing",
             # Outcome nodes
             "risk_factor",
             "spoofing",
@@ -135,18 +142,18 @@ class SpoofingModel:
 
         model.add_nodes_from(nodes)
 
-        # Add edges - evidence nodes to intermediate nodes
+        # Add edges - evidence nodes to reusable intermediate nodes
         market_impact_evidence = ["order_clustering", "price_impact_ratio", "volume_participation"]
         for evidence_node in market_impact_evidence:
-            model.add_edge(evidence_node, "market_impact_intermediate")
+            model.add_edge(evidence_node, "market_impact_spoofing")
 
         behavioral_intent_evidence = ["order_behavior", "intent_to_execute", "order_cancellation"]
         for evidence_node in behavioral_intent_evidence:
-            model.add_edge(evidence_node, "behavioral_intent_intermediate")
+            model.add_edge(evidence_node, "behavioral_intent_spoofing")
 
-        # Add edges - intermediate nodes to risk factor (2 parents instead of 6)
-        model.add_edge("market_impact_intermediate", "risk_factor")
-        model.add_edge("behavioral_intent_intermediate", "risk_factor")
+        # Add edges - reusable intermediate nodes to risk factor (2 parents instead of 6)
+        model.add_edge("market_impact_spoofing", "risk_factor")
+        model.add_edge("behavioral_intent_spoofing", "risk_factor")
 
         # Add edge from risk factor to outcome
         model.add_edge("risk_factor", "spoofing")
@@ -159,7 +166,7 @@ class SpoofingModel:
     def _build_latent_intent_model(self) -> DiscreteBayesianNetwork:
         """
         Build the latent intent spoofing Bayesian network.
-        REFACTORED: Uses 2 intermediate nodes instead of 6 direct parents to latent intent.
+        REFACTORED: Uses reusable intermediate nodes instead of 6 direct parents to latent intent.
 
         Returns:
             Latent intent Bayesian network
@@ -167,7 +174,7 @@ class SpoofingModel:
         # Create the network structure
         model = DiscreteBayesianNetwork()
 
-        # Add nodes (evidence + intermediate + latent + outcome)
+        # Add nodes (evidence + reusable intermediate + latent + outcome)
         nodes = [
             # Evidence nodes
             "order_clustering",
@@ -176,9 +183,9 @@ class SpoofingModel:
             "order_behavior",
             "intent_to_execute",
             "order_cancellation",
-            # Intermediate nodes
-            "market_impact_intermediate",
-            "behavioral_intent_intermediate",
+            # Reusable intermediate nodes
+            "market_impact_spoofing",
+            "behavioral_intent_spoofing",
             # Latent and outcome nodes
             "spoofing_latent_intent",
             "risk_factor",
@@ -187,18 +194,18 @@ class SpoofingModel:
 
         model.add_nodes_from(nodes)
 
-        # Add edges - evidence nodes to intermediate nodes
+        # Add edges - evidence nodes to reusable intermediate nodes
         market_impact_evidence = ["order_clustering", "price_impact_ratio", "volume_participation"]
         for evidence_node in market_impact_evidence:
-            model.add_edge(evidence_node, "market_impact_intermediate")
+            model.add_edge(evidence_node, "market_impact_spoofing")
 
         behavioral_intent_evidence = ["order_behavior", "intent_to_execute", "order_cancellation"]
         for evidence_node in behavioral_intent_evidence:
-            model.add_edge(evidence_node, "behavioral_intent_intermediate")
+            model.add_edge(evidence_node, "behavioral_intent_spoofing")
 
-        # Add edges - intermediate nodes to latent intent (2 parents instead of 6)
-        model.add_edge("market_impact_intermediate", "spoofing_latent_intent")
-        model.add_edge("behavioral_intent_intermediate", "spoofing_latent_intent")
+        # Add edges - reusable intermediate nodes to latent intent (2 parents instead of 6)
+        model.add_edge("market_impact_spoofing", "spoofing_latent_intent")
+        model.add_edge("behavioral_intent_spoofing", "spoofing_latent_intent")
 
         # Add edge from latent intent to risk factor
         model.add_edge("spoofing_latent_intent", "risk_factor")
@@ -216,7 +223,7 @@ class SpoofingModel:
     ):
         """
         Add Conditional Probability Distributions to the model.
-        REFACTORED: Uses intermediate nodes with noisy-OR CPTs.
+        REFACTORED: Uses reusable intermediate nodes with noisy-OR CPTs.
 
         Args:
             model: The Bayesian network model
@@ -260,34 +267,27 @@ class SpoofingModel:
         ]
         model.add_cpds(*evidence_cpds)
 
-        # Intermediate node CPDs using noisy-OR
-        market_impact_cpd = create_intermediate_cpt(
-            self.intermediate_nodes["market_impact"],
-            ["order_clustering", "price_impact_ratio", "volume_participation"],
-            cpt_type="noisy_or"
-        )
+        # Reusable intermediate node CPDs using noisy-OR
+        market_impact_cpd = self.intermediate_nodes["market_impact"].create_noisy_or_cpt()
         model.add_cpds(market_impact_cpd)
 
-        behavioral_intent_cpd = create_intermediate_cpt(
-            self.intermediate_nodes["behavioral_intent"],
-            ["order_behavior", "intent_to_execute", "order_cancellation"],
-            cpt_type="noisy_or"
-        )
+        behavioral_intent_cpd = self.intermediate_nodes["behavioral_intent"].create_noisy_or_cpt()
         model.add_cpds(behavioral_intent_cpd)
 
         if use_latent_intent:
-            # Latent intent CPD (2 intermediate parents → 9 combinations vs 729)
+            # Latent intent CPD (2 reusable intermediate parents → 9 combinations vs 729)
+            # Map reusable node states to spoofing-specific logic
             spoofing_intent_cpd = TabularCPD(
                 variable="spoofing_latent_intent",
                 variable_card=3,
                 values=np.array([
-                    # market_impact: low, medium, high
-                    # behavioral_intent: benign, suspicious, malicious
-                    [0.95, 0.80, 0.60, 0.70, 0.50, 0.30, 0.40, 0.20, 0.05],  # legitimate
-                    [0.04, 0.15, 0.30, 0.25, 0.35, 0.40, 0.35, 0.30, 0.25],  # suspicious  
-                    [0.01, 0.05, 0.10, 0.05, 0.15, 0.30, 0.25, 0.50, 0.70],  # spoofing
+                    # market_impact_spoofing: minimal, moderate, significant
+                    # behavioral_intent_spoofing: legitimate, suspicious, manipulative
+                    [0.95, 0.80, 0.60, 0.70, 0.50, 0.30, 0.40, 0.20, 0.05],  # legitimate_trading
+                    [0.04, 0.15, 0.30, 0.25, 0.35, 0.40, 0.35, 0.30, 0.25],  # suspicious_activity  
+                    [0.01, 0.05, 0.10, 0.05, 0.15, 0.30, 0.25, 0.50, 0.70],  # spoofing_behavior
                 ]),
-                evidence=["market_impact_intermediate", "behavioral_intent_intermediate"],
+                evidence=["market_impact_spoofing", "behavioral_intent_spoofing"],
                 evidence_card=[3, 3],
             )
             model.add_cpds(spoofing_intent_cpd)
@@ -306,18 +306,18 @@ class SpoofingModel:
             )
             model.add_cpds(risk_factor_cpd)
         else:
-            # Standard risk factor CPD (2 intermediate parents → 9 combinations vs 729)
+            # Standard risk factor CPD (2 reusable intermediate parents → 9 combinations vs 729)
             risk_factor_cpd = TabularCPD(
                 variable="risk_factor",
                 variable_card=3,
                 values=np.array([
-                    # market_impact: low, medium, high
-                    # behavioral_intent: benign, suspicious, malicious
+                    # market_impact_spoofing: minimal, moderate, significant
+                    # behavioral_intent_spoofing: legitimate, suspicious, manipulative
                     [0.90, 0.70, 0.40, 0.60, 0.35, 0.15, 0.30, 0.10, 0.05],  # Low risk
                     [0.08, 0.25, 0.45, 0.30, 0.45, 0.50, 0.40, 0.35, 0.25],  # Medium risk
                     [0.02, 0.05, 0.15, 0.10, 0.20, 0.35, 0.30, 0.55, 0.70],  # High risk
                 ]),
-                evidence=["market_impact_intermediate", "behavioral_intent_intermediate"],
+                evidence=["market_impact_spoofing", "behavioral_intent_spoofing"],
                 evidence_card=[3, 3],
             )
             model.add_cpds(risk_factor_cpd)
