@@ -12,28 +12,28 @@ This project follows a **single-source dependency management approach** using on
 Required for basic functionality - installed automatically with the package:
 
 ```python
-# Core scientific computing stack
-"numpy>=1.20.0,<2.0.0"           # Numerical operations
-"pandas>=1.3.0,<3.0.0"           # Data manipulation
-"scipy>=1.7.0,<2.0.0"            # Scientific computing
+# Core scientific computing stack - relaxed for performance improvements
+"numpy>=1.20.0"                  # Numerical operations - allow latest optimizations
+"pandas>=1.3.0"                  # Data manipulation - allow performance improvements  
+"scipy>=1.7.0"                   # Scientific computing - allow algorithm optimizations
 
 # Bayesian Networks and graph operations  
-"pgmpy>=0.1.19,<1.0.0"           # Bayesian Network library
-"networkx>=2.6,<4.0.0"           # Graph operations
+"pgmpy>=0.1.19,<1.0.0"           # Bayesian Network library - keep bound (API stability)
+"networkx>=2.6"                  # Graph operations - stable API, allow latest
 
-# Visualization and plotting
-"matplotlib>=3.3.0,<4.0.0"       # Basic plotting
-"seaborn>=0.11.0,<1.0.0"         # Statistical plotting
+# Visualization and plotting - stable APIs, allow improvements
+"matplotlib>=3.3.0"              # Basic plotting - mature API
+"seaborn>=0.11.0"                # Statistical plotting - stable API
 
 # Machine learning and utilities
-"scikit-learn>=1.0.0,<2.0.0"     # ML utilities
-"joblib>=1.0.0,<2.0.0"           # Parallel processing
+"scikit-learn>=1.0.0"            # ML utilities - stable API since 1.0
+"joblib>=1.0.0"                  # Parallel processing - stable, allow latest
 
-# Progress and configuration
-"tqdm>=4.60.0,<5.0.0"            # Progress bars
-"pyyaml>=5.4.0,<7.0.0"           # YAML configuration
-"jsonschema>=3.2.0,<5.0.0"       # JSON validation
-"typing-extensions>=3.10.0,<5.0.0" # Type hints
+# Progress and configuration - stable utilities
+"tqdm>=4.60.0"                   # Progress bars - stable API
+"pyyaml>=5.4.0"                  # YAML configuration - stable API
+"jsonschema>=3.2.0,<5.0.0"       # JSON validation - keep bound (API changes)
+"typing-extensions>=3.10.0"      # Type hints - backward compatible
 ```
 
 ### **Development Dependencies (`extras_require["dev"]`)**
@@ -103,15 +103,16 @@ pip install -e .[dev,performance]
 
 ## 📋 **Version Constraint Strategy**
 
-### **Constraint Format**
-- **Minimum version**: `>=X.Y.Z` - Ensures compatibility
-- **Maximum version**: `<X.0.0` - Prevents breaking changes
-- **Example**: `numpy>=1.20.0,<2.0.0`
+### **Constraint Strategy**
+- **Core scientific libraries**: Only minimum versions (allow performance improvements)
+- **Framework/API libraries**: Conservative bounds (prevent breaking changes)
+- **Example**: `numpy>=1.20.0` vs `pgmpy>=0.1.19,<1.0.0`
 
 ### **Rationale**
 1. **Minimum versions** ensure required features are available
-2. **Maximum versions** prevent breaking changes from major releases
-3. **Conservative ranges** provide stability while allowing bug fixes
+2. **Scientific libraries** (NumPy, Pandas, SciPy) get frequent performance improvements
+3. **Framework libraries** may have breaking API changes requiring bounds
+4. **Balanced approach** maximizes performance while maintaining stability
 
 ### **Version Selection Criteria**
 - **Minimum**: Oldest version that provides required functionality

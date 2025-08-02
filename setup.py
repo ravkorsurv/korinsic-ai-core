@@ -61,57 +61,57 @@ setup(
     
     # Dependencies - all defined here for clear precedence and conflict avoidance
     install_requires=[
-        # Core scientific computing stack
-        "numpy>=1.20.0,<2.0.0",
-        "pandas>=1.3.0,<3.0.0",
-        "scipy>=1.7.0,<2.0.0",
+        # Core scientific computing stack - relaxed upper bounds for performance improvements
+        "numpy>=1.20.0",          # Allow latest NumPy for performance optimizations
+        "pandas>=1.3.0",          # Allow latest Pandas for performance improvements
+        "scipy>=1.7.0",           # Allow latest SciPy for algorithm optimizations
         
         # Bayesian Networks and graph operations
-        "pgmpy>=0.1.19,<1.0.0",  # Bayesian Network library
-        "networkx>=2.6,<4.0.0",  # Graph operations
+        "pgmpy>=0.1.19,<1.0.0",  # Bayesian Network library - keep bound (API stability)
+        "networkx>=2.6",          # Graph operations - stable API, allow latest
         
-        # Visualization and plotting
-        "matplotlib>=3.3.0,<4.0.0",  # Plotting
-        "seaborn>=0.11.0,<1.0.0",  # Statistical plotting
+        # Visualization and plotting - stable APIs, allow performance improvements
+        "matplotlib>=3.3.0",      # Plotting - mature API, allow latest
+        "seaborn>=0.11.0",        # Statistical plotting - stable API
         
         # Machine learning and utilities
-        "scikit-learn>=1.0.0,<2.0.0",  # Machine learning utilities
-        "joblib>=1.0.0,<2.0.0",  # Parallel processing
+        "scikit-learn>=1.0.0",    # ML utilities - stable API since 1.0
+        "joblib>=1.0.0",          # Parallel processing - stable, allow latest
         
-        # Progress and configuration
-        "tqdm>=4.60.0,<5.0.0",  # Progress bars
-        "pyyaml>=5.4.0,<7.0.0",  # Configuration files
-        "jsonschema>=3.2.0,<5.0.0",  # JSON validation
+        # Progress and configuration - stable utilities
+        "tqdm>=4.60.0",           # Progress bars - stable API
+        "pyyaml>=5.4.0",          # Configuration files - stable API
+        "jsonschema>=3.2.0,<5.0.0",  # JSON validation - keep bound (API changes)
         
         # Type hints and compatibility
-        "typing-extensions>=3.10.0,<5.0.0",  # Type hints
+        "typing-extensions>=3.10.0",  # Type hints - backward compatible
     ],
     
-    # Optional dependencies with version constraints
+    # Optional dependencies - balanced approach for stability vs performance
     extras_require={
         "dev": [
-            "pytest>=6.0.0,<8.0.0",
-            "pytest-cov>=2.12.0,<5.0.0",
-            "pytest-mock>=3.6.0,<4.0.0",
-            "black>=21.0.0,<24.0.0",
-            "flake8>=3.9.0,<7.0.0",
-            "mypy>=0.910,<2.0.0",
-            "isort>=5.9.0,<6.0.0",
-            "pre-commit>=2.15.0,<4.0.0",
+            "pytest>=6.0.0",         # Testing framework - stable API
+            "pytest-cov>=2.12.0",    # Coverage - stable plugin
+            "pytest-mock>=3.6.0",    # Mocking - stable plugin
+            "black>=21.0.0",          # Code formatting - stable API
+            "flake8>=3.9.0",          # Linting - stable API
+            "mypy>=0.910,<2.0.0",     # Type checking - keep bound (frequent API changes)
+            "isort>=5.9.0",           # Import sorting - stable API
+            "pre-commit>=2.15.0",     # Git hooks - stable API
         ],
         "docs": [
-            "sphinx>=4.0.0,<8.0.0",
-            "sphinx-rtd-theme>=0.5.0,<3.0.0",
-            "sphinx-autodoc-typehints>=1.12.0,<2.0.0",
+            "sphinx>=4.0.0",          # Documentation - stable API
+            "sphinx-rtd-theme>=0.5.0", # Theme - stable
+            "sphinx-autodoc-typehints>=1.12.0,<2.0.0", # Keep bound (extension API)
         ],
         "performance": [
-            "numba>=0.54.0,<1.0.0",
-            "cython>=0.29.0,<4.0.0",
+            "numba>=0.54.0",          # JIT compilation - allow latest optimizations
+            "cython>=0.29.0",         # C extensions - stable API
         ],
         "visualization": [
-            "plotly>=5.0.0,<6.0.0",
-            "dash>=2.0.0,<3.0.0",
-            "graphviz>=0.17.0,<1.0.0",
+            "plotly>=5.0.0",          # Interactive plotting - stable API
+            "dash>=2.0.0,<3.0.0",     # Web apps - keep bound (framework changes)
+            "graphviz>=0.17.0",       # Graph visualization - stable API
         ]
     },
     
