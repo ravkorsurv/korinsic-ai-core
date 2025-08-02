@@ -20,8 +20,8 @@ import time
 from typing import Dict, List, Any
 from unittest.mock import Mock, patch
 
-# Add project root to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+# Use proper import path resolution without runtime sys.path modification
+# Run with: python -m pytest tests/unit/test_probability_config_improvements.py
 
 try:
     from src.models.bayesian.shared.probability_config import (

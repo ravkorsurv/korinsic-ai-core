@@ -140,6 +140,39 @@ class ProbabilityConfig:
                     "access_pattern": EVIDENCE_PROFILES[EvidenceType.INFORMATION],
                     "market_segmentation": EVIDENCE_PROFILES[EvidenceType.COORDINATION],
                 }
+            elif model_type == 'insider_dealing':
+                return {
+                    "trade_pattern": ProbabilityProfile(0.95, 0.04, 0.01, "Most trades follow normal patterns"),
+                    "comms_intent": EVIDENCE_PROFILES[EvidenceType.INFORMATION],
+                    "pnl_drift": ProbabilityProfile(0.90, 0.08, 0.02, "Most P&L changes are market-driven"),
+                    "mnpi_access": EVIDENCE_PROFILES[EvidenceType.INFORMATION],
+                    "timing_correlation": EVIDENCE_PROFILES[EvidenceType.INFORMATION],
+                    "trade_direction": EVIDENCE_PROFILES[EvidenceType.BEHAVIORAL],
+                    "news_timing": EVIDENCE_PROFILES[EvidenceType.INFORMATION],
+                    "algo_reaction_sensitivity": EVIDENCE_PROFILES[EvidenceType.TECHNICAL],
+                    "price_impact_anomaly": EVIDENCE_PROFILES[EvidenceType.MARKET_IMPACT],
+                }
+            elif model_type == 'economic_withholding':
+                return {
+                    "capacity_utilization": ProbabilityProfile(0.90, 0.00, 0.10, "Most capacity use is optimal", "ARERA capacity rules"),
+                    "plant_efficiency": ProbabilityProfile(0.90, 0.00, 0.10, "Most plants operate efficiently"),
+                    "fuel_cost_analysis": ProbabilityProfile(0.90, 0.00, 0.10, "Most fuel costs are legitimate"),
+                    "bid_price_analysis": ProbabilityProfile(0.90, 0.00, 0.10, "Most bids are competitively priced"),
+                    "technical_constraints": ProbabilityProfile(0.90, 0.00, 0.10, "Most constraints are genuine"),
+                    "market_conditions": ProbabilityProfile(0.90, 0.00, 0.10, "Most market conditions are normal"),
+                    "regulatory_compliance": ProbabilityProfile(0.90, 0.00, 0.10, "Most operations are compliant"),
+                    "competitive_context": ProbabilityProfile(0.90, 0.00, 0.10, "Most competition is fair"),
+                }
+            elif model_type == 'wash_trading':
+                return {
+                    "economic_purpose": EVIDENCE_PROFILES[EvidenceType.ECONOMIC],
+                    "risk_transfer_analysis": EVIDENCE_PROFILES[EvidenceType.ECONOMIC],
+                    "counterparty_relationship": EVIDENCE_PROFILES[EvidenceType.COORDINATION],
+                    "settlement_coordination": EVIDENCE_PROFILES[EvidenceType.COORDINATION],
+                    "beneficial_ownership": EVIDENCE_PROFILES[EvidenceType.COORDINATION],
+                    "trade_sequence_analysis": EVIDENCE_PROFILES[EvidenceType.BEHAVIORAL],
+                    "timing_synchronization": EVIDENCE_PROFILES[EvidenceType.COORDINATION],
+                }
             else:
                 return {}
 

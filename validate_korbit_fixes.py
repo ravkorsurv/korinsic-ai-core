@@ -38,8 +38,8 @@ import os
 import time
 from typing import Dict, List, Any
 
-# Add project root to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
+# Use proper import path resolution without runtime sys.path modification
+# This should be run from the project root directory
 
 def validate_security_fixes():
     """Validate that security issues have been fixed."""
@@ -47,7 +47,12 @@ def validate_security_fixes():
     print("-" * 40)
     
     # Check that we replaced broad exception handling
-    with open('validate_error_handling_fixes.py', 'r') as f:
+    filepath = 'validate_error_handling_fixes.py'
+    if not os.path.exists(filepath):
+        print(f"❌ Required file {filepath} not found")
+        return False
+        
+    with open(filepath, 'r') as f:
         content = f.read()
         
     # Should have specific ImportError handling
@@ -72,7 +77,12 @@ def validate_readability_improvements():
     print("📖 VALIDATING READABILITY IMPROVEMENTS")
     print("-" * 40)
     
-    with open('validate_error_handling_fixes.py', 'r') as f:
+    filepath = 'validate_error_handling_fixes.py'
+    if not os.path.exists(filepath):
+        print(f"❌ Required file {filepath} not found")
+        return False
+        
+    with open(filepath, 'r') as f:
         content = f.read()
     
     # Check for improved error message formatting
@@ -98,8 +108,9 @@ def validate_design_improvements():
     print("-" * 40)
     
     # Check that we created proper test framework
-    if os.path.exists('tests/unit/test_probability_config_improvements.py'):
-        with open('tests/unit/test_probability_config_improvements.py', 'r') as f:
+    test_filepath = 'tests/unit/test_probability_config_improvements.py'
+    if os.path.exists(test_filepath):
+        with open(test_filepath, 'r') as f:
             test_content = f.read()
         
         # Should use class-based test organization
@@ -124,7 +135,7 @@ def validate_design_improvements():
             print("❌ Tests still too large and complex")
             return False
     else:
-        print("❌ Proper test framework file not found")
+        print(f"❌ Required test framework file {test_filepath} not found")
         return False
     
     print("✅ Design improvements validated\n")
@@ -135,8 +146,9 @@ def validate_documentation_enhancements():
     print("📚 VALIDATING DOCUMENTATION ENHANCEMENTS")
     print("-" * 40)
     
-    if os.path.exists('tests/unit/test_probability_config_improvements.py'):
-        with open('tests/unit/test_probability_config_improvements.py', 'r') as f:
+    test_filepath = 'tests/unit/test_probability_config_improvements.py'
+    if os.path.exists(test_filepath):
+        with open(test_filepath, 'r') as f:
             test_content = f.read()
         
         # Check for structured docstrings
@@ -153,7 +165,7 @@ def validate_documentation_enhancements():
             print("❌ Performance test documentation still vague")
             return False
     else:
-        print("❌ Test documentation file not found")
+        print(f"❌ Required test documentation file {test_filepath} not found")
         return False
     
     print("✅ Documentation enhancements validated\n")
@@ -166,7 +178,12 @@ def validate_performance_optimizations():
     
     try:
         # Check that import-time validation was removed
-        with open('src/models/bayesian/shared/probability_config.py', 'r') as f:
+        config_filepath = 'src/models/bayesian/shared/probability_config.py'
+        if not os.path.exists(config_filepath):
+            print(f"❌ Required file {config_filepath} not found")
+            return False
+            
+        with open(config_filepath, 'r') as f:
             config_content = f.read()
         
         if 'Configuration validation moved to explicit method call' in config_content:
