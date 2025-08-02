@@ -17,6 +17,7 @@ import numpy as np
 from pgmpy.factors.discrete import TabularCPD
 
 from .node_library import RiskFactorNode
+from .probability_config import ProbabilityConfig
 
 
 class MarketImpactNode(RiskFactorNode):
@@ -59,15 +60,15 @@ class MarketImpactNode(RiskFactorNode):
     def create_noisy_or_cpt(self) -> TabularCPD:
         """Create noisy-OR CPT optimized for market impact patterns."""
         if not self.parent_nodes:
-            raise ValueError("Parent nodes must be specified before creating CPT")
+            raise ValueError(f"{self.name}: Parent nodes must be specified before creating CPT")
             
         num_parents = len(self.parent_nodes)
         parent_cards = [3] * num_parents
         
-        # Market impact specific parameters
-        leak_probability = 0.02  # Base market impact without evidence
-        # Decreasing influence weights for additional parents
-        parent_probabilities = [0.85, 0.75, 0.65, 0.55][:num_parents]
+        # Market impact specific parameters from centralized config
+        params = ProbabilityConfig.get_intermediate_params("market_impact")
+        leak_probability = params["leak_probability"]
+        parent_probabilities = params["parent_probabilities"][:num_parents]
         
         total_combinations = 3 ** num_parents
         values = np.zeros((3, total_combinations))
@@ -144,14 +145,15 @@ class BehavioralIntentNode(RiskFactorNode):
     def create_noisy_or_cpt(self) -> TabularCPD:
         """Create noisy-OR CPT optimized for behavioral intent patterns."""
         if not self.parent_nodes:
-            raise ValueError("Parent nodes must be specified before creating CPT")
+            raise ValueError(f"{self.name}: Parent nodes must be specified before creating CPT")
             
         num_parents = len(self.parent_nodes)
         parent_cards = [3] * num_parents
         
-        # Behavioral intent specific parameters  
-        leak_probability = 0.03  # Base rate of suspicious behavior
-        parent_probabilities = [0.90, 0.80, 0.70, 0.60][:num_parents]
+        # Behavioral intent specific parameters from centralized config
+        params = ProbabilityConfig.get_intermediate_params("behavioral_intent")
+        leak_probability = params["leak_probability"]
+        parent_probabilities = params["parent_probabilities"][:num_parents]
         
         total_combinations = 3 ** num_parents
         values = np.zeros((3, total_combinations))
@@ -224,6 +226,53 @@ class CoordinationPatternsNode(RiskFactorNode):
             "cross_desk_collusion", "circular_trading", "wash_trade_detection", "market_cornering"
         }
 
+    def create_noisy_or_cpt(self) -> TabularCPD:
+        """Create noisy-OR CPT optimized for coordination patterns."""
+        if not self.parent_nodes:
+            raise ValueError(f"{self.name}: Parent nodes must be specified before creating CPT")
+            
+        num_parents = len(self.parent_nodes)
+        parent_cards = [3] * num_parents
+        
+        # Coordination patterns specific parameters from centralized config
+        params = ProbabilityConfig.get_intermediate_params("coordination_patterns")
+        leak_probability = params["leak_probability"]
+        parent_probabilities = params["parent_probabilities"][:num_parents]
+        
+        total_combinations = 3 ** num_parents
+        values = np.zeros((3, total_combinations))
+        
+        for i in range(total_combinations):
+            parent_states = self._get_parent_states(i, num_parents)
+            
+            # Calculate probability of independent activity (no coordination)
+            prob_independent = leak_probability
+            for j, state in enumerate(parent_states):
+                if state == 2:  # Coordinated evidence state
+                    prob_independent *= (1 - parent_probabilities[j])
+                elif state == 1:  # Correlated evidence state
+                    prob_independent *= (1 - parent_probabilities[j] * 0.4)
+            
+            prob_coordinated = 1 - prob_independent
+            prob_correlated = prob_coordinated * 0.40  # 40% of coordinated becomes correlated
+            prob_independent_final = 1 - prob_coordinated - prob_correlated
+            
+            values[0, i] = max(0.01, prob_independent_final)  # independent_activity
+            values[1, i] = max(0.01, prob_correlated)         # correlated_activity
+            values[2, i] = max(0.01, prob_coordinated)        # coordinated_activity
+            
+            # Normalize
+            col_sum = values[:, i].sum()
+            values[:, i] /= col_sum
+
+        return TabularCPD(
+            variable=self.name,
+            variable_card=3,
+            values=values,
+            evidence=self.parent_nodes,
+            evidence_card=parent_cards,
+        )
+
 
 class InformationAdvantageNode(RiskFactorNode):
     """
@@ -260,6 +309,53 @@ class InformationAdvantageNode(RiskFactorNode):
         self.applicable_typologies = {
             "insider_dealing", "cross_desk_collusion", "economic_withholding"
         }
+
+    def create_noisy_or_cpt(self) -> TabularCPD:
+        """Create noisy-OR CPT optimized for information advantage patterns."""
+        if not self.parent_nodes:
+            raise ValueError(f"{self.name}: Parent nodes must be specified before creating CPT")
+            
+        num_parents = len(self.parent_nodes)
+        parent_cards = [3] * num_parents
+        
+        # Information advantage specific parameters from centralized config
+        params = ProbabilityConfig.get_intermediate_params("information_advantage")
+        leak_probability = params["leak_probability"]
+        parent_probabilities = params["parent_probabilities"][:num_parents]
+        
+        total_combinations = 3 ** num_parents
+        values = np.zeros((3, total_combinations))
+        
+        for i in range(total_combinations):
+            parent_states = self._get_parent_states(i, num_parents)
+            
+            # Calculate probability of no advantage
+            prob_no_advantage = leak_probability
+            for j, state in enumerate(parent_states):
+                if state == 2:  # Clear advantage evidence state
+                    prob_no_advantage *= (1 - parent_probabilities[j])
+                elif state == 1:  # Potential advantage evidence state
+                    prob_no_advantage *= (1 - parent_probabilities[j] * 0.3)
+            
+            prob_clear_advantage = 1 - prob_no_advantage
+            prob_potential_advantage = prob_clear_advantage * 0.50  # 50% of clear becomes potential
+            prob_no_advantage_final = 1 - prob_clear_advantage - prob_potential_advantage
+            
+            values[0, i] = max(0.01, prob_no_advantage_final)     # no_advantage
+            values[1, i] = max(0.01, prob_potential_advantage)    # potential_advantage
+            values[2, i] = max(0.01, prob_clear_advantage)        # clear_advantage
+            
+            # Normalize
+            col_sum = values[:, i].sum()
+            values[:, i] /= col_sum
+
+        return TabularCPD(
+            variable=self.name,
+            variable_card=3,
+            values=values,
+            evidence=self.parent_nodes,
+            evidence_card=parent_cards,
+        )
 
 
 class EconomicRationalityNode(RiskFactorNode):
@@ -298,6 +394,53 @@ class EconomicRationalityNode(RiskFactorNode):
             "wash_trade_detection", "circular_trading", "economic_withholding", "commodity_manipulation"
         }
 
+    def create_noisy_or_cpt(self) -> TabularCPD:
+        """Create noisy-OR CPT optimized for economic rationality patterns."""
+        if not self.parent_nodes:
+            raise ValueError(f"{self.name}: Parent nodes must be specified before creating CPT")
+            
+        num_parents = len(self.parent_nodes)
+        parent_cards = [3] * num_parents
+        
+        # Economic rationality specific parameters from centralized config
+        params = ProbabilityConfig.get_intermediate_params("economic_rationality")
+        leak_probability = params["leak_probability"]
+        parent_probabilities = params["parent_probabilities"][:num_parents]
+        
+        total_combinations = 3 ** num_parents
+        values = np.zeros((3, total_combinations))
+        
+        for i in range(total_combinations):
+            parent_states = self._get_parent_states(i, num_parents)
+            
+            # Calculate probability of economically rational behavior
+            prob_rational = leak_probability
+            for j, state in enumerate(parent_states):
+                if state == 2:  # No economic purpose evidence state
+                    prob_rational *= (1 - parent_probabilities[j])
+                elif state == 1:  # Questionable rationale evidence state
+                    prob_rational *= (1 - parent_probabilities[j] * 0.6)
+            
+            prob_no_purpose = 1 - prob_rational
+            prob_questionable = prob_no_purpose * 0.60  # 60% of no purpose becomes questionable
+            prob_rational_final = 1 - prob_no_purpose - prob_questionable
+            
+            values[0, i] = max(0.01, prob_rational_final)   # economically_rational
+            values[1, i] = max(0.01, prob_questionable)     # questionable_rationale
+            values[2, i] = max(0.01, prob_no_purpose)       # no_economic_purpose
+            
+            # Normalize
+            col_sum = values[:, i].sum()
+            values[:, i] /= col_sum
+
+        return TabularCPD(
+            variable=self.name,
+            variable_card=3,
+            values=values,
+            evidence=self.parent_nodes,
+            evidence_card=parent_cards,
+        )
+
 
 class TechnicalManipulationNode(RiskFactorNode):
     """
@@ -334,6 +477,53 @@ class TechnicalManipulationNode(RiskFactorNode):
         self.applicable_typologies = {
             "economic_withholding", "commodity_manipulation", "market_cornering"
         }
+
+    def create_noisy_or_cpt(self) -> TabularCPD:
+        """Create noisy-OR CPT optimized for technical manipulation patterns."""
+        if not self.parent_nodes:
+            raise ValueError(f"{self.name}: Parent nodes must be specified before creating CPT")
+            
+        num_parents = len(self.parent_nodes)
+        parent_cards = [3] * num_parents
+        
+        # Technical manipulation specific parameters from centralized config
+        params = ProbabilityConfig.get_intermediate_params("technical_manipulation")
+        leak_probability = params["leak_probability"]
+        parent_probabilities = params["parent_probabilities"][:num_parents]
+        
+        total_combinations = 3 ** num_parents
+        values = np.zeros((3, total_combinations))
+        
+        for i in range(total_combinations):
+            parent_states = self._get_parent_states(i, num_parents)
+            
+            # Calculate probability of normal operations
+            prob_normal = leak_probability
+            for j, state in enumerate(parent_states):
+                if state == 2:  # Artificial constraints evidence state
+                    prob_normal *= (1 - parent_probabilities[j])
+                elif state == 1:  # Constrained operations evidence state
+                    prob_normal *= (1 - parent_probabilities[j] * 0.5)
+            
+            prob_artificial = 1 - prob_normal
+            prob_constrained = prob_artificial * 0.45  # 45% of artificial becomes constrained
+            prob_normal_final = 1 - prob_artificial - prob_constrained
+            
+            values[0, i] = max(0.01, prob_normal_final)    # normal_operations
+            values[1, i] = max(0.01, prob_constrained)     # constrained_operations
+            values[2, i] = max(0.01, prob_artificial)      # artificial_constraints
+            
+            # Normalize
+            col_sum = values[:, i].sum()
+            values[:, i] /= col_sum
+
+        return TabularCPD(
+            variable=self.name,
+            variable_card=3,
+            values=values,
+            evidence=self.parent_nodes,
+            evidence_card=parent_cards,
+        )
 
 
 # Shared utility methods for all intermediate nodes

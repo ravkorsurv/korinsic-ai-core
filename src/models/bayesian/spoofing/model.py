@@ -231,39 +231,17 @@ class SpoofingModel:
         """
         import numpy as np
         from pgmpy.factors.discrete import TabularCPD
+        from ..shared.probability_config import ProbabilityConfig
 
-        # Evidence node CPDs (prior probabilities)
+        # Evidence node CPDs (prior probabilities) - using centralized configuration
+        evidence_nodes = [
+            "order_clustering", "price_impact_ratio", "volume_participation",
+            "order_behavior", "intent_to_execute", "order_cancellation"
+        ]
+        
         evidence_cpds = [
-            TabularCPD(
-                variable="order_clustering",
-                variable_card=3,
-                values=[[0.70], [0.25], [0.05]],
-            ),
-            TabularCPD(
-                variable="price_impact_ratio",
-                variable_card=3,
-                values=[[0.75], [0.20], [0.05]],
-            ),
-            TabularCPD(
-                variable="volume_participation",
-                variable_card=3,
-                values=[[0.72], [0.23], [0.05]],
-            ),
-            TabularCPD(
-                variable="order_behavior",
-                variable_card=3,
-                values=[[0.70], [0.25], [0.05]],
-            ),
-            TabularCPD(
-                variable="intent_to_execute",
-                variable_card=3,
-                values=[[0.80], [0.15], [0.05]],
-            ),
-            TabularCPD(
-                variable="order_cancellation",
-                variable_card=3,
-                values=[[0.75], [0.20], [0.05]],
-            ),
+            ProbabilityConfig.create_evidence_cpd(node_name, variable_card=3)
+            for node_name in evidence_nodes
         ]
         model.add_cpds(*evidence_cpds)
 
@@ -322,15 +300,16 @@ class SpoofingModel:
             )
             model.add_cpds(risk_factor_cpd)
 
-        # Outcome CPD
+        # Outcome CPD - using centralized configuration
+        outcome_probs = ProbabilityConfig.get_outcome_probabilities("spoofing")
         spoofing_cpd = TabularCPD(
             variable="spoofing",
             variable_card=3,
             values=np.array([
-                [0.95, 0.60, 0.10],  # No spoofing
-                [0.04, 0.30, 0.40],  # Possible spoofing
-                [0.01, 0.10, 0.50],  # Likely spoofing
-            ]),
+                outcome_probs["low_risk"],     # No spoofing
+                outcome_probs["medium_risk"],  # Possible spoofing  
+                outcome_probs["high_risk"],    # Likely spoofing
+            ]).T,
             evidence=["risk_factor"],
             evidence_card=[3],
         )
