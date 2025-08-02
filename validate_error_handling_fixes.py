@@ -193,7 +193,9 @@ def test_cross_model_consistency():
         if "market_impact" in spoofing_recommendations and "coordination_patterns" in collusion_recommendations:
             print("✅ Model-specific recommendations are appropriate")
         else:
-            print(f"❌ Wrong recommendations: spoofing={list(spoofing_recommendations.keys())}, collusion={list(collusion_recommendations.keys())}")
+            print("❌ Wrong recommendations:")
+            print(f"  Spoofing nodes: {list(spoofing_recommendations.keys())}")
+            print(f"  Collusion nodes: {list(collusion_recommendations.keys())}")
             return False
         
         # Test 3: Factory creates model-specific configurations
@@ -281,7 +283,9 @@ def test_performance_improvements():
             ProbabilityConfig.get_evidence_prior("order_clustering")
         lookup_time = time.time() - start_time
         
-        if lookup_time < 0.1:  # Should be very fast
+        # Define performance threshold with clear units
+        MAX_ACCEPTABLE_LOOKUP_SECONDS = 0.1
+        if lookup_time < MAX_ACCEPTABLE_LOOKUP_SECONDS:
             print(f"✅ Configuration lookup is fast: {lookup_time:.4f}s for 1000 lookups")
         else:
             print(f"⚠️  Configuration lookup might be slow: {lookup_time:.4f}s")
@@ -291,8 +295,11 @@ def test_performance_improvements():
         for i in range(100):
             try:
                 ProbabilityConfig.create_evidence_cpd(f"test_node_{i%10}", variable_card=3)
-            except:
+            except ImportError:
                 pass  # Skip if pgmpy not available
+            except Exception as e:
+                print(f"⚠️  CPD creation failed: {e}")
+                return False
         creation_time = time.time() - start_time
         
         print(f"✅ CPD creation performance: {creation_time:.4f}s for 100 creations")

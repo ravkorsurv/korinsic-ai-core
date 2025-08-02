@@ -116,7 +116,46 @@ class ProbabilityConfig:
         )
     }
     
-    # Specific Evidence Node Configurations
+    # Hierarchical Evidence Node Structure by Model
+    class EvidenceNodeGroups:
+        """Hierarchical organization of evidence nodes by model type."""
+        
+        @classmethod
+        def get_nodes_for_model(cls, model_type: str) -> Dict[str, ProbabilityProfile]:
+            """Get evidence nodes for a specific model type with lazy loading."""
+            if model_type == 'spoofing':
+                return {
+                    "order_clustering": EVIDENCE_PROFILES[EvidenceType.MARKET_IMPACT],
+                    "price_impact_ratio": EVIDENCE_PROFILES[EvidenceType.MARKET_IMPACT], 
+                    "volume_participation": EVIDENCE_PROFILES[EvidenceType.MARKET_IMPACT],
+                    "order_behavior": EVIDENCE_PROFILES[EvidenceType.BEHAVIORAL],
+                    "intent_to_execute": EVIDENCE_PROFILES[EvidenceType.BEHAVIORAL],
+                    "order_cancellation": EVIDENCE_PROFILES[EvidenceType.BEHAVIORAL],
+                }
+            elif model_type == 'cross_desk_collusion':
+                return {
+                    "comms_metadata": EVIDENCE_PROFILES[EvidenceType.INFORMATION],
+                    "profit_motivation": EVIDENCE_PROFILES[EvidenceType.BEHAVIORAL],
+                    "cross_venue_coordination": EVIDENCE_PROFILES[EvidenceType.COORDINATION],
+                    "access_pattern": EVIDENCE_PROFILES[EvidenceType.INFORMATION],
+                    "market_segmentation": EVIDENCE_PROFILES[EvidenceType.COORDINATION],
+                }
+            else:
+                return {}
+
+        @classmethod
+        def validate_model_completeness(cls, model_type: str, required_nodes: List[str]) -> bool:
+            """Validate that all required nodes exist for a model."""
+            available_nodes = cls.get_nodes_for_model(model_type)
+            return all(node in available_nodes for node in required_nodes)
+
+        @classmethod
+        def get_model_types(cls) -> List[str]:
+            """Get list of supported model types."""
+            return ['spoofing', 'cross_desk_collusion', 'insider_dealing', 
+                   'economic_withholding', 'wash_trading']
+
+    # Specific Evidence Node Configurations (Flat structure for backward compatibility)
     EVIDENCE_NODE_PROBABILITIES = {
         # Spoofing Evidence Nodes
         "order_clustering": EVIDENCE_PROFILES[EvidenceType.MARKET_IMPACT],
@@ -391,5 +430,6 @@ class ProbabilityConfig:
         return True
 
 
-# Validate configuration on import
-ProbabilityConfig.validate_all_probabilities()
+# Configuration validation moved to explicit method call
+# Call ProbabilityConfig.validate_all_probabilities() during testing or deployment
+# to avoid import-time performance overhead
