@@ -395,12 +395,12 @@ class CPTLibrary:
         """Write CPTs section with streaming for memory efficiency."""
         file_handle.write('{\n')
         
-        cpt_items = list(self.cpts.items())
-        for i, (cpt_id, cpt) in enumerate(cpt_items):
+        cpt_items_count = len(self.cpts)
+        for i, (cpt_id, cpt) in enumerate(self.cpts.items()):
             file_handle.write(f'    {json.dumps(cpt_id)}: ')
             json.dump(cpt.to_dict(), file_handle, separators=(',', ':'))
             
-            if i < len(cpt_items) - 1:
+            if i < cpt_items_count - 1:
                 file_handle.write(',')
             file_handle.write('\n')
         
