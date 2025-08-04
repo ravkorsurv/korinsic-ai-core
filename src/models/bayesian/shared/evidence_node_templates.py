@@ -24,6 +24,41 @@ class EvidenceNodeTemplate:
     fallback_prior: List[float]
     regulatory_basis: str = ""
     evidence_category: str = ""
+    
+    def __post_init__(self):
+        """Validate probability distributions and state consistency"""
+        if len(self.fallback_prior) != len(self.states):
+            raise ValueError(
+                f"Length of fallback_prior ({len(self.fallback_prior)}) must match "
+                f"length of states ({len(self.states)}) for node '{self.name}'"
+            )
+        
+        prior_sum = sum(self.fallback_prior)
+        if abs(prior_sum - 1.0) > 1e-10:  # Using epsilon for float comparison
+            raise ValueError(
+                f"Fallback prior probabilities must sum to 1.0, got {prior_sum:.10f} "
+                f"for node '{self.name}'"
+            )
+        
+        # Validate that all probabilities are non-negative
+        for i, prob in enumerate(self.fallback_prior):
+            if prob < 0:
+                raise ValueError(
+                    f"Probability values must be non-negative, got {prob} at index {i} "
+                    f"for node '{self.name}'"
+                )
+        
+        # Validate that states list is not empty
+        if not self.states:
+            raise ValueError(f"States list cannot be empty for node '{self.name}'")
+        
+        # Validate that all state names are non-empty strings
+        for i, state in enumerate(self.states):
+            if not isinstance(state, str) or not state.strip():
+                raise ValueError(
+                    f"State names must be non-empty strings, got '{state}' at index {i} "
+                    f"for node '{self.name}'"
+                )
 
 
 class EvidenceNodeTemplates:

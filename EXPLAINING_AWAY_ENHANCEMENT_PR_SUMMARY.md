@@ -48,6 +48,11 @@ This PR implements comprehensive **4-parent CPT structures with explaining away 
 - **Regulatory compliance built-in** (MAR, MiFID II, STOR references)
 - **Evidence categories** for systematic organization
 - **Template factory methods** for consistent node creation
+- **🔧 CRITICAL FIX: Added comprehensive probability validation** in `EvidenceNodeTemplate.__post_init__()`:
+  - Validates probability distributions sum to 1.0 (with epsilon tolerance)
+  - Ensures fallback_prior length matches states length
+  - Validates all probabilities are non-negative
+  - Prevents empty states and invalid state names
 
 ### **🧪 Comprehensive Testing Framework**
 
@@ -79,6 +84,14 @@ This PR implements comprehensive **4-parent CPT structures with explaining away 
 - **Market cornering structure validation**
 - **Position accumulation pattern testing**
 - **Technical manipulation verification**
+
+#### **`tests/models/enhanced/test_evidence_template_validation.py`** *(NEW FILE - 320+ lines)*
+- **🔧 CRITICAL: Probability validation testing** for EvidenceNodeTemplate
+- **Invalid probability sum detection** (e.g., sums to 0.9 instead of 1.0)
+- **Mismatched length detection** (fallback_prior vs states mismatch)
+- **Negative probability detection** and rejection
+- **Edge case testing** (binary states, epsilon tolerance, single states)
+- **Existing template validation** across all 6 enhanced models
 
 ### **📚 Documentation & Analysis**
 
@@ -181,11 +194,12 @@ This PR implements comprehensive **4-parent CPT structures with explaining away 
 
 ### **📊 Test Coverage**
 
-- **4/6 models** with comprehensive test suites (1,320+ lines of test code)
+- **5/6 models** with comprehensive test suites (1,640+ lines of test code)
 - **100% configuration validation** across all enhanced models
 - **Mathematical verification** of explaining away behavior
 - **Performance benchmarking** confirming 3x CPT reduction
 - **Regulatory compliance testing** for all evidence types
+- **🔧 CRITICAL: Probability validation testing** preventing invalid distributions
 
 ---
 
@@ -253,6 +267,7 @@ This PR represents a **major architectural enhancement** to the Bayesian surveil
 - **3x performance improvement** through optimized CPT architecture
 - **Comprehensive testing framework** ensuring quality and reliability
 - **Full regulatory compliance** with enhanced explainability
+- **🔧 CRITICAL FIX: Probability validation** preventing invalid distributions that could compromise Bayesian inference
 
 **The implementation is production-ready and will significantly improve the accuracy and efficiency of market abuse detection while maintaining full regulatory compliance.**
 
