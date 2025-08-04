@@ -12,9 +12,7 @@ import logging
 from datetime import datetime
 import traceback
 
-# Add src directory to Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
-
+# Using proper package imports with src prefix
 from src.core.bayesian_engine import BayesianEngine
 from src.core.data_processor import DataProcessor
 from src.core.alert_generator import AlertGenerator
@@ -24,13 +22,17 @@ from src.utils.logger import setup_logger
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app, origins="*", allow_headers=["Content-Type", "Authorization"])
 
 # Setup logging
 logger = setup_logger()
 
 # Initialize core components
 config = Config()
+
+# Configure CORS with security-conscious origins from config
+cors_origins = config.get('security', {}).get('cors_origins', ['http://localhost:3000'])
+CORS(app, origins=cors_origins, allow_headers=['Content-Type', 'Authorization'])
+
 bayesian_engine = BayesianEngine()
 data_processor = DataProcessor()
 alert_generator = AlertGenerator()
@@ -268,5 +270,9 @@ def internal_error(error):
     return jsonify({'error': 'Internal server error'}), 500
 
 if __name__ == '__main__':
-    # For local development
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False) 
+    # For local development - use environment-dependent debug mode
+    debug_mode = config.get('server', {}).get('debug', False) or os.environ.get('FLASK_DEBUG', '0') == '1'
+    host = config.get('server', {}).get('host', '0.0.0.0')
+    port = int(os.environ.get('PORT', config.get('server', {}).get('port', 5000)))
+    
+    app.run(host=host, port=port, debug=debug_mode) 

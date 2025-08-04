@@ -57,7 +57,7 @@ setup(
     # Package configuration
     packages=find_packages(where="."),
     package_dir={"": "."},
-    python_requires=">=3.8",
+    python_requires=">=3.8,<3.14",
     
     # Dependencies - all defined here for clear precedence and conflict avoidance
     install_requires=[

@@ -33,9 +33,9 @@ VERSION_INFO = tuple(map(int, __version__.split('.')))
 
 # Import key components for convenience
 try:
-    from src.core.bayesian_engine import BayesianEngine
-    from src.models.bayesian.shared.probability_config import ProbabilityConfig
-    from src.models.bayesian.shared.cpt_library.library import CPTLibrary
+    from .core.bayesian_engine import BayesianEngine
+    from .models.bayesian.shared.probability_config import ProbabilityConfig
+    from .models.bayesian.shared.cpt_library.library import CPTLibrary
     
     __all__ = [
         'BayesianEngine',
