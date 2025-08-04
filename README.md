@@ -9,9 +9,10 @@ Korinsic is a professional-grade AI surveillance platform designed to detect mar
 The codebase follows enterprise-grade architecture with clear separation of concerns:
 
 ```
-kor-ai-core/
+ kor-ai-core/
 ├── src/                          # Core application source code
 │   ├── app.py                   # Main Flask application entry point
+│   ├── __init__.py              # Package initialization
 │   ├── api/                     # API layer with versioning
 │   │   └── v1/                  # API version 1
 │   │       ├── routes/          # REST endpoints by domain
@@ -23,8 +24,23 @@ kor-ai-core/
 │   │   └── services/           # Business service coordination
 │   ├── models/                  # Data models and ML components
 │   │   ├── bayesian/           # Bayesian inference models
+│   │   │   ├── insider_dealing/ # Insider dealing detection
+│   │   │   ├── spoofing/       # Spoofing detection
+│   │   │   ├── wash_trade_detection/ # Wash trade detection
+│   │   │   ├── circular_trading/ # Circular trading detection
+│   │   │   ├── market_cornering/ # Market cornering detection
+│   │   │   ├── commodity_manipulation/ # Commodity manipulation
+│   │   │   ├── economic_withholding/ # Economic withholding
+│   │   │   └── shared/         # Shared model utilities
 │   │   ├── data/               # Data structure definitions
 │   │   └── shared/             # Shared model utilities
+│   ├── components/             # UI components (React)
+│   ├── pages/                  # Application pages
+│   ├── services/               # Service layer
+│   ├── analytics/              # Analytics components
+│   ├── frontend/               # Frontend configuration
+│   │   ├── vite.config.js      # Vite configuration
+│   │   └── index.html          # Main HTML template
 │   └── utils/                  # Common utilities and helpers
 ├── tests/                       # Comprehensive test suite
 │   ├── unit/                   # Unit tests with mocking
@@ -32,6 +48,10 @@ kor-ai-core/
 │   ├── e2e/                    # End-to-end workflow tests
 │   ├── performance/            # Load and performance tests
 │   ├── fixtures/               # Test data and scenarios
+│   ├── analytics/              # Analytics tests
+│   ├── demo/                   # Demo tests
+│   ├── models/                 # Model-specific tests
+│   ├── validation/             # Validation tests
 │   └── utils/                  # Test utilities and helpers
 ├── config/                     # Configuration management
 │   ├── *.json                  # Environment-specific configs
@@ -39,18 +59,37 @@ kor-ai-core/
 │   └── deployment/             # Deployment configurations
 ├── docs/                       # Documentation
 │   ├── development/            # Development guides
-│   └── models/                 # Model documentation
+│   ├── models/                 # Model documentation
+│   ├── features/               # Feature documentation
+│   ├── implementation/         # Implementation guides
+│   ├── plans/                  # Project plans
+│   ├── summaries/              # Project summaries
+│   ├── analysis/               # Analysis documents
+│   ├── phases/                 # Phase documentation
+│   ├── regulatory_explainability/ # Regulatory docs
+│   └── reports/                # Reports and assessments
 ├── scripts/                    # Automation scripts
 │   ├── development/            # Development utilities
-│   ├── deployment/             # Deployment automation
 │   ├── data/                   # Data management scripts
+│   ├── demo/                   # Demo scripts
+│   ├── test/                   # Test scripts
+│   ├── validation/             # Validation scripts
 │   └── maintenance/            # System maintenance
 ├── deployment/                 # Container and cloud configs
+├── examples/                   # Example implementations
 ├── archive/                    # Archived/legacy components
-├── requirements.txt            # Python dependencies
+│   ├── summaries/              # Archived summaries
+│   ├── validation-scripts/     # Archived validation scripts
+│   └── bayesian-models/        # Archived model components
+├── .github/                    # GitHub configuration
+│   └── PULL_REQUEST_TEMPLATE.md # PR template
+├── pyproject.toml              # Python project configuration
+├── setup.py                    # Package setup
+├── pytest.ini                 # Test configuration
 ├── Dockerfile                  # Container configuration
 ├── .gitignore                  # Git ignore patterns
-└── pytest.ini                 # Test configuration
+├── .korbit-config.yaml         # Korbit AI configuration
+└── .pre-commit-config.yaml     # Pre-commit hooks
 ```
 
 ---
@@ -93,8 +132,8 @@ kor-ai-core/
 ```bash
 # 1. Environment Setup
 python -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-pip install -r requirements-dev.txt
+pip install -e .
+pip install -e ".[dev]"
 
 # 2. Configuration
 cp .env.example .env
@@ -345,7 +384,7 @@ python3 -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 
 # Install dependencies
-pip install -r requirements.txt
+pip install -e .
 ```
 
 ### 2. Configuration
@@ -649,7 +688,7 @@ curl http://localhost:5000/health/models
 
 ```bash
 # Install development dependencies
-pip install -r requirements-dev.txt
+pip install -e ".[dev]"
 
 # Setup pre-commit hooks
 pre-commit install
