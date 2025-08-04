@@ -54,7 +54,7 @@ class MarketImpactNode(RiskFactorNode):
         self.parent_nodes = parent_nodes or []
         self.applicable_typologies = {
             "spoofing", "commodity_manipulation", "market_cornering", 
-            "economic_withholding", "wash_trade_detection"
+            "economic_withholding", "wash_trade_detection", "circular_trading"
         }
 
     def create_noisy_or_cpt(self) -> TabularCPD:
@@ -139,7 +139,8 @@ class BehavioralIntentNode(RiskFactorNode):
         self.parent_nodes = parent_nodes or []
         self.applicable_typologies = {
             "spoofing", "cross_desk_collusion", "insider_dealing", 
-            "circular_trading", "wash_trade_detection"
+            "circular_trading", "wash_trade_detection", "economic_withholding",
+            "market_cornering", "commodity_manipulation"
         }
 
     def create_noisy_or_cpt(self) -> TabularCPD:
@@ -475,7 +476,8 @@ class TechnicalManipulationNode(RiskFactorNode):
         )
         self.parent_nodes = parent_nodes or []
         self.applicable_typologies = {
-            "economic_withholding", "commodity_manipulation", "market_cornering"
+            "economic_withholding", "commodity_manipulation", "market_cornering",
+            "wash_trade_detection", "circular_trading"
         }
 
     def create_noisy_or_cpt(self) -> TabularCPD:

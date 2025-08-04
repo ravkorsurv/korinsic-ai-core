@@ -862,16 +862,44 @@
         }
       ]
     },
-    "wash_trade_detection": {
+    "wash_trade_detection_old": {
       "nodes": [
         {
-          "name": "Evidence1",
+          "name": "VolumePatterns",
           "states": [
-            "Normal",
-            "Suspicious",
-            "Highly suspicious"
+            "normal",
+            "suspicious",
+            "highly_suspicious"
           ],
-          "description": "Primary evidence for wash_trade_detection",
+          "description": "Volume clustering and artificial inflation patterns",
+          "fallback_prior": [
+            0.7,
+            0.25,
+            0.05
+          ]
+        },
+        {
+          "name": "TimingPatterns",
+          "states": [
+            "normal",
+            "suspicious",
+            "highly_suspicious"
+          ],
+          "description": "Execution timing and coordination patterns",
+          "fallback_prior": [
+            0.75,
+            0.2,
+            0.05
+          ]
+        },
+        {
+          "name": "PricePatterns",
+          "states": [
+            "normal",
+            "suspicious",
+            "highly_suspicious"
+          ],
+          "description": "Price impact and spread behavior analysis",
           "fallback_prior": [
             0.8,
             0.15,
@@ -879,18 +907,36 @@
           ]
         },
         {
-          "name": "Evidence2",
+          "name": "AccountRelationships",
           "states": [
-            "Low",
-            "Medium",
-            "High"
+            "normal",
+            "suspicious",
+            "highly_suspicious"
           ],
-          "description": "Secondary evidence for wash_trade_detection",
+          "description": "Account linkage and control indicators",
           "fallback_prior": [
-            0.7,
-            0.25,
-            0.05
+            0.6,
+            0.3,
+            0.1
           ]
+        },
+        {
+          "name": "MarketImpact",
+          "states": [
+            "minimal_impact",
+            "moderate_impact",
+            "significant_impact"
+          ],
+          "description": "Market impact aggregation from volume and price patterns"
+        },
+        {
+          "name": "BehavioralIntent",
+          "states": [
+            "legitimate_intent",
+            "suspicious_intent",
+            "manipulative_intent"
+          ],
+          "description": "Behavioral intent aggregation from timing and relationships"
         },
         {
           "name": "Risk",
@@ -904,11 +950,27 @@
       ],
       "edges": [
         [
-          "Evidence1",
+          "VolumePatterns",
+          "MarketImpact"
+        ],
+        [
+          "PricePatterns",
+          "MarketImpact"
+        ],
+        [
+          "TimingPatterns",
+          "BehavioralIntent"
+        ],
+        [
+          "AccountRelationships",
+          "BehavioralIntent"
+        ],
+        [
+          "MarketImpact",
           "Risk"
         ],
         [
-          "Evidence2",
+          "BehavioralIntent",
           "Risk"
         ]
       ],
@@ -985,16 +1047,44 @@
         }
       ]
     },
-    "circular_trading": {
+    "wash_trade_detection": {
       "nodes": [
         {
-          "name": "Evidence1",
+          "name": "VolumePatterns",
           "states": [
-            "Normal",
-            "Suspicious",
-            "Highly suspicious"
+            "normal",
+            "suspicious",
+            "highly_suspicious"
           ],
-          "description": "Primary evidence for circular_trading",
+          "description": "Volume clustering and artificial inflation patterns",
+          "fallback_prior": [
+            0.7,
+            0.25,
+            0.05
+          ]
+        },
+        {
+          "name": "TimingPatterns",
+          "states": [
+            "normal",
+            "suspicious",
+            "highly_suspicious"
+          ],
+          "description": "Execution timing and coordination patterns",
+          "fallback_prior": [
+            0.75,
+            0.2,
+            0.05
+          ]
+        },
+        {
+          "name": "PricePatterns",
+          "states": [
+            "normal",
+            "suspicious",
+            "highly_suspicious"
+          ],
+          "description": "Price impact and spread behavior analysis",
           "fallback_prior": [
             0.8,
             0.15,
@@ -1002,18 +1092,36 @@
           ]
         },
         {
-          "name": "Evidence2",
+          "name": "AccountRelationships",
           "states": [
-            "Low",
-            "Medium",
-            "High"
+            "normal",
+            "suspicious",
+            "highly_suspicious"
           ],
-          "description": "Secondary evidence for circular_trading",
+          "description": "Account linkage and control indicators",
           "fallback_prior": [
-            0.7,
-            0.25,
-            0.05
+            0.6,
+            0.3,
+            0.1
           ]
+        },
+        {
+          "name": "MarketImpact",
+          "states": [
+            "minimal_impact",
+            "moderate_impact",
+            "significant_impact"
+          ],
+          "description": "Market impact aggregation from volume and price patterns"
+        },
+        {
+          "name": "BehavioralIntent",
+          "states": [
+            "legitimate_intent",
+            "suspicious_intent",
+            "manipulative_intent"
+          ],
+          "description": "Behavioral intent aggregation from timing and relationships"
         },
         {
           "name": "Risk",
@@ -1022,36 +1130,38 @@
             "Medium",
             "High"
           ],
-          "description": "Overall circular_trading risk"
+          "description": "Overall wash_trade_detection risk"
         }
       ],
       "edges": [
         [
-          "Evidence1",
+          "VolumePatterns",
+          "MarketImpact"
+        ],
+        [
+          "PricePatterns",
+          "MarketImpact"
+        ],
+        [
+          "TimingPatterns",
+          "BehavioralIntent"
+        ],
+        [
+          "AccountRelationships",
+          "BehavioralIntent"
+        ],
+        [
+          "MarketImpact",
           "Risk"
         ],
         [
-          "Evidence2",
+          "BehavioralIntent",
           "Risk"
         ]
       ],
       "cpds": [
         {
-          "variable": "Evidence1",
-          "values": [
-            [
-              0.8
-            ],
-            [
-              0.15
-            ],
-            [
-              0.05
-            ]
-          ]
-        },
-        {
-          "variable": "Evidence2",
+          "variable": "VolumePatterns",
           "values": [
             [
               0.7
@@ -1065,31 +1175,73 @@
           ]
         },
         {
-          "variable": "Risk",
+          "variable": "TimingPatterns",
+          "values": [
+            [
+              0.75
+            ],
+            [
+              0.2
+            ],
+            [
+              0.05
+            ]
+          ]
+        },
+        {
+          "variable": "PricePatterns",
+          "values": [
+            [
+              0.8
+            ],
+            [
+              0.15
+            ],
+            [
+              0.05
+            ]
+          ]
+        },
+        {
+          "variable": "AccountRelationships",
+          "values": [
+            [
+              0.6
+            ],
+            [
+              0.3
+            ],
+            [
+              0.1
+            ]
+          ]
+        },
+        {
+          "variable": "MarketImpact",
           "evidence": [
-            "Evidence1",
-            "Evidence2"
+            "VolumePatterns",
+            "PricePatterns"
           ],
           "values": [
             [
               0.95,
               0.8,
               0.6,
-              0.7,
-              0.5,
-              0.3,
+              0.85,
+              0.6,
               0.4,
-              0.2,
-              0.1
+              0.7,
+              0.4,
+              0.2
             ],
             [
               0.04,
               0.15,
               0.25,
-              0.25,
-              0.35,
+              0.12,
+              0.3,
               0.4,
-              0.35,
+              0.25,
               0.4,
               0.3
             ],
@@ -1097,11 +1249,392 @@
               0.01,
               0.05,
               0.15,
+              0.03,
+              0.1,
+              0.2,
+              0.05,
+              0.2,
+              0.5
+            ]
+          ]
+        },
+        {
+          "variable": "BehavioralIntent",
+          "evidence": [
+            "TimingPatterns",
+            "AccountRelationships"
+          ],
+          "values": [
+            [
+              0.9,
+              0.7,
+              0.4,
+              0.8,
+              0.5,
+              0.2,
+              0.6,
+              0.3,
+              0.1
+            ],
+            [
+              0.08,
+              0.25,
+              0.4,
+              0.15,
+              0.35,
+              0.5,
+              0.3,
+              0.4,
+              0.3
+            ],
+            [
+              0.02,
+              0.05,
+              0.2,
               0.05,
               0.15,
               0.3,
+              0.1,
+              0.3,
+              0.6
+            ]
+          ]
+        },
+        {
+          "variable": "Risk",
+          "evidence": [
+            "MarketImpact",
+            "BehavioralIntent"
+          ],
+          "values": [
+            [
+              0.95,
+              0.8,
+              0.5,
+              0.85,
+              0.6,
+              0.3,
+              0.7,
+              0.4,
+              0.1
+            ],
+            [
+              0.04,
+              0.15,
+              0.35,
+              0.12,
+              0.3,
+              0.4,
               0.25,
               0.4,
+              0.3
+            ],
+            [
+              0.01,
+              0.05,
+              0.15,
+              0.03,
+              0.1,
+              0.3,
+              0.05,
+              0.2,
+              0.6
+            ]
+          ]
+        }
+      ]
+    },
+    "circular_trading": {
+      "nodes": [
+        {
+          "name": "CircularityPatterns",
+          "states": [
+            "normal",
+            "suspicious",
+            "highly_suspicious"
+          ],
+          "description": "Trade chain analysis and return path detection",
+          "fallback_prior": [
+            0.75,
+            0.2,
+            0.05
+          ]
+        },
+        {
+          "name": "ParticipantAnalysis",
+          "states": [
+            "normal",
+            "suspicious",
+            "highly_suspicious"
+          ],
+          "description": "Entity relationships and role rotation analysis",
+          "fallback_prior": [
+            0.7,
+            0.25,
+            0.05
+          ]
+        },
+        {
+          "name": "VolumeCirculation",
+          "states": [
+            "normal",
+            "suspicious",
+            "highly_suspicious"
+          ],
+          "description": "Volume circulation and conservation analysis",
+          "fallback_prior": [
+            0.7,
+            0.25,
+            0.05
+          ]
+        },
+        {
+          "name": "MarketImpactAnalysis",
+          "states": [
+            "normal",
+            "suspicious",
+            "highly_suspicious"
+          ],
+          "description": "Price effect and liquidity impact analysis",
+          "fallback_prior": [
+            0.8,
+            0.15,
+            0.05
+          ]
+        },
+        {
+          "name": "CoordinationPatterns",
+          "states": [
+            "minimal_coordination",
+            "moderate_coordination",
+            "extensive_coordination"
+          ],
+          "description": "Coordination patterns aggregation from circularity and participants"
+        },
+        {
+          "name": "MarketImpact",
+          "states": [
+            "minimal_impact",
+            "moderate_impact",
+            "significant_impact"
+          ],
+          "description": "Market impact aggregation from volume and market analysis"
+        },
+        {
+          "name": "Risk",
+          "states": [
+            "Low",
+            "Medium",
+            "High"
+          ],
+          "description": "Overall circular_trading risk"
+        }
+      ],
+      "edges": [
+        [
+          "CircularityPatterns",
+          "CoordinationPatterns"
+        ],
+        [
+          "ParticipantAnalysis",
+          "CoordinationPatterns"
+        ],
+        [
+          "VolumeCirculation",
+          "MarketImpact"
+        ],
+        [
+          "MarketImpactAnalysis",
+          "MarketImpact"
+        ],
+        [
+          "CoordinationPatterns",
+          "Risk"
+        ],
+        [
+          "MarketImpact",
+          "Risk"
+        ]
+      ],
+      "cpds": [
+        {
+          "variable": "CircularityPatterns",
+          "values": [
+            [
+              0.75
+            ],
+            [
+              0.2
+            ],
+            [
+              0.05
+            ]
+          ]
+        },
+        {
+          "variable": "ParticipantAnalysis",
+          "values": [
+            [
+              0.7
+            ],
+            [
+              0.25
+            ],
+            [
+              0.05
+            ]
+          ]
+        },
+        {
+          "variable": "VolumeCirculation",
+          "values": [
+            [
+              0.7
+            ],
+            [
+              0.25
+            ],
+            [
+              0.05
+            ]
+          ]
+        },
+        {
+          "variable": "MarketImpactAnalysis",
+          "values": [
+            [
+              0.8
+            ],
+            [
+              0.15
+            ],
+            [
+              0.05
+            ]
+          ]
+        },
+        {
+          "variable": "CoordinationPatterns",
+          "evidence": [
+            "CircularityPatterns",
+            "ParticipantAnalysis"
+          ],
+          "values": [
+            [
+              0.9,
+              0.7,
+              0.4,
+              0.75,
+              0.5,
+              0.2,
+              0.6,
+              0.3,
+              0.1
+            ],
+            [
+              0.08,
+              0.25,
+              0.4,
+              0.2,
+              0.35,
+              0.5,
+              0.3,
+              0.4,
+              0.3
+            ],
+            [
+              0.02,
+              0.05,
+              0.2,
+              0.05,
+              0.15,
+              0.3,
+              0.1,
+              0.3,
+              0.6
+            ]
+          ]
+        },
+        {
+          "variable": "MarketImpact",
+          "evidence": [
+            "VolumeCirculation",
+            "MarketImpactAnalysis"
+          ],
+          "values": [
+            [
+              0.95,
+              0.8,
+              0.6,
+              0.85,
+              0.6,
+              0.4,
+              0.7,
+              0.4,
+              0.2
+            ],
+            [
+              0.04,
+              0.15,
+              0.25,
+              0.12,
+              0.3,
+              0.4,
+              0.25,
+              0.4,
+              0.3
+            ],
+            [
+              0.01,
+              0.05,
+              0.15,
+              0.03,
+              0.1,
+              0.2,
+              0.05,
+              0.2,
+              0.5
+            ]
+          ]
+        },
+        {
+          "variable": "Risk",
+          "evidence": [
+            "CoordinationPatterns",
+            "MarketImpact"
+          ],
+          "values": [
+            [
+              0.95,
+              0.8,
+              0.5,
+              0.85,
+              0.6,
+              0.3,
+              0.7,
+              0.4,
+              0.1
+            ],
+            [
+              0.04,
+              0.15,
+              0.35,
+              0.12,
+              0.3,
+              0.4,
+              0.25,
+              0.4,
+              0.3
+            ],
+            [
+              0.01,
+              0.05,
+              0.15,
+              0.03,
+              0.1,
+              0.3,
+              0.05,
+              0.2,
               0.6
             ]
           ]
