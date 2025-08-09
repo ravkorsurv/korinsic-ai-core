@@ -1473,13 +1473,14 @@ def map_news_timing(trade_data: Dict[str, Any], news_data: Dict[str, Any]) -> in
         if tt is None:
             continue
         for ev in news_events:
-            if not ev.get("price_sensitive", True):
+            if not ev.get("price_sensitive", False):
                 continue
             nv = ev.get("timestamp")
             if nv is None:
                 continue
             try:
-                dt = abs((nv - tt).total_seconds()) / 60.0
+                SECONDS_PER_MINUTE = 60.0
+                dt = abs((nv - tt).total_seconds()) / SECONDS_PER_MINUTE
             except Exception:
                 continue
             if dt < min_minutes:
