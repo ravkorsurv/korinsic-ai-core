@@ -9,6 +9,10 @@ from typing import Any, Dict, List
 
 import numpy as np
 
+# Timing threshold constants for news-trade proximity mapping
+HIGHLY_SUSPICIOUS_MINUTES = 5
+SUSPICIOUS_MINUTES = 60
+
 
 def map_trade_pattern(trade_data: Dict[str, Any]) -> int:
     """
@@ -1480,8 +1484,8 @@ def map_news_timing(trade_data: Dict[str, Any], news_data: Dict[str, Any]) -> in
                 continue
             if dt < min_minutes:
                 min_minutes = dt
-    if min_minutes <= 5:
+    if min_minutes <= HIGHLY_SUSPICIOUS_MINUTES:
         return 2
-    if min_minutes <= 60:
+    if min_minutes <= SUSPICIOUS_MINUTES:
         return 1
     return 0

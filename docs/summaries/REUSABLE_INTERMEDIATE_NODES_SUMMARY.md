@@ -46,6 +46,10 @@ Instead of creating model-specific intermediate nodes, we've designed **6 reusab
 - `news_timing + state_information_access + announcement_correlation`
 - `information_sharing + access_pattern + privileged_communication`
 
+**Enhanced Insider Dealing (Latent Intent)**:
+- `mnpi_access` is modeled as an evidence parent of `latent_intent` to avoid increasing `risk_factor` fan-in. The aggregator ignores external `mnpi_access` when the BN includes it to prevent double-counting.
+- Explicit mappers now exist for `news_timing` and `state_information_access`. Timing thresholds use constants: `HIGHLY_SUSPICIOUS_MINUTES = 5`, `SUSPICIOUS_MINUTES = 60`.
+
 **States**: `["no_advantage", "potential_advantage", "clear_advantage"]`
 
 ### **5. EconomicRationalityNode**

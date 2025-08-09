@@ -30,8 +30,14 @@ All Bayesian models in the Kor.ai Risk Engine now support the standard evidence 
 - **Status**: Fully integrated (reuses nodes from other models)
 
 ### 7. Insider Dealing ✅
-- **Evidence Nodes (10+)**: trade_pattern, comms_intent, pnl_drift, mnpi_access, trade_direction, risk_profile, timing_proximity, pnl_loss_spike, sales_activity, market_news_context
-- **Status**: Original implementation already uses standard pattern
+- **Evidence Nodes (enhanced)**: trade_pattern, comms_intent, pnl_drift, news_timing, state_information_access, announcement_correlation, profit_motivation, access_pattern, order_behavior, comms_metadata, mnpi_access
+- **Enhanced BN Integration**: In the latent-intent model, `mnpi_access` feeds `latent_intent` (keeps `risk_factor` at 4 parents: trade_pattern, comms_intent, pnl_drift, latent_intent). Aggregator ignores external `mnpi_access` to avoid double-counting when present in the BN.
+- **Mapping**:
+  - `mnpi_access`: from HR/market data (executive/high or >2 indicators → clear; senior/≥1 indicator → potential; else none)
+  - `news_timing`: explicit mapper based on minutes proximity to price-sensitive news
+  - `state_information_access`: explicit mapper from state access indicators
+- **Threshold constants**: `HIGHLY_SUSPICIOUS_MINUTES = 5`, `SUSPICIOUS_MINUTES = 60` (in `core/evidence_mapper.py`) replace magic numbers.
+- **Status**: Enhanced model preferred; baseline retained for backward compatibility.
 
 ### 8. Wash Trade Detection ✅
 - **Evidence Nodes (6)**: wash_trade_likelihood, signal_distortion_index, algo_reaction_sensitivity, strategy_leg_overlap, price_impact_anomaly, implied_liquidity_conflict
