@@ -791,6 +791,16 @@ class BayesianEngine:
 
             mapped_evidence = map_evidence(processed_data)
 
+            # Avoid double-counting MNPI when it is included inside the BN (latent intent path)
+            try:
+                insider_nodes = set(self.insider_dealing_model.nodes()) if self.insider_dealing_model else set()
+                if "mnpi_access" in insider_nodes and "mnpi_access" in mapped_evidence:
+                    # Remove aggregator MNPI contribution to avoid double-counting
+                    mapped_evidence.pop("mnpi_access", None)
+            except Exception:
+                # Non-fatal: proceed without gating if model is unavailable
+                pass
+
             # Apply market news contextualization to suppress false alerts
             news_context = mapped_evidence.get(
                 "market_news_context", 2

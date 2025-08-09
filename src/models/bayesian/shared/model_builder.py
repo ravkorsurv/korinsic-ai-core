@@ -10,6 +10,12 @@ from typing import Any, Dict, List, Optional
 from pgmpy.factors.discrete import TabularCPD
 from pgmpy.inference import VariableElimination
 from pgmpy.models import DiscreteBayesianNetwork
+from itertools import product
+from .structured_cpds import (
+    generate_linear_aggregate_cpd,
+    generate_softmax_cpd,
+    SoftmaxCPDParams,
+)
 
 from .node_library import (
     AccessPatternNode,
@@ -243,6 +249,9 @@ def build_insider_dealing_bn_with_latent_intent():
     state_information_access = StateInformationNode(
         "state_information_access", description="State-level information access"
     )
+    mnpi_access = StateInformationNode(
+        "mnpi_access", description="Access to material non-public information"
+    )
     announcement_correlation = AnnouncementCorrelationNode(
         "announcement_correlation", description="Trading correlation with announcements"
     )
@@ -271,6 +280,7 @@ def build_insider_dealing_bn_with_latent_intent():
         ("comms_metadata", "latent_intent"),
         ("news_timing", "latent_intent"),
         ("state_information_access", "latent_intent"),
+        ("mnpi_access", "latent_intent"),
         ("announcement_correlation", "latent_intent"),
         # Traditional evidence paths
         ("trade_pattern", "risk_factor"),
@@ -318,6 +328,11 @@ def build_insider_dealing_bn_with_latent_intent():
         variable_card=3,
         values=[[0.88], [0.10], [0.02]],
     )
+    cpd_mnpi_access = TabularCPD(
+        variable="mnpi_access",
+        variable_card=3,
+        values=[[0.88], [0.10], [0.02]],
+    )
     cpd_announcement_correlation = TabularCPD(
         variable="announcement_correlation",
         variable_card=3,
@@ -326,7 +341,7 @@ def build_insider_dealing_bn_with_latent_intent():
 
     # NEW: Latent intent CPT - P(latent_intent | profit_motivation, access_pattern, order_behavior, comms_metadata, news_timing, state_information_access, announcement_correlation)
     # This models how converging evidence paths influence the unobservable intent
-    # 3^7 = 2187 combinations for 7 evidence variables with 3 states each
+    # 3^8 = 6561 combinations for 8 evidence variables with 3 states each
     cpd_latent_intent = TabularCPD(
         variable="latent_intent",
         variable_card=3,
@@ -337,16 +352,17 @@ def build_insider_dealing_bn_with_latent_intent():
             "comms_metadata",
             "news_timing",
             "state_information_access",
+            "mnpi_access",
             "announcement_correlation",
         ],
-        evidence_card=[3, 3, 3, 3, 3, 3, 3],
+        evidence_card=[3, 3, 3, 3, 3, 3, 3, 3],
         values=[
-            # P(no_intent | evidence combinations) - 2187 values
-            [0.95] * 2187,
-            # P(potential_intent | evidence combinations) - 2187 values
-            [0.04] * 2187,
-            # P(clear_intent | evidence combinations) - 2187 values
-            [0.01] * 2187,
+            # P(no_intent | evidence combinations) - 6561 values
+            [0.95] * 6561,
+            # P(potential_intent | evidence combinations) - 6561 values
+            [0.04] * 6561,
+            # P(clear_intent | evidence combinations) - 6561 values
+            [0.01] * 6561,
         ],
     )
 
@@ -387,6 +403,7 @@ def build_insider_dealing_bn_with_latent_intent():
         cpd_comms_metadata,
         cpd_news_timing,
         cpd_state_information_access,
+        cpd_mnpi_access,
         cpd_announcement_correlation,
         cpd_latent_intent,
         cpd_risk_factor,
@@ -513,6 +530,165 @@ def build_insider_dealing_bn():
     )
 
     # Validate the model
+    if not model.check_model():
+        raise ValueError("Bayesian Network structure or CPDs are invalid")
+
+    return model
+
+
+def build_insider_dealing_bn_with_latent_intent_grouped():
+    """
+    Build Insider Dealing Bayesian Network with latent intent using grouped intermediate nodes
+    to reduce state space complexity.
+
+    Two intermediate aggregates:
+      - intent_behavior_aggregate: groups [profit_motivation, access_pattern, order_behavior]
+      - access_timing_aggregate: groups [news_timing, state_information_access, mnpi_access]
+
+    Then latent_intent has 4 parents: [intent_behavior_aggregate, access_timing_aggregate, comms_metadata, announcement_correlation]
+    This reduces combinations from 3^8=6561 to 3^4=81 for latent_intent CPT.
+    """
+    # Base evidence nodes
+    trade_pattern = EvidenceNode("trade_pattern", ["normal", "suspicious"], description="Trade pattern evidence")
+    comms_intent = CommsIntentNode("comms_intent", description="Comms intent evidence")
+    pnl_drift = VarianceTunedIndicatorNode("pnl_drift", description="PnL drift indicator")
+
+    profit_motivation = ProfitMotivationNode("profit_motivation", description="Profit motivation evidence")
+    access_pattern = AccessPatternNode("access_pattern", description="Access pattern evidence")
+    order_behavior = OrderBehaviorNode("order_behavior", description="Order behavior evidence")
+    comms_metadata = CommsMetadataNode("comms_metadata", description="Communications metadata")
+    news_timing = NewsTimingNode("news_timing", description="News-trade timing analysis")
+    state_information_access = StateInformationNode("state_information_access", description="State-level information access")
+    mnpi_access = StateInformationNode("mnpi_access", description="Access to material non-public information")
+    announcement_correlation = AnnouncementCorrelationNode("announcement_correlation", description="Trading correlation with announcements")
+
+    # Aggregated intermediate nodes (3-state risk factors)
+    intent_behavior_aggregate = RiskFactorNode("intent_behavior_aggregate", ["low", "medium", "high"], description="Aggregated intent/behavior evidence")
+    access_timing_aggregate = RiskFactorNode("access_timing_aggregate", ["low", "medium", "high"], description="Aggregated access/timing evidence")
+
+    # Latent intent
+    latent_intent = LatentIntentNode("latent_intent", description="Latent intent to manipulate")
+
+    # Risk factor and outcome
+    risk_factor = RiskFactorNode("risk_factor", ["low", "medium", "high"], description="Latent risk factor")
+    insider_dealing = OutcomeNode("insider_dealing", ["no", "yes"], description="Insider dealing outcome")
+
+    edges = [
+        # Aggregations
+        ("profit_motivation", "intent_behavior_aggregate"),
+        ("access_pattern", "intent_behavior_aggregate"),
+        ("order_behavior", "intent_behavior_aggregate"),
+        ("news_timing", "access_timing_aggregate"),
+        ("state_information_access", "access_timing_aggregate"),
+        ("mnpi_access", "access_timing_aggregate"),
+        # Latent intent parents (reduced)
+        ("intent_behavior_aggregate", "latent_intent"),
+        ("access_timing_aggregate", "latent_intent"),
+        ("comms_metadata", "latent_intent"),
+        ("announcement_correlation", "latent_intent"),
+        # Traditional risk factor path unchanged
+        ("trade_pattern", "risk_factor"),
+        ("comms_intent", "risk_factor"),
+        ("pnl_drift", "risk_factor"),
+        ("latent_intent", "risk_factor"),
+        ("risk_factor", "insider_dealing"),
+    ]
+
+    model = DiscreteBayesianNetwork(edges, latents={"latent_intent"})
+
+    # Marginal CPDs for base evidence
+    cpd_trade_pattern = TabularCPD(variable="trade_pattern", variable_card=2, values=[[0.95], [0.05]])
+    cpd_comms_intent = TabularCPD(variable="comms_intent", variable_card=3, values=[[0.8], [0.15], [0.05]])
+    cpd_pnl_drift = TabularCPD(variable="pnl_drift", variable_card=2, values=[[0.9], [0.1]])
+
+    cpd_profit_motivation = TabularCPD(variable="profit_motivation", variable_card=3, values=[[0.85], [0.12], [0.03]])
+    cpd_access_pattern = TabularCPD(variable="access_pattern", variable_card=3, values=[[0.9], [0.08], [0.02]])
+    cpd_order_behavior = TabularCPD(variable="order_behavior", variable_card=3, values=[[0.88], [0.1], [0.02]])
+    cpd_comms_metadata = TabularCPD(variable="comms_metadata", variable_card=3, values=[[0.92], [0.06], [0.02]])
+    cpd_news_timing = TabularCPD(variable="news_timing", variable_card=3, values=[[0.85], [0.12], [0.03]])
+    cpd_state_information_access = TabularCPD(variable="state_information_access", variable_card=3, values=[[0.88], [0.10], [0.02]])
+    cpd_mnpi_access = TabularCPD(variable="mnpi_access", variable_card=3, values=[[0.88], [0.10], [0.02]])
+    cpd_announcement_correlation = TabularCPD(variable="announcement_correlation", variable_card=3, values=[[0.80], [0.15], [0.05]])
+
+    # Helper to create aggregate CPDs with simple rule-based probabilities
+    cpd_intent_behavior_aggregate = generate_linear_aggregate_cpd(
+        "intent_behavior_aggregate",
+        ["profit_motivation", "access_pattern", "order_behavior"],
+        [3, 3, 3],
+        weight=1.0,
+    )
+    cpd_access_timing_aggregate = generate_linear_aggregate_cpd(
+        "access_timing_aggregate",
+        ["news_timing", "state_information_access", "mnpi_access"],
+        [3, 3, 3],
+        weight=1.25,
+    )
+
+    # Softmax-based latent intent CPD with monotonicity on access path
+    latent_params = SoftmaxCPDParams(
+        parent_weights={
+            "intent_behavior_aggregate": 1.0,
+            "access_timing_aggregate": 1.5,
+            "comms_metadata": 0.8,
+            "announcement_correlation": 0.6,
+        },
+        class_bias=(0.3, -0.05, -0.6),
+        class_gain=(1.0, 2.0, 3.5),
+        enforce_monotonic_for=("access_timing_aggregate",),
+    )
+    cpd_latent_intent = generate_softmax_cpd(
+        variable="latent_intent",
+        parents=[
+            "intent_behavior_aggregate",
+            "access_timing_aggregate",
+            "comms_metadata",
+            "announcement_correlation",
+        ],
+        evidence_card=[3, 3, 3, 3],
+        params=latent_params,
+    )
+
+    # Risk factor CPT remains small (36 combos)
+    cpd_risk_factor = TabularCPD(
+        variable="risk_factor",
+        variable_card=3,
+        evidence=["trade_pattern", "comms_intent", "pnl_drift", "latent_intent"],
+        evidence_card=[2, 3, 2, 3],
+        values=[[0.95] * 36, [0.04] * 36, [0.01] * 36],
+    )
+
+    # Outcome CPT
+    cpd_insider_dealing = TabularCPD(
+        variable="insider_dealing",
+        variable_card=2,
+        evidence=["risk_factor"],
+        evidence_card=[3],
+        values=[[0.99, 0.7, 0.2], [0.01, 0.3, 0.8]],
+    )
+
+    for cpd in [
+        cpd_trade_pattern,
+        cpd_comms_intent,
+        cpd_pnl_drift,
+        cpd_profit_motivation,
+        cpd_access_pattern,
+        cpd_order_behavior,
+        cpd_comms_metadata,
+        cpd_news_timing,
+        cpd_state_information_access,
+        cpd_mnpi_access,
+        cpd_announcement_correlation,
+        cpd_intent_behavior_aggregate,
+        cpd_access_timing_aggregate,
+        cpd_latent_intent,
+        cpd_risk_factor,
+        cpd_insider_dealing,
+    ]:
+        try:
+            model.add_cpds(cpd)
+        except Exception as e:
+            raise ValueError(f"Failed to add CPD {getattr(cpd, 'variable', 'unknown')}: {str(e)}")
+
     if not model.check_model():
         raise ValueError("Bayesian Network structure or CPDs are invalid")
 
