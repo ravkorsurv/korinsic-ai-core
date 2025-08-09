@@ -640,7 +640,24 @@ def build_insider_dealing_bn_with_latent_intent_grouped():
         "access_timing_aggregate", ["news_timing", "state_information_access", "mnpi_access"]
     )
 
-    # Latent intent with 4 parents (3^4=81 combos). Keep conservative prior by default.
+    # Dynamic probabilities based on evidence patterns (non-uniform)
+    def _calculate_latent_intent_probs():
+        probs = []
+        for combo in product(*[range(3) for _ in range(4)]):
+            intent_behavior, access_timing, comms, announcement = combo
+            total = intent_behavior + access_timing + comms + announcement
+            # High-risk pattern: all signals at least medium and strong sum
+            if all(x >= 1 for x in combo) and total >= 6:
+                probs.append([0.2, 0.3, 0.5])
+            # Medium-risk pattern: moderate combined strength
+            elif total >= 4:
+                probs.append([0.4, 0.4, 0.2])
+            # Low-risk pattern otherwise
+            else:
+                probs.append([0.85, 0.1, 0.05])
+        # Transpose to TabularCPD shape (rows = states)
+        return list(map(list, zip(*probs)))
+
     cpd_latent_intent = TabularCPD(
         variable="latent_intent",
         variable_card=3,
@@ -651,7 +668,7 @@ def build_insider_dealing_bn_with_latent_intent_grouped():
             "announcement_correlation",
         ],
         evidence_card=[3, 3, 3, 3],
-        values=[[0.85] * 81, [0.1] * 81, [0.05] * 81],
+        values=_calculate_latent_intent_probs(),
     )
 
     # Risk factor CPT remains small (36 combos)
