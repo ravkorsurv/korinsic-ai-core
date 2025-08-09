@@ -304,6 +304,7 @@ class InsiderDealingModel:
                 "comms_metadata",
                 "news_timing",
                 "state_information_access",
+                "mnpi_access",
                 "announcement_correlation",
             ]
         else:

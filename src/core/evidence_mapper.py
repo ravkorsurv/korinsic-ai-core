@@ -565,6 +565,12 @@ def map_evidence(raw_data: Dict[str, Any]) -> Dict[str, int]:
         "mnpi_access": map_mnpi_access(
             raw_data.get("hr", {}), raw_data.get("market", {})
         ),
+        "state_information_access": map_state_information_access(
+            raw_data.get("state_information", {})
+        ),
+        "news_timing": map_news_timing(
+            raw_data.get("trade", {}), raw_data.get("news", {})
+        ),
         "trade_direction": map_trade_direction(
             raw_data.get("trade", {}), raw_data.get("market", {})
         ),
@@ -1430,3 +1436,52 @@ def map_commodity_manipulation_evidence(commodity_data: Dict[str, Any]) -> Dict[
         "volume_participation": map_volume_participation(trade_data, market_data),
         "cross_venue_coordination": map_cross_venue_coordination(venue_data),
     }
+
+
+def map_state_information_access(state_data: Dict[str, Any]) -> int:
+    """
+    Map state information access indicators to BN state index.
+    Returns 0 for 'no_access', 1 for 'potential_access', 2 for 'clear_access'.
+    """
+    # Simple heuristic: treat strong signals as clear, weak as potential
+    indicators = state_data.get("indicators", 0)
+    access_flags = state_data.get("access_flags", [])
+    if indicators >= 2 or "privileged_channel" in access_flags:
+        return 2
+    if indicators >= 1 or "sensitive_meeting" in access_flags:
+        return 1
+    return 0
+
+
+def map_news_timing(trade_data: Dict[str, Any], news_data: Dict[str, Any]) -> int:
+    """
+    Map trade-news timing proximity to BN state index.
+    Returns 0 'normal_timing', 1 'suspicious_timing', 2 'highly_suspicious_timing'.
+    """
+    # Heuristic: use minutes to nearest price-sensitive news
+    trades = trade_data.get("trades", [])
+    news_events = news_data.get("events", [])
+    if not trades or not news_events:
+        return 0
+    min_minutes = 9999
+    for t in trades:
+        tt = t.get("timestamp")
+        if tt is None:
+            continue
+        for ev in news_events:
+            if not ev.get("price_sensitive", True):
+                continue
+            nv = ev.get("timestamp")
+            if nv is None:
+                continue
+            try:
+                dt = abs((nv - tt).total_seconds()) / 60.0
+            except Exception:
+                continue
+            if dt < min_minutes:
+                min_minutes = dt
+    if min_minutes <= 5:
+        return 2
+    if min_minutes <= 60:
+        return 1
+    return 0

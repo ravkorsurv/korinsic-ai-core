@@ -246,12 +246,13 @@ class TestInsiderDealingModelEnhancement:
         assert 'news_timing' in required_nodes
         assert 'state_information_access' in required_nodes
         assert 'announcement_correlation' in required_nodes
+        assert 'mnpi_access' in required_nodes
         
         # Check that all expected nodes are present
         expected_nodes = [
             'trade_pattern', 'comms_intent', 'pnl_drift',
             'profit_motivation', 'access_pattern', 'order_behavior', 'comms_metadata',
-            'news_timing', 'state_information_access', 'announcement_correlation'
+            'news_timing', 'state_information_access', 'announcement_correlation', 'mnpi_access'
         ]
         
         for node_name in expected_nodes:
@@ -342,11 +343,13 @@ class TestBayesianNetworkConstruction:
         assert 'news_timing' in network.nodes()
         assert 'state_information_access' in network.nodes()
         assert 'announcement_correlation' in network.nodes()
+        assert 'mnpi_access' in network.nodes()
         
         # Check that edges exist for enhanced nodes to latent intent
         assert ('news_timing', 'latent_intent') in network.edges()
         assert ('state_information_access', 'latent_intent') in network.edges()
         assert ('announcement_correlation', 'latent_intent') in network.edges()
+        assert ('mnpi_access', 'latent_intent') in network.edges()
         
         # Verify network structure
         assert network.check_model() == True
@@ -357,6 +360,7 @@ class TestBayesianNetworkConstruction:
         assert 'news_timing' in cpd_names
         assert 'state_information_access' in cpd_names
         assert 'announcement_correlation' in cpd_names
+        assert 'mnpi_access' in cpd_names
     
     def test_latent_intent_cpd_updated_for_enhanced_nodes(self):
         """Test that latent intent CPD is updated to include enhanced nodes."""
@@ -374,16 +378,16 @@ class TestBayesianNetworkConstruction:
         # Check that enhanced nodes are in the evidence
         expected_evidence = [
             "profit_motivation", "access_pattern", "order_behavior", "comms_metadata",
-            "news_timing", "state_information_access", "announcement_correlation"
+            "news_timing", "state_information_access", "mnpi_access", "announcement_correlation"
         ]
         
         for evidence_var in expected_evidence:
             assert evidence_var in latent_intent_cpd.variables
         
-        # Check that the CPD has the right number of values (3^7 = 2187 combinations)
+        # Check that the CPD has the right number of values (3^8 = 6561 combinations)
         # For a multi-dimensional array, we need to check the total number of combinations
         total_combinations = np.prod(latent_intent_cpd.values.shape[1:])  # Skip first dimension (variable states)
-        assert total_combinations == 2187
+        assert total_combinations == 6561
 
 
 class TestIntegrationWithExistingSystem:

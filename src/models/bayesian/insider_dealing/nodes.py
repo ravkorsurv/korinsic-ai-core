@@ -86,6 +86,12 @@ class InsiderDealingNodes:
                 "description": "State-level information access",
                 "fallback_prior": [0.88, 0.10, 0.02],
             },
+            "mnpi_access": {
+                "type": "state_information",
+                "states": ["no_access", "potential_access", "clear_access"],
+                "description": "Access to material non-public information (MNPI)",
+                "fallback_prior": [0.88, 0.10, 0.02],
+            },
             "announcement_correlation": {
                 "type": "announcement_correlation",
                 "states": ["no_correlation", "weak_correlation", "strong_correlation"],
@@ -213,6 +219,7 @@ class InsiderDealingNodes:
             "comms_metadata",
             "news_timing",
             "state_information_access",
+            "mnpi_access",
             "announcement_correlation",
             "latent_intent",
             "risk_factor",

@@ -243,6 +243,9 @@ def build_insider_dealing_bn_with_latent_intent():
     state_information_access = StateInformationNode(
         "state_information_access", description="State-level information access"
     )
+    mnpi_access = StateInformationNode(
+        "mnpi_access", description="Access to material non-public information"
+    )
     announcement_correlation = AnnouncementCorrelationNode(
         "announcement_correlation", description="Trading correlation with announcements"
     )
@@ -271,6 +274,7 @@ def build_insider_dealing_bn_with_latent_intent():
         ("comms_metadata", "latent_intent"),
         ("news_timing", "latent_intent"),
         ("state_information_access", "latent_intent"),
+        ("mnpi_access", "latent_intent"),
         ("announcement_correlation", "latent_intent"),
         # Traditional evidence paths
         ("trade_pattern", "risk_factor"),
@@ -318,6 +322,11 @@ def build_insider_dealing_bn_with_latent_intent():
         variable_card=3,
         values=[[0.88], [0.10], [0.02]],
     )
+    cpd_mnpi_access = TabularCPD(
+        variable="mnpi_access",
+        variable_card=3,
+        values=[[0.88], [0.10], [0.02]],
+    )
     cpd_announcement_correlation = TabularCPD(
         variable="announcement_correlation",
         variable_card=3,
@@ -326,7 +335,7 @@ def build_insider_dealing_bn_with_latent_intent():
 
     # NEW: Latent intent CPT - P(latent_intent | profit_motivation, access_pattern, order_behavior, comms_metadata, news_timing, state_information_access, announcement_correlation)
     # This models how converging evidence paths influence the unobservable intent
-    # 3^7 = 2187 combinations for 7 evidence variables with 3 states each
+    # 3^8 = 6561 combinations for 8 evidence variables with 3 states each
     cpd_latent_intent = TabularCPD(
         variable="latent_intent",
         variable_card=3,
@@ -337,16 +346,17 @@ def build_insider_dealing_bn_with_latent_intent():
             "comms_metadata",
             "news_timing",
             "state_information_access",
+            "mnpi_access",
             "announcement_correlation",
         ],
-        evidence_card=[3, 3, 3, 3, 3, 3, 3],
+        evidence_card=[3, 3, 3, 3, 3, 3, 3, 3],
         values=[
-            # P(no_intent | evidence combinations) - 2187 values
-            [0.95] * 2187,
-            # P(potential_intent | evidence combinations) - 2187 values
-            [0.04] * 2187,
-            # P(clear_intent | evidence combinations) - 2187 values
-            [0.01] * 2187,
+            # P(no_intent | evidence combinations) - 6561 values
+            [0.95] * 6561,
+            # P(potential_intent | evidence combinations) - 6561 values
+            [0.04] * 6561,
+            # P(clear_intent | evidence combinations) - 6561 values
+            [0.01] * 6561,
         ],
     )
 
@@ -387,6 +397,7 @@ def build_insider_dealing_bn_with_latent_intent():
         cpd_comms_metadata,
         cpd_news_timing,
         cpd_state_information_access,
+        cpd_mnpi_access,
         cpd_announcement_correlation,
         cpd_latent_intent,
         cpd_risk_factor,
