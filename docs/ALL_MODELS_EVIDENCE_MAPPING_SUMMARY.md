@@ -32,7 +32,7 @@ All Bayesian models in the Kor.ai Risk Engine now support the standard evidence 
 ### 7. Insider Dealing ✅
 - **Evidence Nodes (enhanced)**: trade_pattern, comms_intent, pnl_drift, news_timing, state_information_access, announcement_correlation, profit_motivation, access_pattern, order_behavior, comms_metadata, mnpi_access
 - **Enhanced BN Integration**: In the latent-intent model, `mnpi_access` feeds `latent_intent` (keeps `risk_factor` at 4 parents: trade_pattern, comms_intent, pnl_drift, latent_intent). Aggregator ignores external `mnpi_access` to avoid double-counting when present in the BN.
-- **Performance variant**: `build_insider_dealing_bn_with_latent_intent_grouped()` groups evidence into two intermediates (`intent_behavior_aggregate`, `access_timing_aggregate`), reducing `latent_intent` parent combinations from 3^8 = 6561 to 3^4 = 81.
+- **Performance variant**: `build_insider_dealing_bn_with_latent_intent_grouped()` groups evidence into two intermediates (`intent_behavior_aggregate`, `access_timing_aggregate`), reducing `latent_intent` parent combinations from 3^8 = 6561 to 3^4 = 81. Uses structured CPDs (softmax-based) for aggregates and latent intent with monotonic constraints, enabling calibration and linear parameter growth.
 - **Mapping**:
   - `mnpi_access`: from HR/market data (executive/high or >2 indicators → clear; senior/≥1 indicator → potential; else none)
   - `news_timing`: explicit mapper based on minutes proximity to price-sensitive news

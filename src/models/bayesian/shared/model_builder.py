@@ -11,6 +11,11 @@ from pgmpy.factors.discrete import TabularCPD
 from pgmpy.inference import VariableElimination
 from pgmpy.models import DiscreteBayesianNetwork
 from itertools import product
+from .structured_cpds import (
+    generate_linear_aggregate_cpd,
+    generate_softmax_cpd,
+    SoftmaxCPDParams,
+)
 
 from .node_library import (
     AccessPatternNode,
@@ -606,69 +611,41 @@ def build_insider_dealing_bn_with_latent_intent_grouped():
     cpd_announcement_correlation = TabularCPD(variable="announcement_correlation", variable_card=3, values=[[0.80], [0.15], [0.05]])
 
     # Helper to create aggregate CPDs with simple rule-based probabilities
-    def build_aggregate_cpd(variable: str, parents: list) -> TabularCPD:
-        parent_cards = [3] * len(parents)
-        combos = list(product(*[range(3) for _ in parents]))
-        rows_low, rows_med, rows_high = [], [], []
-        for combo in combos:
-            # Simple rule: score = sum of state indices
-            score = sum(combo)
-            has_high = any(s == 2 for s in combo)
-            has_medium = any(s == 1 for s in combo)
-            if has_high and (has_medium or score >= 3):
-                # High aggregate
-                rows_low.append(0.1)
-                rows_med.append(0.2)
-                rows_high.append(0.7)
-            elif score >= len(combo):
-                # Medium aggregate
-                rows_low.append(0.2)
-                rows_med.append(0.6)
-                rows_high.append(0.2)
-            else:
-                # Low aggregate
-                rows_low.append(0.8)
-                rows_med.append(0.15)
-                rows_high.append(0.05)
-        values = [rows_low, rows_med, rows_high]
-        return TabularCPD(variable=variable, variable_card=3, evidence=parents, evidence_card=parent_cards, values=values)
-
-    cpd_intent_behavior_aggregate = build_aggregate_cpd(
-        "intent_behavior_aggregate", ["profit_motivation", "access_pattern", "order_behavior"]
+    cpd_intent_behavior_aggregate = generate_linear_aggregate_cpd(
+        "intent_behavior_aggregate",
+        ["profit_motivation", "access_pattern", "order_behavior"],
+        [3, 3, 3],
+        weight=1.0,
     )
-    cpd_access_timing_aggregate = build_aggregate_cpd(
-        "access_timing_aggregate", ["news_timing", "state_information_access", "mnpi_access"]
+    cpd_access_timing_aggregate = generate_linear_aggregate_cpd(
+        "access_timing_aggregate",
+        ["news_timing", "state_information_access", "mnpi_access"],
+        [3, 3, 3],
+        weight=1.25,
     )
 
-    # Dynamic probabilities based on evidence patterns (non-uniform)
-    def _calculate_latent_intent_probs():
-        probs = []
-        for combo in product(*[range(3) for _ in range(4)]):
-            intent_behavior, access_timing, comms, announcement = combo
-            total = intent_behavior + access_timing + comms + announcement
-            # High-risk pattern: all signals at least medium and strong sum
-            if all(x >= 1 for x in combo) and total >= 6:
-                probs.append([0.2, 0.3, 0.5])
-            # Medium-risk pattern: moderate combined strength
-            elif total >= 4:
-                probs.append([0.4, 0.4, 0.2])
-            # Low-risk pattern otherwise
-            else:
-                probs.append([0.85, 0.1, 0.05])
-        # Transpose to TabularCPD shape (rows = states)
-        return list(map(list, zip(*probs)))
-
-    cpd_latent_intent = TabularCPD(
+    # Softmax-based latent intent CPD with monotonicity on access path
+    latent_params = SoftmaxCPDParams(
+        parent_weights={
+            "intent_behavior_aggregate": 1.0,
+            "access_timing_aggregate": 1.5,
+            "comms_metadata": 0.8,
+            "announcement_correlation": 0.6,
+        },
+        class_bias=(0.3, -0.05, -0.6),
+        class_gain=(1.0, 2.0, 3.5),
+        enforce_monotonic_for=("access_timing_aggregate",),
+    )
+    cpd_latent_intent = generate_softmax_cpd(
         variable="latent_intent",
-        variable_card=3,
-        evidence=[
+        parents=[
             "intent_behavior_aggregate",
             "access_timing_aggregate",
             "comms_metadata",
             "announcement_correlation",
         ],
         evidence_card=[3, 3, 3, 3],
-        values=_calculate_latent_intent_probs(),
+        params=latent_params,
     )
 
     # Risk factor CPT remains small (36 combos)
