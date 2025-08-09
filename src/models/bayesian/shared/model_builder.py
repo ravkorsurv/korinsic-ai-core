@@ -666,7 +666,7 @@ def build_insider_dealing_bn_with_latent_intent_grouped():
         values=[[0.99, 0.7, 0.2], [0.01, 0.3, 0.8]],
     )
 
-    model.add_cpds(
+    for cpd in [
         cpd_trade_pattern,
         cpd_comms_intent,
         cpd_pnl_drift,
@@ -683,7 +683,11 @@ def build_insider_dealing_bn_with_latent_intent_grouped():
         cpd_latent_intent,
         cpd_risk_factor,
         cpd_insider_dealing,
-    )
+    ]:
+        try:
+            model.add_cpds(cpd)
+        except Exception as e:
+            raise ValueError(f"Failed to add CPD {getattr(cpd, 'variable', 'unknown')}: {str(e)}")
 
     if not model.check_model():
         raise ValueError("Bayesian Network structure or CPDs are invalid")

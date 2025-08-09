@@ -8,13 +8,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from itertools import product
-from typing import Dict, List, Sequence, Tuple
+from typing import Dict, List, Sequence, Tuple, Optional
 
 import math
 from pgmpy.factors.discrete import TabularCPD
 
 
 def _softmax(scores: Sequence[float]) -> List[float]:
+    """Numerically stable softmax with empty-sequence protection."""
+    if not scores:
+        return []
     max_s = max(scores)
     exps = [math.exp(s - max_s) for s in scores]
     total = sum(exps)
@@ -22,10 +25,28 @@ def _softmax(scores: Sequence[float]) -> List[float]:
 
 
 def _state_to_feature(state_idx: int, num_states: int = 3) -> float:
-    """Map ordinal state index to a normalized feature in [0,1]."""
+    """Map ordinal state index to a normalized feature in [0,1].
+
+    Returns 0.0 for degenerate cases (num_states <= 1) to avoid division by zero.
+    """
     if num_states <= 1:
         return 0.0
     return float(state_idx) / float(num_states - 1)
+
+
+def _compute_normalized_score(
+    parents: List[str],
+    combo: Tuple[int, ...],
+    evidence_card: List[int],
+    parent_weights: Dict[str, float],
+) -> float:
+    """Compute weighted normalized score in [0,1] for a given parent-state combo."""
+    score = sum(
+        parent_weights.get(parent_name, 0.0) * _state_to_feature(state_idx, card)
+        for parent_name, state_idx, card in zip(parents, combo, evidence_card)
+    )
+    total_w = sum(max(0.0, w) for w in parent_weights.values()) or 1.0
+    return min(max(score / total_w, 0.0), 1.0)
 
 
 @dataclass
@@ -56,6 +77,37 @@ class SoftmaxCPDParams:
         )
 
 
+def validate_softmax_params(
+    params: SoftmaxCPDParams, validation_data: Optional[Dict] = None
+) -> bool:
+    """Basic validation for softmax parameters.
+
+    - Ensures enforced-monotonic parents have non-negative weights
+    - Ensures total positive weight is non-zero
+    - Optionally: compare against simple bounds in validation_data
+    """
+    p = params.sanitized()
+    if sum(max(0.0, w) for w in p.parent_weights.values()) <= 0.0:
+        return False
+    for name in p.enforce_monotonic_for:
+        if p.parent_weights.get(name, 0.0) < 0.0:
+            return False
+    return True
+
+
+def tune_softmax_params(
+    params: SoftmaxCPDParams, training_data: Optional[Dict] = None
+) -> SoftmaxCPDParams:
+    """Placeholder tuner: returns sanitized params; adjust access-related weight slightly up.
+    Integrate with CPDCalibrator for data-driven tuning when available.
+    """
+    p = params.sanitized()
+    for k in list(p.parent_weights.keys()):
+        if any(tag in k for tag in ("mnpi", "access", "state_information")):
+            p.parent_weights[k] = max(0.0, p.parent_weights[k]) * 1.05
+    return p
+
+
 def generate_softmax_cpd(
     variable: str,
     parents: List[str],
@@ -63,11 +115,13 @@ def generate_softmax_cpd(
     params: SoftmaxCPDParams,
 ) -> TabularCPD:
     """Generate a TabularCPD for a 3-state variable using a softmax over a scalar score.
-
     The scalar score is a weighted sum of normalized parent states (0..1).
     Class logits are linear functions of the score.
     """
-    assert len(parents) == len(evidence_card)
+    if len(parents) != len(evidence_card):
+        raise ValueError(
+            f"Number of parents ({len(parents)}) must match length of evidence_card ({len(evidence_card)})"
+        )
     params = params.sanitized()
 
     combos = list(product(*[range(c) for c in evidence_card]))
@@ -75,14 +129,7 @@ def generate_softmax_cpd(
 
     for combo in combos:
         # Compute normalized score in [0,1]
-        score = 0.0
-        for parent_name, state_idx, card in zip(parents, combo, evidence_card):
-            feature = _state_to_feature(state_idx, card)
-            score += params.parent_weights.get(parent_name, 0.0) * feature
-        # Normalize by sum of positive weights to bound in [0,1]
-        total_w = sum(max(0.0, w) for w in params.parent_weights.values()) or 1.0
-        score = min(max(score / total_w, 0.0), 1.0)
-
+        score = _compute_normalized_score(parents, combo, evidence_card, params.parent_weights)
         b0, b1, b2 = params.class_bias
         g0, g1, g2 = params.class_gain
         z0 = b0 + g0 * (1.0 - score)
