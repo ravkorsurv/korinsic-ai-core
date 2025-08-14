@@ -34,7 +34,7 @@ from ..shared.intermediate_nodes import (
 )
 
 # Add regulatory explainability import
-from ....core.regulatory_explainability import (
+from core.regulatory_explainability import (
     RegulatoryExplainabilityEngine,
     EvidenceItem,
     EvidenceType,
@@ -840,7 +840,7 @@ class EconomicWithholdingModel:
             Evidence dictionary for Bayesian network (numeric indices)
         """
         # Import the standard evidence mapper
-        from ....core.evidence_mapper import map_economic_withholding_evidence
+        from core.evidence_mapper import map_economic_withholding_evidence
         
         # Prepare data in the standard format
         ew_data = {
@@ -980,7 +980,7 @@ class EconomicWithholdingModel:
         """
         try:
             # Import the standard evidence mapper
-            from ....core.evidence_mapper import map_economic_withholding_evidence
+            from core.evidence_mapper import map_economic_withholding_evidence
             
             # Extract specific data for economic withholding analysis
             ew_data = processed_data.get('economic_withholding', {})

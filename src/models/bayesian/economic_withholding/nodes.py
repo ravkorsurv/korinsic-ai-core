@@ -7,7 +7,7 @@ economic withholding detection model for power markets.
 
 from typing import Any, Dict, List, Optional, Union
 
-from ....core.node_library import (
+from core.node_library import (
     BayesianNode,
     EvidenceNode,
     LatentIntentNode,
