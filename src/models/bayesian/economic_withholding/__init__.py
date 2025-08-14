@@ -30,9 +30,9 @@ logger = logging.getLogger(__name__)
 
 # Define modules with their criticality
 MODULES_TO_IMPORT = {
-	'config': {'module': 'EconomicWithholdingConfig', 'critical': False},
+	'config': {'module': 'EconomicWithholdingConfig', 'critical': True},
 	'model': {'module': 'EconomicWithholdingModel', 'critical': False},
-	'nodes': {'module': 'EconomicWithholdingNodes', 'critical': False},
+	'nodes': {'module': 'EconomicWithholdingNodes', 'critical': True},
 	'scenario_engine': {'module': 'ScenarioSimulationEngine', 'critical': False},
 	'cost_curve_analyzer': {'module': 'CostCurveAnalyzer', 'critical': False},
 	'arera_compliance': {'module': 'ARERAComplianceEngine', 'critical': False},
@@ -70,11 +70,17 @@ if critical_failures:
 if import_errors and not critical_failures:
 	logger.warning(f"Some economic withholding modules could not be imported: {'; '.join(import_errors)}")
 
-__all__ = [
-	"EconomicWithholdingModel",
-	"EconomicWithholdingNodes",
-	"EconomicWithholdingConfig",
-	"ScenarioSimulationEngine",
-	"CostCurveAnalyzer",
-	"ARERAComplianceEngine"
-]
+# Build __all__ dynamically to include only successfully imported symbols
+__all__ = []
+if EconomicWithholdingModel is not None:
+	__all__.append("EconomicWithholdingModel")
+if EconomicWithholdingNodes is not None:
+	__all__.append("EconomicWithholdingNodes")
+if EconomicWithholdingConfig is not None:
+	__all__.append("EconomicWithholdingConfig")
+if ScenarioSimulationEngine is not None:
+	__all__.append("ScenarioSimulationEngine")
+if CostCurveAnalyzer is not None:
+	__all__.append("CostCurveAnalyzer")
+if ARERAComplianceEngine is not None:
+	__all__.append("ARERAComplianceEngine")
