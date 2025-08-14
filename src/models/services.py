@@ -9,7 +9,10 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from .bayesian.registry import BayesianModelRegistry
+try:
+	from .bayesian.registry import BayesianModelRegistry  # type: ignore
+except Exception:
+	BayesianModelRegistry = None  # type: ignore
 
 logger = logging.getLogger(__name__)
 

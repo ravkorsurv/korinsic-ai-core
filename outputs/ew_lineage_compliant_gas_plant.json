@@ -1,0 +1,87 @@
+{
+  "case": "compliant_gas_plant",
+  "timestamp": "2025-08-14T03:51:23.208771",
+  "raw_input_summary": {
+    "plant_data": {
+      "unit_id": "COMP_GAS_001",
+      "fuel_type": "gas",
+      "capacity_mw": 400.0,
+      "heat_rate": 7200,
+      "efficiency": 0.47
+    },
+    "offers_count": 4,
+    "market_data": {
+      "system_load_mw": 25000,
+      "load_factor": "normal_demand",
+      "market_tightness": "balanced",
+      "transmission_constraints": "unconstrained"
+    },
+    "fuel_prices": {
+      "gas": 48.0
+    }
+  },
+  "evidence": {
+    "numeric": {
+      "fuel_cost_variance": 0,
+      "plant_efficiency": 0,
+      "marginal_cost_deviation": 0,
+      "heat_rate_variance": 0,
+      "load_factor": 1,
+      "market_tightness": 1,
+      "competitive_context": 0,
+      "transmission_constraint": 0,
+      "bid_shape_anomaly": 0,
+      "offer_withdrawal_pattern": 0,
+      "cross_plant_coordination": 0,
+      "capacity_utilization": 0,
+      "markup_consistency": 0,
+      "opportunity_pricing": 0,
+      "fuel_price_correlation": 0,
+      "price_impact_ratio": 0,
+      "volume_participation": 0,
+      "liquidity_context": 0,
+      "order_clustering": 0,
+      "benchmark_timing": 0
+    },
+    "states": {
+      "fuel_cost_variance": "aligned",
+      "plant_efficiency": "optimal",
+      "marginal_cost_deviation": "cost_reflective",
+      "heat_rate_variance": "consistent",
+      "load_factor": "normal_demand",
+      "market_tightness": "balanced",
+      "competitive_context": "competitive",
+      "transmission_constraint": "unconstrained",
+      "bid_shape_anomaly": "normal_curve",
+      "offer_withdrawal_pattern": "normal_availability",
+      "cross_plant_coordination": "independent_operation",
+      "capacity_utilization": "full_utilization",
+      "markup_consistency": "consistent_markup",
+      "opportunity_pricing": "cost_based",
+      "fuel_price_correlation": "strong_correlation",
+      "price_impact_ratio": "normal_impact",
+      "volume_participation": "normal_participation",
+      "liquidity_context": "liquid",
+      "order_clustering": "normal_distribution",
+      "benchmark_timing": "outside_window"
+    }
+  },
+  "risk_assessment": {
+    "probabilities": {
+      "no_withholding": 0.91,
+      "potential_withholding": 0.08,
+      "clear_withholding": 0.01
+    },
+    "max_state": "no_withholding",
+    "confidence": 0.91
+  },
+  "arera_compliance": {
+    "status": "compliant",
+    "violations": [],
+    "confidence_level": 0.95
+  },
+  "alert": {
+    "triggered": false,
+    "commentary": "No alert: compliant and low model risk."
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "case": "flagged_gas_plant",
+  "timestamp": "2025-08-14T03:51:23.209459",
+  "raw_input_summary": {
+    "plant_data": {
+      "unit_id": "FLAG_GAS_002",
+      "fuel_type": "gas",
+      "capacity_mw": 380.0,
+      "heat_rate": 7800,
+      "efficiency": 0.43
+    },
+    "offers_count": 4,
+    "market_data": {
+      "system_load_mw": 28500,
+      "load_factor": "peak_demand",
+      "market_tightness": "tight",
+      "transmission_constraints": "moderate_constraints"
+    },
+    "fuel_prices": {
+      "gas": 49.5
+    }
+  },
+  "evidence": {
+    "numeric": {
+      "fuel_cost_variance": 1,
+      "plant_efficiency": 1,
+      "marginal_cost_deviation": 1,
+      "heat_rate_variance": 0,
+      "load_factor": 2,
+      "market_tightness": 2,
+      "competitive_context": 0,
+      "transmission_constraint": 1,
+      "bid_shape_anomaly": 0,
+      "offer_withdrawal_pattern": 0,
+      "cross_plant_coordination": 0,
+      "capacity_utilization": 0,
+      "markup_consistency": 0,
+      "opportunity_pricing": 0,
+      "fuel_price_correlation": 0,
+      "price_impact_ratio": 0,
+      "volume_participation": 0,
+      "liquidity_context": 0,
+      "order_clustering": 0,
+      "benchmark_timing": 0
+    },
+    "states": {
+      "fuel_cost_variance": "moderate_variance",
+      "plant_efficiency": "suboptimal",
+      "marginal_cost_deviation": "moderate_markup",
+      "heat_rate_variance": "consistent",
+      "load_factor": "peak_demand",
+      "market_tightness": "tight",
+      "competitive_context": "competitive",
+      "transmission_constraint": "moderate_constraints",
+      "bid_shape_anomaly": "normal_curve",
+      "offer_withdrawal_pattern": "normal_availability",
+      "cross_plant_coordination": "independent_operation",
+      "capacity_utilization": "full_utilization",
+      "markup_consistency": "consistent_markup",
+      "opportunity_pricing": "cost_based",
+      "fuel_price_correlation": "strong_correlation",
+      "price_impact_ratio": "normal_impact",
+      "volume_participation": "normal_participation",
+      "liquidity_context": "liquid",
+      "order_clustering": "normal_distribution",
+      "benchmark_timing": "outside_window"
+    }
+  },
+  "risk_assessment": {
+    "probabilities": {
+      "no_withholding": 0.5,
+      "potential_withholding": 0.4,
+      "clear_withholding": 0.1
+    },
+    "max_state": "no_withholding",
+    "confidence": 0.5
+  },
+  "arera_compliance": {
+    "status": "requires_investigation",
+    "violations": [
+      {
+        "type": "ECONOMIC_WITHHOLDING_EXCESSIVE_MARKUP",
+        "severity": "medium",
+        "description": "Average markup 18.0% exceeds ARERA threshold 15% (scenario min_cost)",
+        "evidence": {
+          "average_markup": 0.18,
+          "benchmark_scenario": "min_cost",
+          "p_value": 0.008
+        },
+        "statistical_significance": 0.992,
+        "economic_significance": 0.18,
+        "reference": "ARERA Resolution 111/06"
+      }
+    ],
+    "confidence_level": 0.9
+  },
+  "alert": {
+    "triggered": true,
+    "commentary": "Alert generated due to ARERA status: requires_investigation. High-risk indicators: load_factor=peak_demand, market_tightness=tight"
+  }
+}
