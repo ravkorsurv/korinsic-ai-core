@@ -8,17 +8,37 @@ This package contains Bayesian network models organized by abuse type:
 - shared/: Shared Bayesian components and utilities
 """
 
-from .insider_dealing import InsiderDealingModel
-from .latent_intent import LatentIntentModel
-from .registry import BayesianModelRegistry
-from .shared import BayesianNodeLibrary, ModelBuilder
-from .spoofing import SpoofingModel
+try:
+	from .insider_dealing import InsiderDealingModel  # type: ignore
+except Exception:
+	InsiderDealingModel = None  # type: ignore
+
+try:
+	from .latent_intent import LatentIntentModel  # type: ignore
+except Exception:
+	LatentIntentModel = None  # type: ignore
+
+try:
+	from .registry import BayesianModelRegistry  # type: ignore
+except Exception:
+	BayesianModelRegistry = None  # type: ignore
+
+try:
+	from .shared import BayesianNodeLibrary, ModelBuilder  # type: ignore
+except Exception:
+	BayesianNodeLibrary = None  # type: ignore
+	ModelBuilder = None  # type: ignore
+
+try:
+	from .spoofing import SpoofingModel  # type: ignore
+except Exception:
+	SpoofingModel = None  # type: ignore
 
 __all__ = [
-    "BayesianModelRegistry",
-    "InsiderDealingModel",
-    "SpoofingModel",
-    "LatentIntentModel",
-    "BayesianNodeLibrary",
-    "ModelBuilder",
+	"BayesianModelRegistry",
+	"InsiderDealingModel",
+	"SpoofingModel",
+	"LatentIntentModel",
+	"BayesianNodeLibrary",
+	"ModelBuilder",
 ]

@@ -35,7 +35,11 @@ Compliance: Designed for MiFID II, MAR, EMIR, and other regulatory requirements
 Dependencies: pgmpy, numpy, pandas, scikit-learn for Bayesian inference
 """
 
-from .bayesian import BayesianModelRegistry
+try:
+	from .bayesian import BayesianModelRegistry  # noqa: F401
+except Exception:
+	# Defer optional heavy imports (e.g., pgmpy) to runtime users of those modules
+	BayesianModelRegistry = None  # type: ignore
 from .services import ModelService
 from .shared import BaseModel, ModelMetadata
 from .trading_data import (
